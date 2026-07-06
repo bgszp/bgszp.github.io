@@ -179,13 +179,12 @@
     <!-- Bagian Menu Notes / Catatan -->
 <div class="card" style="margin-top: 20px;">
     <h3><i class="fa-solid fa-pen-to-square"></i> Notes / Catatan</h3>
-    <textarea 
-        id="userNotes" 
-        placeholder="Ketik atau tempel catatan penting Anda di sini... (Otomatis tersimpan)" 
-        rows="5" 
-        style="width: 100%; padding: 10px; background: #1a1a2e; color: #fff; border: 1px solid #00f2fe; border-radius: 8px; resize: vertical; font-family: sans-serif;"
-        oninput="saveNotes()"
-    ></textarea>
+<textarea 
+    id="userNotes" 
+    placeholder="Ketik atau tempel catatan penting Anda di sini... (Otomatis tersimpan)" 
+    style="width: 100%; min-height: 250px; padding: 15px; background: #1a1a2e; color: #fff; border: 1px solid #00f2fe; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box; line-height: 1.5;"
+    oninput="saveNotes()"
+></textarea>
     <button class="btn-primary" onclick="clearNotes()" style="margin-top: 10px; background: #ff4757; border-color: #ff4757;">
         <i class="fa-solid fa-trash"></i> Hapus Catatan
     </button>
