@@ -217,19 +217,22 @@
         };
 
         window.generateUsername = function() {
-            const teksInput = document.getElementById('genNameOutput').value;
-            
-            if (!teksInput || teksInput === "Data akan muncul di sini") {
-                showToast("Silakan acak data terlebih dahulu! ⚠️");
-                return;
-            }
-            
-            const namaLengkap = teksInput.split('|')[0].trim();
-            const namaTanpasPasi = namaLengkap.replace(/\s+/g, '').toLowerCase();
-            
-            tampilkanDanSalin(namaTanpasPasi);
-            tambahKeRiwayat(namaTanpasPasi);
-        };
+    const teksInput = document.getElementById('genNameOutput').value;
+    
+    if (!teksInput || teksInput === "Data akan muncul di sini") {
+        showToast("Silakan acak data terlebih dahulu! ⚠️");
+        return;
+    }
+    
+    // Mengambil bagian nama saja
+    const namaLengkap = teksInput.split('|')[0].trim();
+    
+    // Mengubah spasi menjadi titik (.) dan huruf kecil semua (contoh: budi.setiawan)
+    const namaDenganTitik = namaLengkap.replace(/\s+/g, '.').toLowerCase();
+    
+    tampilkanDanSalin(namaDenganTitik);
+    tambahKeRiwayat(namaDenganTitik);
+};
 
         function tampilkanDanSalin(teks) {
             const outputField = document.getElementById('genNameOutput');
