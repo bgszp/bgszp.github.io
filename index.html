@@ -177,37 +177,38 @@
     <div class="toast" id="toastNotif">Berhasil Disalin! ✨</div>
 
     <script>
-        // Array Data Utama yang di-load dari file JSON eksternal
-        let DATA_DUMMY_DATABASE = [];
+// Array Data Utama yang di-load dari file JSON eksternal
+let DATA_DUMMY_DATABASE = [];
 
-        // Fungsi bawaan untuk mengambil data dari file data_pengguna.json
-        document.addEventListener("DOMContentLoaded", function() {
-            fetch('./data_pengguna.json')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Gagal mengambil file JSON.");
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    DATA_DUMMY_DATABASE = data;
-                    console.log("Database dummy berhasil dimuat! Total: " + data.length + " baris data.");
-                })
-                .catch(err => {
-                    console.error("Error load data:", err);
-                    showToast("Gagal memuat database JSON! ⚠️");
-                });
+// Fungsi bawaan untuk mengambil data dari file data_pengguna.json
+document.addEventListener("DOMContentLoaded", function() {
+    fetch('./data_pengguna.json')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Gagal mengambil file JSON.");
+            }
+            return response.json();
+        })
+        .then(data => {
+            DATA_DUMMY_DATABASE = data;
+            console.log("Database dummy berhasil dimuat! Total: " + data.length + " baris data.");
+        })
+        .catch(err => {
+            console.error("Error load data:", err);
+            showToast("Gagal memuat database JSON! ⚠️");
         });
+});
 
-        window.generateName = function() {
+window.generateName = function() {
     if (DATA_DUMMY_DATABASE.length === 0) {
         showToast("Data sedang memuat, silakan tunggu... ⚠️");
         return;
     }
 
+    // Memilih satu objek baris data secara acak
     const dataAcak = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
     
-    // DI SINI: Pemisah '|' sudah dihilangkan dan diganti koma & spasi agar rapi
+    // PEMISAH DIHITUNG DISINI: Menggunakan koma dan spasi (Tanpa Garis Tegak '|')
     const dataFinal = `${dataAcak.nama}, ${dataAcak.alamat}, ${dataAcak.no_hp}`;
     
     tampilkanDanSalin(dataFinal);
@@ -222,70 +223,60 @@ window.generateUsername = function() {
         return;
     }
     
-    // DI SINI DISESUAIKAN: Sekarang memotong berdasarkan tanda koma ',' karena '|' sudah hilang
+    // LOGIKA DIPERBAIKI: Memotong berdasarkan tanda koma (',') karena tanda '|' sudah tidak ada
     const namaLengkap = teksInput.split(',')[0].trim();
     
-    // Mengubah spasi menjadi titik
-    const namaDenganTitik = namaLengkap.replace(/\s+/g, '.').toLowerCase();
-    
-    tampilkanDanSalin(namaDenganTitik);
-    tambahKeRiwayat(namaDenganTitik);
-};
-    
-    // Mengambil bagian nama saja
-    const namaLengkap = teksInput.split('|')[0].trim();
-    
-    // Mengubah spasi menjadi titik (.) dan huruf kecil semua (contoh: budi.setiawan)
+    // Mengubah semua spasi menjadi titik (.) dan menjadikannya huruf kecil semua
     const namaDenganTitik = namaLengkap.replace(/\s+/g, '.').toLowerCase();
     
     tampilkanDanSalin(namaDenganTitik);
     tambahKeRiwayat(namaDenganTitik);
 };
 
-        function tampilkanDanSalin(teks) {
-            const outputField = document.getElementById('genNameOutput');
-            if (outputField) {
-                outputField.value = teks;
-                
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(teks).then(() => {
-                        showToast("Berhasil Disalin! OK!! ✨");
-                    }).catch(err => {
-                        salinManual(outputField);
-                    });
-                } else {
-                    salinManual(outputField);
-                }
-            }
+function tampilkanDanSalin(teks) {
+    const outputField = document.getElementById('genNameOutput');
+    if (outputField) {
+        outputField.value = teks;
+        
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(teks).then(() => {
+                showToast("Berhasil Disalin! ✨");
+            }).catch(err => {
+                salinManual(outputField);
+            });
+        } else {
+            salinManual(outputField);
         }
+    }
+}
 
-        function salinManual(inputElement) {
-            inputElement.select();
-            inputElement.setSelectionRange(0, 99999);
-            document.execCommand("copy");
-            showToast("Berhasil Disalin! OK!! ✨");
-        }
+function salinManual(inputElement) {
+    inputElement.select();
+    inputElement.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    showToast("Berhasil Disalin! ✨");
+}
 
-        function tambahKeRiwayat(teks) {
-            const historyList = document.getElementById('historyList');
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.innerText = teks;
-            item.onclick = function() { tampilkanDanSalin(teks); };
-            historyList.insertBefore(item, historyList.firstChild);
-        }
+function tambahKeRiwayat(teks) {
+    const historyList = document.getElementById('historyList');
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerText = teks;
+    item.onclick = function() { tampilkanDanSalin(teks); };
+    historyList.insertBefore(item, historyList.firstChild);
+}
 
-        function clearHistory() {
-            document.getElementById('historyList').innerHTML = '';
-            showToast("Riwayat dihapus!");
-        }
+function clearHistory() {
+    document.getElementById('historyList').innerHTML = '';
+    showToast("Riwayat dihapus!");
+}
 
-        function showToast(pesan) {
-            const toast = document.getElementById('toastNotif');
-            toast.innerText = pesan;
-            toast.classList.add('show');
-            setTimeout(() => { toast.classList.remove('show'); }, 2000);
-        }
+function showToast(pesan) {
+    const toast = document.getElementById('toastNotif');
+    toast.innerText = pesan;
+    toast.classList.add('show');
+    setTimeout(() => { toast.classList.remove('show'); }, 2000);
+}
     </script>
 </body>
 </html>
