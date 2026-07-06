@@ -200,29 +200,37 @@
         });
 
         window.generateName = function() {
-            // Validasi jika data belum selesai di-load oleh browser
-            if (DATA_DUMMY_DATABASE.length === 0) {
-                showToast("Data sedang memuat, silakan tunggu... ⚠️");
-                return;
-            }
+    if (DATA_DUMMY_DATABASE.length === 0) {
+        showToast("Data sedang memuat, silakan tunggu... ⚠️");
+        return;
+    }
 
-            // Memilih satu objek baris data secara acak dari database JSON
-            const dataAcak = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
-            
-            // Menggabungkan string data sesuai dengan template Anda sebelumnya
-            const dataFinal = `${dataAcak.nama} | ${dataAcak.alamat} | ${dataAcak.no_hp}`;
-            
-            tampilkanDanSalin(dataFinal);
-            tambahKeRiwayat(dataFinal);
-        };
+    const dataAcak = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
+    
+    // DI SINI: Pemisah '|' sudah dihilangkan dan diganti koma & spasi agar rapi
+    const dataFinal = `${dataAcak.nama}, ${dataAcak.alamat}, ${dataAcak.no_hp}`;
+    
+    tampilkanDanSalin(dataFinal);
+    tambahKeRiwayat(dataFinal);
+};
 
-        window.generateUsername = function() {
+window.generateUsername = function() {
     const teksInput = document.getElementById('genNameOutput').value;
     
     if (!teksInput || teksInput === "Data akan muncul di sini") {
         showToast("Silakan acak data terlebih dahulu! ⚠️");
         return;
     }
+    
+    // DI SINI DISESUAIKAN: Sekarang memotong berdasarkan tanda koma ',' karena '|' sudah hilang
+    const namaLengkap = teksInput.split(',')[0].trim();
+    
+    // Mengubah spasi menjadi titik
+    const namaDenganTitik = namaLengkap.replace(/\s+/g, '.').toLowerCase();
+    
+    tampilkanDanSalin(namaDenganTitik);
+    tambahKeRiwayat(namaDenganTitik);
+};
     
     // Mengambil bagian nama saja
     const namaLengkap = teksInput.split('|')[0].trim();
