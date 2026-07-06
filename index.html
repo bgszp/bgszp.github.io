@@ -176,6 +176,22 @@
 
     <div class="toast" id="toastNotif">Berhasil Disalin! ✨</div>
 
+    <!-- Bagian Menu Notes / Catatan -->
+<div class="card" style="margin-top: 20px;">
+    <h3><i class="fa-solid fa-pen-to-square"></i> Notes / Catatan</h3>
+    <textarea 
+        id="userNotes" 
+        placeholder="Ketik atau tempel catatan penting Anda di sini... (Otomatis tersimpan)" 
+        rows="5" 
+        style="width: 100%; padding: 10px; background: #1a1a2e; color: #fff; border: 1px solid #00f2fe; border-radius: 8px; resize: vertical; font-family: sans-serif;"
+        oninput="saveNotes()"
+    ></textarea>
+    <button class="btn-primary" onclick="clearNotes()" style="margin-top: 10px; background: #ff4757; border-color: #ff4757;">
+        <i class="fa-solid fa-trash"></i> Hapus Catatan
+    </button>
+</div>
+
+    
     <script>
 // Array Data Utama yang di-load dari file JSON eksternal
 let DATA_DUMMY_DATABASE = [];
@@ -277,6 +293,33 @@ function showToast(pesan) {
     toast.classList.add('show');
     setTimeout(() => { toast.classList.remove('show'); }, 2000);
 }
+
+// Fungsi untuk memuat catatan yang tersimpan saat halaman pertama kali dibuka
+document.addEventListener("DOMContentLoaded", function() {
+    // ... kode fetch data JSON Anda yang sudah ada ...
+    
+    // Tambahkan baris ini untuk memuat catatan lama jika ada
+    const savedNotes = localStorage.getItem("aplikasi_notes");
+    if (savedNotes) {
+        document.getElementById("userNotes").value = savedNotes;
+    }
+});
+
+// Fungsi untuk menyimpan catatan secara otomatis setiap kali pengguna mengetik
+window.saveNotes = function() {
+    const notesValue = document.getElementById("userNotes").value;
+    localStorage.setItem("aplikasi_notes", notesValue);
+};
+
+// Fungsi untuk menghapus seluruh isi catatan
+window.clearNotes = function() {
+    if (confirm("Apakah Anda yakin ingin menghapus seluruh catatan?")) {
+        document.getElementById("userNotes").value = "";
+        localStorage.removeItem("aplikasi_notes");
+        showToast("Catatan berhasil dihapus!");
+    }
+};
+        
     </script>
 </body>
 </html>
