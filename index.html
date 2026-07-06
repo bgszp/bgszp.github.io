@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generator Data Futuristik</title>
     
-    <!-- Import icon dari Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
     <style>
@@ -169,7 +168,6 @@
         </div>
     </div>
 
-    <!-- Kotak Riwayat Hasil Acak -->
     <div class="history-card">
         <div class="history-title">
             <span><i class="fa-solid fa-history"></i> RIWAYAT GENERATE (KLIK UNTUK SALIN)</span>
@@ -247,7 +245,6 @@
             if (outputField) {
                 outputField.value = teks;
                 
-                // Fitur salin otomatis ramah browser mobile/GitHub Pages
                 if (navigator.clipboard && window.isSecureContext) {
                     navigator.clipboard.writeText(teks).then(() => {
                         showToast("Berhasil Disalin! OK!! ✨");
