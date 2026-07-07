@@ -325,7 +325,7 @@
             localStorage.setItem("smscode_user_api_key", currentKey);
         }
 
-        async function requestSmsNumber() {
+async function requestSmsNumber() {
             const btnSms = document.getElementById('btn-sms-code');
             const loadingText = document.getElementById('smsLoadingText');
             const resultBox = document.getElementById('smsResultBox');
@@ -333,7 +333,8 @@
             const resPhone = document.getElementById('smsResPhone');
             const resId = document.getElementById('smsResId');
 
-            const activeApiKey = document.getElementById("smsApiKeyField").value.trim();
+            // .trim() dan .replace di bawah ini berfungsi menghapus karakter gaib / non-ISO
+            const activeApiKey = document.getElementById("smsApiKeyField").value.trim().replace(/[^\x20-\x7E]/g, "");
 
             btnSms.disabled = true;
             loadingText.style.display = "block";
@@ -353,6 +354,50 @@
                 }, 300);
                 return;
             }
+
+            try {
+                const response = await fetch(`${CORS_PROXY}${API_URL}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + activeApiKey,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        country: "ID",
+                        service: "shopee"
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resStatus.innerText = "Sukses";
+                    resStatus.style.color = "#00ffcc";
+                    resPhone.innerText = data.phoneNumber || "Nomor Kosong";
+                    resId.innerText = data.id || "-";
+                    
+                    if(data.phoneNumber) {
+                        tampilkanDanSalin(data.phoneNumber);
+                        tambahKeRiwayat(`Sewa Shopee: ${data.phoneNumber}`);
+                    }
+                } else {
+                    throw new Error(data.message || `Server merespon status ${response.status}`);
+                }
+
+            } catch (error) {
+                resultBox.classList.add('sms-error-mode');
+                resStatus.innerText = "Gagal Mengubungi API";
+                resStatus.style.color = "#ff4a4a";
+                resPhone.innerText = "Koneksi Proxy Terhenti / Error";
+                resId.innerText = error.message + " (Jika pertama kali menggunakan, kunjungi https://cors-anywhere.herokuapp.com/corsdemo di browser untuk mengaktifkan akses sementara)";
+            } finally {
+                loadingText.style.display = "none";
+                btnSms.disabled = false;
+                resultBox.style.display = "block";
+            }
+}
+          
 
             try {
                 const response = await fetch(`${CORS_PROXY}${API_URL}`, {
