@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik v2.8</title>
+    <title>Generator Data Futuristik v2.9</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -29,7 +29,7 @@
             border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
         }
         #btn-username { background: linear-gradient(45deg, #00b4db, #0083b0); box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4); }
-        .history-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; width: 100%; max-width: 420px; max-height: 200px; overflow-y: auto; }
+        .history-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; width: 100%; max-width: 420px; max-height: 200px; overflow-y: auto; margin-top: 10px; }
         .history-title { font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 10px; display: flex; justify-content: space-between; }
         .history-item { font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; opacity: 0; z-index: 99; }
@@ -43,6 +43,7 @@
 </head>
 <body>
 
+    <!-- 1. CARD UTAMA (GENERATOR DATA) -->
     <div class="container-card">
         <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator</div>
         <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
@@ -52,14 +53,11 @@
         </div>
     </div>
 
-    <div class="history-card">
-        <div class="history-title"><span>RIWAYAT</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
-        <div id="historyList"></div>
-    </div>
-
-    <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 20px;">
+    <!-- 2. NOTES SECTION (CATATAN SINKRONISASI) -->
+    <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 10px;">
         <div class="title"><i class="fa-solid fa-cloud-sun" style="color: #00ffcc;"></i> Catatan Sinkronisasi Multi-Device</div>
         
+        <!-- KOLOM CONFIG GITHUB -->
         <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
             <div>
                 <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB USERNAME</label>
@@ -76,6 +74,7 @@
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <!-- KOLOM 1: SINKRONISASI BACA OTOMATIS -->
             <div>
                 <div style="font-size: 13px; font-weight: bold; color: #ff007f; margin-bottom: 5px; text-align: left;">
                     <i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA (LIVE)
@@ -87,18 +86,26 @@
                 </button>
             </div>
             
+            <!-- KOLOM 2 -->
             <div>
                 <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">DATA PENTING / COPAS</div>
                 <textarea id="userNotes2" placeholder="Tempel data acak..." style="width: 100%; min-height: 220px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px;" oninput="saveLocalNotes('userNotes2', 'aplikasi_notes_2')"></textarea>
                 <div style="height: 31px;"></div>
             </div>
             
+            <!-- KOLOM 3 -->
             <div>
                 <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">LAIN-LAIN / TODO</div>
                 <textarea id="userNotes3" placeholder="Info lainnya..." style="width: 100%; min-height: 220px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px;" oninput="saveLocalNotes('userNotes3', 'aplikasi_notes_3')"></textarea>
                 <div style="height: 31px;"></div>
             </div>
         </div>
+    </div>
+
+    <!-- 3. RIWAYAT (POSISI SEKARANG DI BAWAH SENDIRI) -->
+    <div class="history-card" style="width: 100%; max-width: 900px; margin-top: 10px;">
+        <div class="history-title"><span>RIWAYAT GENERATOR DATA</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
+        <div id="historyList"></div>
     </div>
 
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
@@ -109,14 +116,12 @@
         let isAdminAuthenticated = false;
         let currentFileSha = ""; 
 
-        // DATA UTAMA ANDA JADIKAN DEFAULT SISTEM BACA (READ-ONLY)
         const DEFAULT_USER = "bgszp";
         const DEFAULT_REPO = "bgszp.github.io";
 
         document.addEventListener("DOMContentLoaded", function() {
             fetch('./data_pengguna.json').then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
 
-            // Set atau Load data konfigurasi internal Admin
             if(!localStorage.getItem("git_user")) document.getElementById("gitUser").value = DEFAULT_USER;
             else document.getElementById("gitUser").value = localStorage.getItem("git_user");
 
@@ -128,7 +133,6 @@
             if(localStorage.getItem("aplikasi_notes_2")) document.getElementById("userNotes2").value = localStorage.getItem("aplikasi_notes_2");
             if(localStorage.getItem("aplikasi_notes_3")) document.getElementById("userNotes3").value = localStorage.getItem("aplikasi_notes_3");
 
-            // HP Lain akan otomatis langsung membaca dari repositori Anda secara instan
             autoFetchForEveryone();
         });
 
@@ -140,12 +144,10 @@
 
         function saveLocalNotes(id, key) { localStorage.setItem(key, document.getElementById(id).value); }
 
-        // FUNGSI BACA OTOMATIS TANPA TOKEN (UNTUK SEMUA HP PEMANTAU)
         async function autoFetchForEveryone() {
             const statusLabel = document.getElementById("syncStatus");
             statusLabel.innerText = "(Memantau Live...)";
             
-            // Mengambil data langsung dari jalur publik GitHub Pages milik bgszp
             const url = `https://bgszp.github.io/catatan_utama.txt?t=${Date.now()}`;
 
             try {
@@ -155,8 +157,6 @@
                     document.getElementById("userNotes").value = textData;
                     statusLabel.innerText = "(Mode Pantau Aktif)";
                     statusLabel.style.color = "#00ffcc";
-                    
-                    // Ambil SHA diam-diam untuk persiapan jika device ini ternyata milik Admin
                     fetchShaQuietly();
                 } else {
                     document.getElementById("userNotes").value = "";
@@ -182,7 +182,6 @@
             } catch(e){}
         }
 
-        // AKTOR UTAMA: UNLOCK EDIT HANYA BISA DILAKUKAN JIKA TOKEN VALID & PIN BENAR
         async function toggleAdminAccess() {
             const noteUtama = document.getElementById("userNotes");
             const btnAdmin = document.getElementById("btnAdminAuth");
@@ -196,17 +195,13 @@
                     isAdminAuthenticated = true;
                     noteUtama.removeAttribute("readonly");
                     noteUtama.classList.remove("admin-locked");
-                    
-                    // Munculkan kolom config rahasia di bawah agar admin bisa setting/isi token baru
                     configBox.style.display = "grid"; 
-                    
                     btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan &amp; Kunci';
                     btnAdmin.style.background = "#ff007f";
                     iconLock.className = "fa-solid fa-lock-open";
                     showToast("Mode Admin Terbuka! 🔓");
                 } else if (inputPin !== null) { alert("PIN Salah! Akses ditolak."); }
             } else {
-                // PROSES SIMPAN / UPDATE OLEH ADMIN KE GITHUB
                 const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
                 const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
                 const token = document.getElementById("gitToken").value.trim();
@@ -228,10 +223,7 @@
                     content: base64Content
                 };
                 
-                // Jika SHA belum terdeteksi, kita paksa tarik manual menggunakan token admin
-                if(!currentFileSha) {
-                    await fetchShaQuietly();
-                }
+                if(!currentFileSha) { await fetchShaQuietly(); }
                 if(currentFileSha) bodyPayload.sha = currentFileSha;
 
                 try {
@@ -244,21 +236,19 @@
                     if(res.ok) {
                         const resData = await res.json();
                         currentFileSha = resData.content.sha;
-                        
                         isAdminAuthenticated = false;
                         noteUtama.setAttribute("readonly", "true");
                         noteUtama.classList.add("admin-locked");
-                        configBox.style.display = "none"; // Sembunyikan kembali menu config
-                        
+                        configBox.style.display = "none"; 
                         btnAdmin.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit';
                         btnAdmin.style.background = "#1a1535";
-                        iconLock.className = "fa-solid = fa-lock";
+                        iconLock.className = "fa-solid fa-lock";
                         statusLabel.innerText = "(Mode Pantau Aktif)";
                         statusLabel.style.color = "#00ffcc";
                         showToast("Tersimpan secara Global! ☁️");
                     } else { throw new Error(); }
                 } catch(e) {
-                    alert("Gagal memperbarui Cloud. Pastikan Token PAT Anda benar dan memiliki izin Write.");
+                    alert("Gagal memperbarui Cloud. Pastikan Token PAT Anda benar.");
                     statusLabel.innerText = "(Gagal Menyimpan)";
                 } finally {
                     btnAdmin.disabled = false;
