@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik v2.7</title>
+    <title>Generator Data Futuristik v2.8</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -60,14 +60,14 @@
     <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 20px;">
         <div class="title"><i class="fa-solid fa-cloud-sun" style="color: #00ffcc;"></i> Catatan Sinkronisasi Multi-Device</div>
         
-        <div style="background: rgba(255,255,255,0.02); border: 1px dashed #3d3463; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+        <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
             <div>
                 <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB USERNAME</label>
-                <input type="text" id="gitUser" class="config-field" placeholder="Username GitHub Anda" oninput="saveGitConfig()">
+                <input type="text" id="gitUser" class="config-field" placeholder="bgszp" oninput="saveGitConfig()">
             </div>
             <div>
                 <label style="font-size:11px; color:#aaa; display:block; text-align:left;">NAMA REPO WEB</label>
-                <input type="text" id="gitRepo" class="config-field" placeholder="Nama Repositori" oninput="saveGitConfig()">
+                <input type="text" id="gitRepo" class="config-field" placeholder="bgszp.github.io" oninput="saveGitConfig()">
             </div>
             <div>
                 <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB TOKEN (PAT)</label>
@@ -78,7 +78,7 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
             <div>
                 <div style="font-size: 13px; font-weight: bold; color: #ff007f; margin-bottom: 5px; text-align: left;">
-                    <i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA (LIVE GITHUB)
+                    <i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA (LIVE)
                     <span id="syncStatus" style="font-size:10px; color:#aaa; margin-left:5px;">(Membaca...)</span>
                 </div>
                 <textarea id="userNotes" readonly class="admin-locked" placeholder="Memuat data dari cloud..." style="width: 100%; min-height: 220px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical;"></textarea>
@@ -109,20 +109,27 @@
         let isAdminAuthenticated = false;
         let currentFileSha = ""; 
 
+        // DATA UTAMA ANDA JADIKAN DEFAULT SISTEM BACA (READ-ONLY)
+        const DEFAULT_USER = "bgszp";
+        const DEFAULT_REPO = "bgszp.github.io";
+
         document.addEventListener("DOMContentLoaded", function() {
-            // Load DB nama acak
             fetch('./data_pengguna.json').then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
 
-            // Load saved settings
-            if(localStorage.getItem("git_user")) document.getElementById("gitUser").value = localStorage.getItem("git_user");
-            if(localStorage.getItem("git_repo")) document.getElementById("gitRepo").value = localStorage.getItem("git_repo");
+            // Set atau Load data konfigurasi internal Admin
+            if(!localStorage.getItem("git_user")) document.getElementById("gitUser").value = DEFAULT_USER;
+            else document.getElementById("gitUser").value = localStorage.getItem("git_user");
+
+            if(!localStorage.getItem("git_repo")) document.getElementById("gitRepo").value = DEFAULT_REPO;
+            else document.getElementById("gitRepo").value = localStorage.getItem("git_repo");
+
             if(localStorage.getItem("git_token")) document.getElementById("gitToken").value = localStorage.getItem("git_token");
             
             if(localStorage.getItem("aplikasi_notes_2")) document.getElementById("userNotes2").value = localStorage.getItem("aplikasi_notes_2");
             if(localStorage.getItem("aplikasi_notes_3")) document.getElementById("userNotes3").value = localStorage.getItem("aplikasi_notes_3");
 
-            // Ambil Catatan Utama secara online dari GitHub
-            fetchGitHubNote();
+            // HP Lain akan otomatis langsung membaca dari repositori Anda secara instan
+            autoFetchForEveryone();
         });
 
         function saveGitConfig() {
@@ -133,49 +140,55 @@
 
         function saveLocalNotes(id, key) { localStorage.setItem(key, document.getElementById(id).value); }
 
-        // AMBIL DATA DARI GITHUB
-        async function fetchGitHubNote() {
-            const user = document.getElementById("gitUser").value.trim();
-            const repo = document.getElementById("gitRepo").value.trim();
-            const token = document.getElementById("gitToken").value.trim();
+        // FUNGSI BACA OTOMATIS TANPA TOKEN (UNTUK SEMUA HP PEMANTAU)
+        async function autoFetchForEveryone() {
             const statusLabel = document.getElementById("syncStatus");
-
-            if(!user || !repo || !token) {
-                statusLabel.innerText = "(Config Cloud Belum Lengkap)";
-                document.getElementById("userNotes").value = "Silakan isi data config Username, Repo, dan Token GitHub di atas terlebih dahulu untuk mengaktifkan cloud.";
-                return;
-            }
-
-            statusLabel.innerText = "(Sinkronisasi...)";
-            const url = `https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`;
+            statusLabel.innerText = "(Memantau Live...)";
+            
+            // Mengambil data langsung dari jalur publik GitHub Pages milik bgszp
+            const url = `https://bgszp.github.io/catatan_utama.txt?t=${Date.now()}`;
 
             try {
-                const res = await fetch(url, {
-                    headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3+json" }
-                });
-                
-                if(res.status === 200) {
-                    const data = await res.json();
-                    currentFileSha = data.sha;
-                    document.getElementById("userNotes").value = decodeURIComponent(escape(atob(data.content)));
-                    statusLabel.innerText = "(Cloud Terhubung)";
+                const res = await fetch(url);
+                if(res.ok) {
+                    const textData = await res.text();
+                    document.getElementById("userNotes").value = textData;
+                    statusLabel.innerText = "(Mode Pantau Aktif)";
                     statusLabel.style.color = "#00ffcc";
-                } else if(res.status === 404) {
+                    
+                    // Ambil SHA diam-diam untuk persiapan jika device ini ternyata milik Admin
+                    fetchShaQuietly();
+                } else {
                     document.getElementById("userNotes").value = "";
-                    statusLabel.innerText = "(File Baru Terdeteksi)";
+                    statusLabel.innerText = "(Catatan Kosong)";
                 }
             } catch(e) {
-                statusLabel.innerText = "(Gagal Sinkronisasi)";
+                statusLabel.innerText = "(Gagal Memuat)";
                 statusLabel.style.color = "#ff4a4a";
             }
         }
 
-        // KUNCI & SIMPAN DATA KE GITHUB
+        async function fetchShaQuietly() {
+            const token = document.getElementById("gitToken").value.trim();
+            if(!token) return;
+            try {
+                const res = await fetch(`https://api.github.com/repos/${DEFAULT_USER}/${DEFAULT_REPO}/contents/catatan_utama.txt`, {
+                    headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3+json" }
+                });
+                if(res.status === 200) {
+                    const data = await res.json();
+                    currentFileSha = data.sha;
+                }
+            } catch(e){}
+        }
+
+        // AKTOR UTAMA: UNLOCK EDIT HANYA BISA DILAKUKAN JIKA TOKEN VALID & PIN BENAR
         async function toggleAdminAccess() {
             const noteUtama = document.getElementById("userNotes");
             const btnAdmin = document.getElementById("btnAdminAuth");
             const iconLock = document.getElementById("adminLockIcon");
             const statusLabel = document.getElementById("syncStatus");
+            const configBox = document.getElementById("adminConfigBox");
 
             if (!isAdminAuthenticated) {
                 const inputPin = prompt("Masukkan PIN Keamanan Admin:");
@@ -183,22 +196,27 @@
                     isAdminAuthenticated = true;
                     noteUtama.removeAttribute("readonly");
                     noteUtama.classList.remove("admin-locked");
-                    btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Kunci &amp; Simpan ke Cloud';
+                    
+                    // Munculkan kolom config rahasia di bawah agar admin bisa setting/isi token baru
+                    configBox.style.display = "grid"; 
+                    
+                    btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan &amp; Kunci';
                     btnAdmin.style.background = "#ff007f";
                     iconLock.className = "fa-solid fa-lock-open";
-                    showToast("Akses Terbuka! 🔓");
-                } else if (inputPin !== null) { alert("PIN Salah!"); }
+                    showToast("Mode Admin Terbuka! 🔓");
+                } else if (inputPin !== null) { alert("PIN Salah! Akses ditolak."); }
             } else {
-                const user = document.getElementById("gitUser").value.trim();
-                const repo = document.getElementById("gitRepo").value.trim();
+                // PROSES SIMPAN / UPDATE OLEH ADMIN KE GITHUB
+                const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
+                const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
                 const token = document.getElementById("gitToken").value.trim();
                 
-                if(!user || !repo || !token) {
-                    alert("Gagal Menyimpan! Konfigurasi Cloud GitHub Anda tidak valid.");
+                if(!token) {
+                    alert("Gagal Menyimpan! Anda harus mengisi GITHUB TOKEN (PAT) terlebih dahulu.");
                     return;
                 }
 
-                statusLabel.innerText = "(Menyimpan ke Cloud...)";
+                statusLabel.innerText = "(Mengupload...)";
                 btnAdmin.disabled = true;
 
                 const url = `https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`;
@@ -206,9 +224,14 @@
                 const base64Content = btoa(unescape(encodeURIComponent(contentText)));
 
                 const bodyPayload = {
-                    message: "Update catatan utama via Web Generator",
+                    message: "Update live via Admin Web Perangkat",
                     content: base64Content
                 };
+                
+                // Jika SHA belum terdeteksi, kita paksa tarik manual menggunakan token admin
+                if(!currentFileSha) {
+                    await fetchShaQuietly();
+                }
                 if(currentFileSha) bodyPayload.sha = currentFileSha;
 
                 try {
@@ -221,18 +244,21 @@
                     if(res.ok) {
                         const resData = await res.json();
                         currentFileSha = resData.content.sha;
+                        
                         isAdminAuthenticated = false;
                         noteUtama.setAttribute("readonly", "true");
                         noteUtama.classList.add("admin-locked");
+                        configBox.style.display = "none"; // Sembunyikan kembali menu config
+                        
                         btnAdmin.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit';
                         btnAdmin.style.background = "#1a1535";
-                        iconLock.className = "fa-solid fa-lock";
-                        statusLabel.innerText = "(Cloud Terhubung)";
+                        iconLock.className = "fa-solid = fa-lock";
+                        statusLabel.innerText = "(Mode Pantau Aktif)";
                         statusLabel.style.color = "#00ffcc";
-                        showToast("Tersimpan di Semua HP! ☁️🔒");
+                        showToast("Tersimpan secara Global! ☁️");
                     } else { throw new Error(); }
                 } catch(e) {
-                    alert("Gagal mengupload ke GitHub. Cek kembali kevalidan token.");
+                    alert("Gagal memperbarui Cloud. Pastikan Token PAT Anda benar dan memiliki izin Write.");
                     statusLabel.innerText = "(Gagal Menyimpan)";
                 } finally {
                     btnAdmin.disabled = false;
