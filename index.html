@@ -256,7 +256,7 @@
         </button>
 
         <div id="smsLoadingText" class="sms-loading">
-            <i class="fa-solid fa-circle-notch fa-spin"></i> Menghubungkan via CORS Proxy...
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Menghubungkan aman via Proxy...
         </div>
 
         <div id="smsResultBox" class="sms-result-box">
@@ -298,9 +298,9 @@
     </div>
 
     <script>
-        // Menggunakan CORS Proxy AllOrigins agar diizinkan berjalan di GitHub Pages
-        const PROXY_URL = "https://api.allorigins.win/raw?url=";
-        const TARGET_API = "https://api.smscode.gg/v1/orders"; 
+        // Menggunakan CORS Proxy alternatif yang mendukung POST Request secara publik
+        const CORS_PROXY = "https://cors-anywhere.herokuapp.com/";
+        const API_URL = "https://api.smscode.gg/v1/orders";
 
         let DATA_DUMMY_DATABASE = [];
 
@@ -355,12 +355,12 @@
             }
 
             try {
-                // Request ditembak melalui proxy bypass CORS
-                const response = await fetch(`${PROXY_URL}${encodeURIComponent(TARGET_API)}`, {
+                const response = await fetch(`${CORS_PROXY}${API_URL}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${activeApiKey}`
+                        'Authorization': `Bearer ${activeApiKey}`,
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({
                         country: "ID",
@@ -388,8 +388,8 @@
                 resultBox.classList.add('sms-error-mode');
                 resStatus.innerText = "Gagal Mengubungi API";
                 resStatus.style.color = "#ff4a4a";
-                resPhone.innerText = "Koneksi Terblokir / Gagal";
-                resId.innerText = error.message + " (Pastikan token API Key Anda benar dan saldo mencukupi)";
+                resPhone.innerText = "Koneksi Proxy Terhenti / Error";
+                resId.innerText = error.message + " (Jika pertama kali menggunakan, kunjungi https://cors-anywhere.herokuapp.com/corsdemo di browser untuk mengaktifkan akses sementara)";
             } finally {
                 loadingText.style.display = "none";
                 btnSms.disabled = false;
