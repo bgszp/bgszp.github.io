@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik v2</title>
+    <title>Generator Data Futuristik v2.1</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -256,13 +256,13 @@
         </button>
 
         <div id="smsLoadingText" class="sms-loading">
-            <i class="fa-solid fa-circle-notch fa-spin"></i> Menghubungkan aman via Proxy...
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Menghubungkan aman via Proxy v2...
         </div>
 
         <div id="smsResultBox" class="sms-result-box">
             <p><strong>Status:</strong> <span id="smsResStatus" style="font-weight: bold;">-</span></p>
             <p><strong>Nomor Telepon:</strong> <span id="smsResPhone" style="font-size: 16px; font-weight: bold;">-</span></p>
-            <p><strong>Pesan / ID:</strong> <span id="smsResId" style="font-family: monospace; color: #aaa;">-</span></p>
+            <p><strong>Order ID:</strong> <span id="smsResId" style="font-family: monospace; color: #aaa;">-</span></p>
         </div>
     </div>
 
@@ -298,8 +298,9 @@
     </div>
 
     <script>
+        // Menggunakan Proksi Publik dan API Endpoint /v2 sesuai dokumentasi resmi SMSCode
         const CORS_PROXY = "https://cors-anywhere.herokuapp.com/";
-        const API_URL = "https://api.smscode.gg/v1/orders";
+        const API_URL_V2 = "https://api.smscode.gg/v2/orders";
         let DATA_DUMMY_DATABASE = [];
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -331,7 +332,7 @@
             const resPhone = document.getElementById('smsResPhone');
             const resId = document.getElementById('smsResId');
 
-            // Membersihkan token otomatis dari karakter gaib non-ISO
+            // Membersihkan token otomatis dari spasi gaib / karakter non-ISO
             const activeApiKey = document.getElementById("smsApiKeyField").value.trim().replace(/[^\x20-\x7E]/g, "");
 
             btnSms.disabled = true;
@@ -353,42 +354,51 @@
                 return;
             }
 
+            // Membuat Idempotency Key unik berbasis waktu agar transaksi aman dan tidak double-charge
+            const uniqueIdempotencyKey = "key-" + Date.now();
+
             try {
-                const response = await fetch(`${CORS_PROXY}${API_URL}`, {
+                // Menembak endpoint /v2 sesuai instruksi dokumentasi resmi
+                const response = await fetch(`${CORS_PROXY}${API_URL_V2}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + activeApiKey,
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'idempotency-key': uniqueIdempotencyKey
                     },
                     body: JSON.stringify({
-                        country: "ID",
-                        service: "shopee"
+                        catalog_product_id: 1, // Default ID produk atau sesuaikan dengan sistem SMSCode
+                        max_price: "0.50",     // Menggunakan USD format string sesuai aturan /v2
+                        quantity: 1
                     })
                 });
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.orders && data.orders.length > 0) {
+                    const orderData = data.orders[0];
                     resStatus.innerText = "Sukses";
                     resStatus.style.color = "#00ffcc";
-                    resPhone.innerText = data.phoneNumber || "Nomor Kosong";
-                    resId.innerText = data.id || "-";
+                    resPhone.innerText = orderData.phoneNumber || "Nomor Berhasil Disewa";
+                    resId.innerText = orderData.id || "-";
                     
-                    if(data.phoneNumber) {
-                        tampilkanDanSalin(data.phoneNumber);
-                        tambahKeRiwayat(`Sewa Shopee: ${data.phoneNumber}`);
+                    if(orderData.phoneNumber) {
+                        tampilkanDanSalin(orderData.phoneNumber);
+                        tambahKeRiwayat(`Sewa Shopee: ${orderData.phoneNumber}`);
                     }
                 } else {
-                    throw new Error(data.message || `Server merespon status ${response.status}`);
+                    // Menangkap skema error terstruktur dari respons SMSCode
+                    const errMsg = data.error ? data.error.message : "Gagal menyewa nomor.";
+                    throw new Error(errMsg);
                 }
 
             } catch (error) {
                 resultBox.classList.add('sms-error-mode');
                 resStatus.innerText = "Gagal Mengubungi API";
                 resStatus.style.color = "#ff4a4a";
-                resPhone.innerText = "Koneksi Proxy Terhenti / Error";
-                resId.innerText = error.message + " (Jika pertama kali menggunakan, kunjungi https://cors-anywhere.herokuapp.com/corsdemo di browser untuk mengaktifkan akses sementara)";
+                resPhone.innerText = "Error Validasi / Sistem";
+                resId.innerText = error.message + " (Pastikan saldo Anda cukup, token benar, dan sudah mengaktifkan akses di https://cors-anywhere.herokuapp.com/corsdemo jika belum)";
             } finally {
                 loadingText.style.display = "none";
                 btnSms.disabled = false;
