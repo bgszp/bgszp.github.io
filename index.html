@@ -150,32 +150,21 @@
         /* ========================================== */
         /* === SMS CODE STYLE START === */
         /* ========================================== */
-        .sms-form-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        .sms-form-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: bold;
-            color: #aaa;
-            margin-bottom: 6px;
-            letter-spacing: 0.5px;
-        }
-        .sms-select {
-            width: 100%;
-            padding: 12px;
+        .sms-info-tag {
             background: #1a1535;
-            color: #fff;
             border: 1px solid #3d3463;
             border-radius: 8px;
-            outline: none;
-            font-size: 14px;
-            cursor: pointer;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #d6c7ff;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
         }
-        .sms-select:focus {
-            border-color: #ff007f;
-            box-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+        .sms-info-tag span {
+            color: #00ffcc;
         }
         #btn-sms-code {
             background: linear-gradient(45deg, #ff007f, #7928ca);
@@ -212,6 +201,7 @@
 </head>
 <body>
 
+    <!-- CARD UTAMA: GENERATOR DATA -->
     <div class="container-card">
         <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator Futuristik</div>
         
@@ -228,44 +218,40 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
+    <!-- === SMS CODE UI START === -->
+    <!-- ========================================== -->
     <div class="container-card">
         <div class="title"><i class="fa-solid fa-comment-sms" style="color: #ff007f;"></i> Acaka Data - SMS Code</div>
         
-        <div class="sms-form-group">
-            <label><i class="fa-solid fa-globe"></i> PILIH NEGARA NOMOR TELEPON</label>
-            <select id="smsCountry" class="sms-select">
-                <option value="ID">Indonesia (+62)</option>
-                <option value="MY">Malaysia (+60)</option>
-                <option value="SG">Singapura (+65)</option>
-                <option value="US">Amerika Serikat (+1)</option>
-            </select>
+        <!-- Label Informasi Kunci Layanan -->
+        <div class="sms-info-tag">
+            <div><i class="fa-solid fa-globe"></i> Negara: <span>Indonesia</span></div>
+            <div><i class="fa-solid fa-bag-shopping"></i> Layanan: <span>Shopee</span></div>
         </div>
 
-        <div class="sms-form-group">
-            <label><i class="fa-solid fa-layer-group"></i> PILIH LAYANAN APLIKASI</label>
-            <select id="smsService" class="sms-select">
-                <option value="whatsapp">WhatsApp</option>
-                <option value="telegram">Telegram</option>
-                <option value="google">Google / Gmail</option>
-                <option value="facebook">Facebook</option>
-                <option value="tiktok">TikTok</option>
-            </select>
-        </div>
-
+        <!-- Tombol Order Langsung -->
         <button class="btn-primary" id="btn-sms-code" onclick="requestSmsNumber()">
-            <i class="fa-solid fa-key"></i> Sewa Nomor Baru
+            <i class="fa-solid fa-key"></i> Sewa Nomor Shopee Indonesia
         </button>
 
+        <!-- Status Loading -->
         <div id="smsLoadingText" class="sms-loading">
             <i class="fa-solid fa-circle-notch fa-spin"></i> Menghubungkan ke API SMSCode...
         </div>
 
+        <!-- Panel Output Hasil Kiriman API -->
         <div id="smsResultBox" class="sms-result-box">
             <p><strong>Status:</strong> <span id="smsResStatus" style="color: #00ffcc; font-weight: bold;">Sukses</span></p>
             <p><strong>Nomor Telepon:</strong> <span id="smsResPhone" style="font-size: 16px; font-weight: bold; color: #00ffcc;">-</span></p>
             <p><strong>ID Transaksi:</strong> <span id="smsResId" style="font-family: monospace; color: #aaa;">-</span></p>
         </div>
     </div>
+    <!-- ========================================== -->
+    <!-- === SMS CODE UI END === -->
+    <!-- ========================================== -->
+
+    <!-- CARD RIWAYAT -->
     <div class="history-card">
         <div class="history-title">
             <span><i class="fa-solid fa-history"></i> RIWAYAT GENERATE (KLIK UNTUK SALIN)</span>
@@ -276,6 +262,7 @@
 
     <div class="toast" id="toastNotif">Berhasil Disalin! ✨</div>
 
+    <!-- Bagian Menu Notes / Catatan -->
     <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 20px;">
         <div class="title" style="text-align: center;">
             <i class="fa-solid fa-pen-to-square" style="color: #00ffcc;"></i> Notes / Catatan 3 Kolom
@@ -320,10 +307,8 @@
 
     
     <script>
-        // Array Data Utama yang di-load dari file JSON eksternal
         let DATA_DUMMY_DATABASE = [];
 
-        // Fungsi bawaan untuk mengambil data dari file data_pengguna.json
         document.addEventListener("DOMContentLoaded", function() {
             fetch('./data_pengguna.json')
                 .then(response => {
@@ -341,7 +326,6 @@
                     showToast("Gagal memuat database JSON! ⚠️");
                 });
 
-            // Memuat catatan lama dari 3 kolom berbeda saat halaman dibuka
             const savedNotes1 = localStorage.getItem("aplikasi_notes");
             if (savedNotes1) document.getElementById("userNotes").value = savedNotes1;
 
@@ -448,13 +432,14 @@
         /* === SMS CODE LOGIC START === */
         /* ========================================== */
         
-        // PENTING: Silakan ganti teks token di bawah ini dengan API Key resmi Anda dari SMSCode.gg
+        // PENTING: Ganti dengan API Key resmi Anda dari SMSCode.gg
         const SMSCODE_API_KEY = "MASUKKAN_API_KEY_SMSCODE_ANDA_DI_SINI";
         const API_BASE_URL = "https://api.smscode.gg/v1"; 
 
         async function requestSmsNumber() {
-            const countrySelect = document.getElementById('smsCountry').value;
-            const serviceSelect = document.getElementById('smsService').value;
+            // Parameter langsung dikunci ke ID (Indonesia) dan shopee sesuai permintaan Anda
+            const countrySelect = "ID";
+            const serviceSelect = "shopee";
             
             const btnSms = document.getElementById('btn-sms-code');
             const loadingText = document.getElementById('smsLoadingText');
@@ -464,13 +449,11 @@
             const resPhone = document.getElementById('smsResPhone');
             const resId = document.getElementById('smsResId');
 
-            // Proteksi jika API Key belum dikonfigurasi
             if (SMSCODE_API_KEY === "MASUKKAN_API_KEY_SMSCODE_ANDA_DI_SINI") {
                 alert("Harap masukkan API Key SMSCode Anda terlebih dahulu di dalam script bagian bawah!");
                 return;
             }
 
-            // Atur UI saat memproses request
             btnSms.disabled = true;
             loadingText.style.display = "block";
             resultBox.style.display = "none";
@@ -497,9 +480,8 @@
                     resPhone.innerText = data.phoneNumber || "Nomor tidak ditemukan";
                     resId.innerText = data.id || "-";
                     
-                    // Otomatis masukkan hasil nomor sewa ke kolom generator utama untuk mempermudah copas jika diperlukan
                     tampilkanDanSalin(data.phoneNumber || "");
-                    tambahKeRiwayat(`Sewa Nomor: ${data.phoneNumber}`);
+                    tambahKeRiwayat(`Sewa Shopee: ${data.phoneNumber}`);
                 } else {
                     throw new Error(data.message || "Gagal merespon dari server.");
                 }
