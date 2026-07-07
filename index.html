@@ -146,6 +146,68 @@
             transform: translateX(-50%) translateY(0);
             opacity: 1;
         }
+
+        /* ========================================== */
+        /* === SMS CODE STYLE START === */
+        /* ========================================== */
+        .sms-form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .sms-form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: #aaa;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .sms-select {
+            width: 100%;
+            padding: 12px;
+            background: #1a1535;
+            color: #fff;
+            border: 1px solid #3d3463;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .sms-select:focus {
+            border-color: #ff007f;
+            box-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+        }
+        #btn-sms-code {
+            background: linear-gradient(45deg, #ff007f, #7928ca);
+            box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4);
+        }
+        .sms-loading {
+            font-size: 13px;
+            color: #aaa;
+            font-style: italic;
+            margin-top: 12px;
+            display: none;
+        }
+        .sms-result-box {
+            margin-top: 15px;
+            padding: 12px 15px;
+            background: rgba(0, 255, 204, 0.05);
+            border-left: 4px solid #00ffcc;
+            border-radius: 6px;
+            text-align: left;
+            display: none;
+        }
+        .sms-result-box p {
+            margin: 6px 0;
+            font-size: 13px;
+            color: #e2d9ff;
+        }
+        .sms-error-mode {
+            background: rgba(255, 74, 74, 0.05) !important;
+            border-left-color: #ff4a4a !important;
+        }
+        /* === SMS CODE STYLE END === */
+        /* ========================================== */
     </style>
 </head>
 <body>
@@ -166,6 +228,44 @@
         </div>
     </div>
 
+    <div class="container-card">
+        <div class="title"><i class="fa-solid fa-comment-sms" style="color: #ff007f;"></i> Acaka Data - SMS Code</div>
+        
+        <div class="sms-form-group">
+            <label><i class="fa-solid fa-globe"></i> PILIH NEGARA NOMOR TELEPON</label>
+            <select id="smsCountry" class="sms-select">
+                <option value="ID">Indonesia (+62)</option>
+                <option value="MY">Malaysia (+60)</option>
+                <option value="SG">Singapura (+65)</option>
+                <option value="US">Amerika Serikat (+1)</option>
+            </select>
+        </div>
+
+        <div class="sms-form-group">
+            <label><i class="fa-solid fa-layer-group"></i> PILIH LAYANAN APLIKASI</label>
+            <select id="smsService" class="sms-select">
+                <option value="whatsapp">WhatsApp</option>
+                <option value="telegram">Telegram</option>
+                <option value="google">Google / Gmail</option>
+                <option value="facebook">Facebook</option>
+                <option value="tiktok">TikTok</option>
+            </select>
+        </div>
+
+        <button class="btn-primary" id="btn-sms-code" onclick="requestSmsNumber()">
+            <i class="fa-solid fa-key"></i> Sewa Nomor Baru
+        </button>
+
+        <div id="smsLoadingText" class="sms-loading">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Menghubungkan ke API SMSCode...
+        </div>
+
+        <div id="smsResultBox" class="sms-result-box">
+            <p><strong>Status:</strong> <span id="smsResStatus" style="color: #00ffcc; font-weight: bold;">Sukses</span></p>
+            <p><strong>Nomor Telepon:</strong> <span id="smsResPhone" style="font-size: 16px; font-weight: bold; color: #00ffcc;">-</span></p>
+            <p><strong>ID Transaksi:</strong> <span id="smsResId" style="font-family: monospace; color: #aaa;">-</span></p>
+        </div>
+    </div>
     <div class="history-card">
         <div class="history-title">
             <span><i class="fa-solid fa-history"></i> RIWAYAT GENERATE (KLIK UNTUK SALIN)</span>
@@ -176,191 +276,248 @@
 
     <div class="toast" id="toastNotif">Berhasil Disalin! ✨</div>
 
-    <!-- Bagian Menu Notes / Catatan -->
     <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 20px;">
-    <div class="title" style="text-align: center;">
-        <i class="fa-solid fa-pen-to-square" style="color: #00ffcc;"></i> Notes / Catatan 3 Kolom
-    </div>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        <div class="title" style="text-align: center;">
+            <i class="fa-solid fa-pen-to-square" style="color: #00ffcc;"></i> Notes / Catatan 3 Kolom
+        </div>
         
-        <div>
-            <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">CATATAN UTAMA</div>
-            <textarea 
-                id="userNotes" 
-                placeholder="Tulis catatan utama di sini..." 
-                style="width: 100%; min-height: 250px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box;"
-                oninput="saveNotes('userNotes', 'aplikasi_notes')"
-            ></textarea>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <div>
+                <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">CATATAN UTAMA</div>
+                <textarea 
+                    id="userNotes" 
+                    placeholder="Tulis catatan utama di sini..." 
+                    style="width: 100%; min-height: 250px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box;"
+                    oninput="saveNotes('userNotes', 'aplikasi_notes')"
+                ></textarea>
+            </div>
+
+            <div>
+                <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">DATA PENTING / COPAS</div>
+                <textarea 
+                    id="userNotes2" 
+                    placeholder="Tempel data hasil acak ke sini..." 
+                    style="width: 100%; min-height: 250px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box;"
+                    oninput="saveNotes('userNotes2', 'aplikasi_notes_2')"
+                ></textarea>
+            </div>
+
+            <div>
+                <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">LAIN-LAIN / TODO</div>
+                <textarea 
+                    id="userNotes3" 
+                    placeholder="Tulis tambahan info lainnya di sini..." 
+                    style="width: 100%; min-height: 250px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box;"
+                    oninput="saveNotes('userNotes3', 'aplikasi_notes_3')"
+                ></textarea>
+            </div>
         </div>
 
-        <div>
-            <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">DATA PENTING / COPAS</div>
-            <textarea 
-                id="userNotes2" 
-                placeholder="Tempel data hasil acak ke sini..." 
-                style="width: 100%; min-height: 250px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box;"
-                oninput="saveNotes('userNotes2', 'aplikasi_notes_2')"
-            ></textarea>
-        </div>
-
-        <div>
-            <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">LAIN-LAIN / TODO</div>
-            <textarea 
-                id="userNotes3" 
-                placeholder="Tulis tambahan info lainnya di sini..." 
-                style="width: 100%; min-height: 250px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px; resize: vertical; font-family: sans-serif; box-sizing: border-box;"
-                oninput="saveNotes('userNotes3', 'aplikasi_notes_3')"
-            ></textarea>
-        </div>
-
+        <button class="btn-primary" onclick="clearAllNotes()" style="background: linear-gradient(45deg, #ff4a4a, #cc2e2e); box-shadow: 0 4px 15px rgba(255, 74, 74, 0.3); max-width: 200px; margin: 0 auto;">
+            <i class="fa-solid fa-trash"></i> Hapus Semua Catatan
+        </button>
     </div>
-
-    <button class="btn-primary" onclick="clearAllNotes()" style="background: linear-gradient(45deg, #ff4a4a, #cc2e2e); box-shadow: 0 4px 15px rgba(255, 74, 74, 0.3); max-width: 200px; margin: 0 auto;">
-        <i class="fa-solid fa-trash"></i> Hapus Semua Catatan
-    </button>
-</div>
 
     
     <script>
-// Array Data Utama yang di-load dari file JSON eksternal
-let DATA_DUMMY_DATABASE = [];
+        // Array Data Utama yang di-load dari file JSON eksternal
+        let DATA_DUMMY_DATABASE = [];
 
-// Fungsi bawaan untuk mengambil data dari file data_pengguna.json
-document.addEventListener("DOMContentLoaded", function() {
-    fetch('./data_pengguna.json')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Gagal mengambil file JSON.");
-            }
-            return response.json();
-        })
-        .then(data => {
-            DATA_DUMMY_DATABASE = data;
-            console.log("Database dummy berhasil dimuat! Total: " + data.length + " baris data.");
-        })
-        .catch(err => {
-            console.error("Error load data:", err);
-            showToast("Gagal memuat database JSON! ⚠️");
+        // Fungsi bawaan untuk mengambil data dari file data_pengguna.json
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch('./data_pengguna.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Gagal mengambil file JSON.");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    DATA_DUMMY_DATABASE = data;
+                    console.log("Database dummy berhasil dimuat! Total: " + data.length + " baris data.");
+                })
+                .catch(err => {
+                    console.error("Error load data:", err);
+                    showToast("Gagal memuat database JSON! ⚠️");
+                });
+
+            // Memuat catatan lama dari 3 kolom berbeda saat halaman dibuka
+            const savedNotes1 = localStorage.getItem("aplikasi_notes");
+            if (savedNotes1) document.getElementById("userNotes").value = savedNotes1;
+
+            const savedNotes2 = localStorage.getItem("aplikasi_notes_2");
+            if (savedNotes2) document.getElementById("userNotes2").value = savedNotes2;
+
+            const savedNotes3 = localStorage.getItem("aplikasi_notes_3");
+            if (savedNotes3) document.getElementById("userNotes3").value = savedNotes3;
         });
-});
 
-window.generateName = function() {
-    if (DATA_DUMMY_DATABASE.length === 0) {
-        showToast("Data sedang memuat, silakan tunggu... ⚠️");
-        return;
-    }
+        window.generateName = function() {
+            if (DATA_DUMMY_DATABASE.length === 0) {
+                showToast("Data sedang memuat, silakan tunggu... ⚠️");
+                return;
+            }
 
-    // Memilih satu objek baris data secara acak
-    const dataAcak = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
-    
-    // PEMISAH DIHITUNG DISINI: Menggunakan koma dan spasi (Tanpa Garis Tegak '|')
-    const dataFinal = `${dataAcak.nama}, ${dataAcak.alamat}, ${dataAcak.no_hp}`;
-    
-    tampilkanDanSalin(dataFinal);
-    tambahKeRiwayat(dataFinal);
-};
+            const dataAcak = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
+            const dataFinal = `${dataAcak.nama}, ${dataAcak.alamat}, ${dataAcak.no_hp}`;
+            
+            tampilkanDanSalin(dataFinal);
+            tambahKeRiwayat(dataFinal);
+        };
 
-window.generateUsername = function() {
-    const teksInput = document.getElementById('genNameOutput').value;
-    
-    if (!teksInput || teksInput === "Data akan muncul di sini") {
-        showToast("Silakan acak data terlebih dahulu! ⚠️");
-        return;
-    }
-    
-    // LOGIKA DIPERBAIKI: Memotong berdasarkan tanda koma (',') karena tanda '|' sudah tidak ada
-    const namaLengkap = teksInput.split(',')[0].trim();
-    
-    // Mengubah semua spasi menjadi titik (.) dan menjadikannya huruf kecil semua
-    const namaDenganTitik = namaLengkap.replace(/\s+/g, '.').toLowerCase();
-    
-    tampilkanDanSalin(namaDenganTitik);
-    tambahKeRiwayat(namaDenganTitik);
-};
+        window.generateUsername = function() {
+            const teksInput = document.getElementById('genNameOutput').value;
+            
+            if (!teksInput || teksInput === "Data akan muncul di sini") {
+                showToast("Silakan acak data terlebih dahulu! ⚠️");
+                return;
+            }
+            
+            const namaLengkap = teksInput.split(',')[0].trim();
+            const namaDenganTitik = namaLengkap.replace(/\s+/g, '.').toLowerCase();
+            
+            tampilkanDanSalin(namaDenganTitik);
+            tambahKeRiwayat(namaDenganTitik);
+        };
 
-function tampilkanDanSalin(teks) {
-    const outputField = document.getElementById('genNameOutput');
-    if (outputField) {
-        outputField.value = teks;
-        
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(teks).then(() => {
-                showToast("Berhasil Disalin! ✨");
-            }).catch(err => {
-                salinManual(outputField);
-            });
-        } else {
-            salinManual(outputField);
+        function tampilkanDanSalin(teks) {
+            const outputField = document.getElementById('genNameOutput');
+            if (outputField) {
+                outputField.value = teks;
+                
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(teks).then(() => {
+                        showToast("Berhasil Disalin! ✨");
+                    }).catch(err => {
+                        salinManual(outputField);
+                    });
+                } else {
+                    salinManual(outputField);
+                }
+            }
         }
-    }
-}
 
-function salinManual(inputElement) {
-    inputElement.select();
-    inputElement.setSelectionRange(0, 99999);
-    document.execCommand("copy");
-    showToast("Berhasil Disalin! ✨");
-}
+        function salinManual(inputElement) {
+            inputElement.select();
+            inputElement.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            showToast("Berhasil Disalin! ✨");
+        }
 
-function tambahKeRiwayat(teks) {
-    const historyList = document.getElementById('historyList');
-    const item = document.createElement('div');
-    item.className = 'history-item';
-    item.innerText = teks;
-    item.onclick = function() { tampilkanDanSalin(teks); };
-    historyList.insertBefore(item, historyList.firstChild);
-}
+        function tambahKeRiwayat(teks) {
+            const historyList = document.getElementById('historyList');
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerText = teks;
+            item.onclick = function() { tampilkanDanSalin(teks); };
+            historyList.insertBefore(item, historyList.firstChild);
+        }
 
-function clearHistory() {
-    document.getElementById('historyList').innerHTML = '';
-    showToast("Riwayat dihapus!");
-}
+        function clearHistory() {
+            document.getElementById('historyList').innerHTML = '';
+            showToast("Riwayat dihapus!");
+        }
 
-function showToast(pesan) {
-    const toast = document.getElementById('toastNotif');
-    toast.innerText = pesan;
-    toast.classList.add('show');
-    setTimeout(() => { toast.classList.remove('show'); }, 2000);
-}
+        function showToast(pesan) {
+            const toast = document.getElementById('toastNotif');
+            toast.innerText = pesan;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 2000);
+        }
 
-// Fungsi untuk memuat catatan yang tersimpan saat halaman pertama kali dibuka
-document.addEventListener("DOMContentLoaded", function() {
-    // ... kode fetch data JSON Anda yang sudah ada ...
+        window.saveNotes = function(elementId, storageKey) {
+            const notesValue = document.getElementById(elementId).value;
+            localStorage.setItem(storageKey, notesValue);
+        };
 
-    // Memuat catatan lama dari 3 kolom berbeda saat halaman dibuka
-    const savedNotes1 = localStorage.getItem("aplikasi_notes");
-    if (savedNotes1) document.getElementById("userNotes").value = savedNotes1;
+        window.clearAllNotes = function() {
+            if (confirm("Apakah Anda yakin ingin menghapus seluruh isi di ketiga kolom catatan?")) {
+                document.getElementById("userNotes").value = "";
+                document.getElementById("userNotes2").value = "";
+                document.getElementById("userNotes3").value = "";
+                
+                localStorage.removeItem("aplikasi_notes");
+                localStorage.removeItem("aplikasi_notes_2");
+                localStorage.removeItem("aplikasi_notes_3");
+                
+                showToast("Semua catatan berhasil dikosongkan!");
+            }
+        };
 
-    const savedNotes2 = localStorage.getItem("aplikasi_notes_2");
-    if (savedNotes2) document.getElementById("userNotes2").value = savedNotes2;
-
-    const savedNotes3 = localStorage.getItem("aplikasi_notes_3");
-    if (savedNotes3) document.getElementById("userNotes3").value = savedNotes3;
-});
-
-// Fungsi dinamis untuk menyimpan catatan otomatis berdasarkan ID kolomnya
-window.saveNotes = function(elementId, storageKey) {
-    const notesValue = document.getElementById(elementId).value;
-    localStorage.setItem(storageKey, notesValue);
-};
-
-// Fungsi untuk menghapus sekaligus seluruh 3 kolom catatan
-window.clearAllNotes = function() {
-    if (confirm("Apakah Anda yakin ingin menghapus seluruh isi di ketiga kolom catatan?")) {
-        document.getElementById("userNotes").value = "";
-        document.getElementById("userNotes2").value = "";
-        document.getElementById("userNotes3").value = "";
+        /* ========================================== */
+        /* === SMS CODE LOGIC START === */
+        /* ========================================== */
         
-        localStorage.removeItem("aplikasi_notes");
-        localStorage.removeItem("aplikasi_notes_2");
-        localStorage.removeItem("aplikasi_notes_3");
-        
-        showToast("Semua catatan berhasil dikosongkan!");
-    }
-};
+        // PENTING: Silakan ganti teks token di bawah ini dengan API Key resmi Anda dari SMSCode.gg
+        const SMSCODE_API_KEY = "MASUKKAN_API_KEY_SMSCODE_ANDA_DI_SINI";
+        const API_BASE_URL = "https://api.smscode.gg/v1"; 
 
-        
-    </script>
+        async function requestSmsNumber() {
+            const countrySelect = document.getElementById('smsCountry').value;
+            const serviceSelect = document.getElementById('smsService').value;
+            
+            const btnSms = document.getElementById('btn-sms-code');
+            const loadingText = document.getElementById('smsLoadingText');
+            const resultBox = document.getElementById('smsResultBox');
+            
+            const resStatus = document.getElementById('smsResStatus');
+            const resPhone = document.getElementById('smsResPhone');
+            const resId = document.getElementById('smsResId');
+
+            // Proteksi jika API Key belum dikonfigurasi
+            if (SMSCODE_API_KEY === "MASUKKAN_API_KEY_SMSCODE_ANDA_DI_SINI") {
+                alert("Harap masukkan API Key SMSCode Anda terlebih dahulu di dalam script bagian bawah!");
+                return;
+            }
+
+            // Atur UI saat memproses request
+            btnSms.disabled = true;
+            loadingText.style.display = "block";
+            resultBox.style.display = "none";
+            resultBox.classList.remove('sms-error-mode');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SMSCODE_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        country: countrySelect,
+                        service: serviceSelect
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resStatus.innerText = "Sukses Mendapatkan Nomor";
+                    resStatus.style.color = "#00ffcc";
+                    resPhone.innerText = data.phoneNumber || "Nomor tidak ditemukan";
+                    resId.innerText = data.id || "-";
+                    
+                    // Otomatis masukkan hasil nomor sewa ke kolom generator utama untuk mempermudah copas jika diperlukan
+                    tampilkanDanSalin(data.phoneNumber || "");
+                    tambahKeRiwayat(`Sewa Nomor: ${data.phoneNumber}`);
+                } else {
+                    throw new Error(data.message || "Gagal merespon dari server.");
+                }
+
+            } catch (error) {
+                resultBox.classList.add('sms-error-mode');
+                resStatus.innerText = "Gagal / Error API";
+                resStatus.style.color = "#ff4a4a";
+                resPhone.innerText = "Tidak tersedia";
+                resId.innerText = error.message;
+            } finally {
+                loadingText.style.display = "none";
+                btnSms.disabled = false;
+                resultBox.style.display = "block";
+            }
+        }
+        /* === SMS CODE LOGIC END === */
+        /* ========================================== */
+    </style>
 </body>
 </html>
