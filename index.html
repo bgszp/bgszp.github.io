@@ -147,7 +147,7 @@
             opacity: 1;
         }
 
-        /* SMS STYLES */
+        /* SMS STYLES & CONFIG AREA */
         .sms-info-tag {
             background: #1a1535;
             border: 1px solid #3d3463;
@@ -163,6 +163,34 @@
         }
         .sms-info-tag span {
             color: #00ffcc;
+        }
+        .config-input-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        .config-input-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: #aaa;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+        .config-field {
+            width: 100%;
+            padding: 12px;
+            background: #110d24;
+            border: 1px solid #3d3463;
+            border-radius: 8px;
+            color: #ff007f;
+            font-family: monospace;
+            font-size: 13px;
+            outline: none;
+            text-align: center;
+        }
+        .config-field:focus {
+            border-color: #ff007f;
+            box-shadow: 0 0 8px rgba(255, 0, 127, 0.3);
         }
         #btn-sms-code {
             background: linear-gradient(45deg, #ff007f, #7928ca);
@@ -197,7 +225,6 @@
 </head>
 <body>
 
-    <!-- CARD UTAMA -->
     <div class="container-card">
         <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator Futuristik</div>
         <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
@@ -211,17 +238,21 @@
         </div>
     </div>
 
-    <!-- SMS CODE CARD -->
     <div class="container-card">
         <div class="title"><i class="fa-solid fa-comment-sms" style="color: #ff007f;"></i> Acaka Data - SMS Code</div>
         
+        <div class="config-input-group">
+            <label><i class="fa-solid fa-key"></i> CONFIG SMSCODE API KEY (AUTO-SAVE)</label>
+            <input type="password" id="smsApiKeyField" class="config-field" placeholder="Tempel token/API Key akun di sini..." oninput="saveCurrentApiKey()" />
+        </div>
+
         <div class="sms-info-tag">
             <div><i class="fa-solid fa-globe"></i> Negara: <span>Indonesia</span></div>
             <div><i class="fa-solid fa-bag-shopping"></i> Layanan: <span>Shopee</span></div>
         </div>
 
         <button class="btn-primary" id="btn-sms-code" onclick="requestSmsNumber()">
-            <i class="fa-solid fa-key"></i> Sewa Nomor Shopee Indonesia
+            <i class="fa-solid fa-cloud-download"></i> Sewa Nomor Shopee Indonesia
         </button>
 
         <div id="smsLoadingText" class="sms-loading">
@@ -235,7 +266,6 @@
         </div>
     </div>
 
-    <!-- RIWAYAT -->
     <div class="history-card">
         <div class="history-title">
             <span><i class="fa-solid fa-history"></i> RIWAYAT GENERATE (KLIK UNTUK SALIN)</span>
@@ -246,7 +276,6 @@
 
     <div class="toast" id="toastNotif">Berhasil Disalin! ✨</div>
 
-    <!-- NOTES -->
     <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 20px;">
         <div class="title" style="text-align: center;"><i class="fa-solid fa-pen-to-square" style="color: #00ffcc;"></i> Notes / Catatan 3 Kolom</div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
@@ -269,24 +298,33 @@
     </div>
 
     <script>
-        // ========================================================
-        // PENTING: GANTI TEKS DI BAWAH INI DENGAN API KEY ANDA
-        // ========================================================
-        const SMSCODE_API_KEY = "MASUKKAN_API_KEY_SMSCODE_ANDA_DI_SINI";
         const API_BASE_URL = "https://api.smscode.gg/v1"; 
-
         let DATA_DUMMY_DATABASE = [];
 
         document.addEventListener("DOMContentLoaded", function() {
+            // Ambil database dummy
             fetch('./data_pengguna.json')
                 .then(response => response.ok ? response.json() : [])
                 .then(data => { DATA_DUMMY_DATABASE = data; })
                 .catch(err => console.error("Error JSON:", err));
 
+            // Muat API Key yang tersimpan di browser jika ada
+            const savedKey = localStorage.getItem("smscode_user_api_key");
+            if (savedKey) {
+                document.getElementById("smsApiKeyField").value = savedKey;
+            }
+
+            // Muat data catatan
             if(localStorage.getItem("aplikasi_notes")) document.getElementById("userNotes").value = localStorage.getItem("aplikasi_notes");
             if(localStorage.getItem("aplikasi_notes_2")) document.getElementById("userNotes2").value = localStorage.getItem("aplikasi_notes_2");
             if(localStorage.getItem("aplikasi_notes_3")) document.getElementById("userNotes3").value = localStorage.getItem("aplikasi_notes_3");
         });
+
+        // Menyimpan API Key otomatis ketika diketik/diganti
+        function saveCurrentApiKey() {
+            const currentKey = document.getElementById("smsApiKeyField").value.trim();
+            localStorage.setItem("smscode_user_api_key", currentKey);
+        }
 
         async function requestSmsNumber() {
             const btnSms = document.getElementById('btn-sms-code');
@@ -296,34 +334,35 @@
             const resPhone = document.getElementById('smsResPhone');
             const resId = document.getElementById('smsResId');
 
-            // 1. Tampilkan animasi loading & reset tampilan box
+            // Mengambil API Key langsung dari input tampilan
+            const activeApiKey = document.getElementById("smsApiKeyField").value.trim();
+
             btnSms.disabled = true;
             loadingText.style.display = "block";
             resultBox.style.display = "none";
             resultBox.classList.remove('sms-error-mode');
 
-            // 2. Proteksi Validasi API Key langsung di UI (Supaya tidak diam saja)
-            if (!SMSCODE_API_KEY || SMSCODE_API_KEY.includes("MASUKKAN_API_KEY")) {
+            // Validasi jika kolom input kosong
+            if (!activeApiKey) {
                 setTimeout(() => {
                     loadingText.style.display = "none";
                     btnSms.disabled = false;
                     resultBox.classList.add('sms-error-mode');
-                    resStatus.innerText = "Konfigurasi Salah";
+                    resStatus.innerText = "API Key Kosong";
                     resStatus.style.color = "#ff4a4a";
-                    resPhone.innerText = "API Key Kosong";
-                    resId.innerText = "Silakan buka kode HTML Anda, cari konstanta SMSCODE_API_KEY di bagian bawah script, lalu tempel token API Key resmi Anda dari dashboard SMSCode.gg.";
+                    resPhone.innerText = "Gagal Memproses";
+                    resId.innerText = "Silakan masukkan token API Key valid akun SMSCode Anda pada kolom input di atas terlebih dahulu.";
                     resultBox.style.display = "block";
-                }, 400);
+                }, 300);
                 return;
             }
 
-            // 3. Proses Request API
             try {
                 const response = await fetch(`${API_BASE_URL}/orders`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SMSCODE_API_KEY}`
+                        'Authorization': `Bearer ${activeApiKey}`
                     },
                     body: JSON.stringify({
                         country: "ID",
@@ -348,12 +387,11 @@
                 }
 
             } catch (error) {
-                // Jika diblokir oleh CORS atau internet putus, bagian ini pasti berjalan
                 resultBox.classList.add('sms-error-mode');
                 resStatus.innerText = "Gagal Mengubungi API";
                 resStatus.style.color = "#ff4a4a";
                 resPhone.innerText = "Koneksi Terblokir / Gagal";
-                resId.innerText = error.message + " (Periksa apakah API Key aktif, atau kemungkinan kendala kebijakan CORS browser saat file dibuka lokal)";
+                resId.innerText = error.message + " (Pastikan token API Key Anda benar, saldo mencukupi, dan browser Anda tidak memblokir koneksi CORS eksternal)";
             } finally {
                 loadingText.style.display = "none";
                 btnSms.disabled = false;
@@ -416,7 +454,10 @@
         window.clearAllNotes = function() {
             if (confirm("Hapus semua catatan?")) {
                 document.getElementById("userNotes").value = ""; document.getElementById("userNotes2").value = ""; document.getElementById("userNotes3").value = "";
-                localStorage.clear();
+                localStorage.removeItem("aplikasi_notes");
+                localStorage.removeItem("aplikasi_notes_2");
+                localStorage.removeItem("aplikasi_notes_3");
+                showToast("Semua catatan dibersihkan!");
             }
         };
     </script>
