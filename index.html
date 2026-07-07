@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik v3.1</title>
+    <title>Generator Data BGS v3.2</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -41,13 +41,19 @@
         .notes-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .btn-refresh-note { background: #1a1535; border: 1px solid #3d3463; color: #00ffcc; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: bold; }
         .btn-refresh-note:hover { background: #3d3463; box-shadow: 0 0 8px rgba(0, 255, 204, 0.4); }
-        .btn-refresh-note:active i { transform: rotate(180deg); }
         
         .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
         .note-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
         .note-num-btn { background: #3d3463; color: #00ffcc; border: 1px solid #5a4f8c; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; min-width: 35px; text-align: center; }
         .note-num-btn:hover { background: #00ffcc; color: #141026; box-shadow: 0 0 8px #00ffcc; }
-        .note-text-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 13px; padding: 4px 0; }
+        
+        /* INPUT AREA EDITABLE & VIEW */
+        .note-text-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 13px; padding: 4px 0; display: block; width: 100%; }
+        
+        /* PEMANIS VISUAL: WARNA SPEAL UNTUK PREVIEW TEXT YANG TERPISAH '/' */
+        .note-display-wrapper { flex: 1; font-size: 13px; padding: 4px 0; word-break: break-all; }
+        .text-before-slash { color: #ffffff; font-weight: 500; }
+        .text-after-slash { color: #6e678a; font-style: italic; }
     </style>
 </head>
 <body>
@@ -125,7 +131,7 @@
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
         let currentFileSha = ""; 
-        let rawNotesText = "";
+        let rawNotesLines = []; // Array penampung baris teks mentah asli
 
         const DEFAULT_USER = "bgszp";
         const DEFAULT_REPO = "bgszp.github.io";
@@ -156,71 +162,107 @@
         function saveLocalNotes(id, key) { localStorage.setItem(key, document.getElementById(id).value); }
 
         function renderNotesList(fullText) {
-            rawNotesText = fullText;
             const container = document.getElementById("notesContainer");
             container.innerHTML = "";
-            let lines = fullText.split("\n");
-            if(lines.length === 0 || (lines.length === 1 && lines[0].trim() === "")) { lines = [""]; }
+            
+            rawNotesLines = fullText.split("\n");
+            if(rawNotesLines.length === 0 || (rawNotesLines.length === 1 && rawNotesLines[0].trim() === "")) { 
+                rawNotesLines = [""]; 
+            }
 
-            lines.forEach((text, index) => {
+            rawNotesLines.forEach((text, index) => {
                 const rowNum = index + 1;
                 const rowDiv = document.createElement("div");
                 rowDiv.className = "note-row";
 
+                // 1. TOMBOL COPY DENGAN FILTRASI TANDA '/'
                 const numBtn = document.createElement("button");
                 numBtn.className = "note-num-btn";
                 numBtn.innerText = `[${rowNum}]`;
                 numBtn.onclick = function() {
-                    const txtToCopy = inputField.value;
-                    if(txtToCopy.trim() !== "") {
-                        if (navigator.clipboard && window.isSecureContext) {
-                            navigator.clipboard.writeText(txtToCopy).then(() => showToast(`Salin Baris ${rowNum}! ✨`));
+                    // Ambil value teks live langsung dari input field terkait
+                    const currentInpValue = document.getElementById(`inp-note-${index}`) ? document.getElementById(`inp-note-${index}`).value : text;
+                    
+                    if(currentInpValue.trim() !== "") {
+                        let finalCopyText = currentInpValue;
+                        
+                        // FITUR UTAMA: Jika ada tanda /, potong string dan ambil bagian kirinya saja
+                        if(currentInpValue.includes("/")) {
+                            finalCopyText = currentInpValue.split("/")[0].trim();
+                        }
+
+                        if (navigator.clipboard && window.isSecureContext && finalCopyText !== "") {
+                            navigator.clipboard.writeText(finalCopyText).then(() => {
+                                showToast(`Salin Baris ${rowNum} (Tanpa Note) ✨`);
+                            });
                         }
                     }
                 };
 
-                const inputField = document.createElement("input");
-                inputField.type = "text";
-                inputField.className = "note-text-input";
-                inputField.value = text;
-                if(!isAdminAuthenticated) { inputField.setAttribute("readonly", "true"); }
-
-                inputField.onkeydown = function(e) {
-                    if (e.key === "Enter" && isAdminAuthenticated) {
-                        e.preventDefault();
-                        insertNewRowAfter(index);
-                    }
-                };
-
                 rowDiv.appendChild(numBtn);
-                rowDiv.appendChild(inputField);
+
+                // 2. LOGIKA STRUKTUR TAMPILAN (MODE ADMIN VS MODE PANTAU)
+                if(isAdminAuthenticated) {
+                    // Jika mode admin, tampilkan Input Box Biasa agar bebas diketik
+                    const inputField = document.createElement("input");
+                    inputField.type = "text";
+                    inputField.id = `inp-note-${index}`;
+                    inputField.className = "note-text-input";
+                    inputField.value = text;
+
+                    inputField.onkeydown = function(e) {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            insertNewRowAfter(index);
+                        }
+                    };
+                    rowDiv.appendChild(inputField);
+                } else {
+                    // Jika mode pantau biasa, gunakan visual styling pembagi tanda '/'
+                    const displayWrapper = document.createElement("div");
+                    displayWrapper.className = "note-display-wrapper";
+                    
+                    if(text.includes("/")) {
+                        const parts = text.split("/");
+                        const beforeSlash = parts[0];
+                        const afterSlash = parts.slice(1).join("/"); // Gabung sisa jika ada slash ganda
+                        
+                        displayWrapper.innerHTML = `<span class="text-before-slash">${beforeSlash}</span><span class="text-after-slash">/${afterSlash}</span>`;
+                    } else {
+                        displayWrapper.innerHTML = `<span class="text-before-slash">${text}</span>`;
+                    }
+                    rowDiv.appendChild(displayWrapper);
+                }
+
                 container.appendChild(rowDiv);
             });
         }
 
         function insertNewRowAfter(currentIndex) {
-            const inputs = document.querySelectorAll(".note-text-input");
             let newLines = [];
-            inputs.forEach(inp => newLines.push(inp.value));
+            rawNotesLines.forEach((_, idx) => {
+                const el = document.getElementById(`inp-note-${idx}`);
+                newLines.push(el ? el.value : "");
+            });
             newLines.splice(currentIndex + 1, 0, "");
             renderNotesList(newLines.join("\n"));
-            const updatedInputs = document.querySelectorAll(".note-text-input");
-            if(updatedInputs[currentIndex + 1]) { updatedInputs[currentIndex + 1].focus(); }
+            
+            const targetInput = document.getElementById(`inp-note-${currentIndex + 1}`);
+            if(targetInput) targetInput.focus();
         }
 
         function packInputsToString() {
-            const inputs = document.querySelectorAll(".note-text-input");
             let lineArray = [];
-            inputs.forEach(inp => lineArray.push(inp.value));
+            rawNotesLines.forEach((_, idx) => {
+                const el = document.getElementById(`inp-note-${idx}`);
+                lineArray.push(el ? el.value : "");
+            });
             return lineArray.join("\n");
         }
 
-        // FUNGSI TARIK DATA LIVE + CEK UPDATE
         async function autoFetchForEveryone() {
             const statusLabel = document.getElementById("syncStatus");
             statusLabel.innerText = "(Memantau Live...)";
-            
-            // Penggunaan timestamp dinamis (?t=...) menghindari cache browser yang tersangkut data lama
             const url = `https://bgszp.github.io/catatan_utama.txt?t=${Date.now()}`;
 
             try {
@@ -266,8 +308,11 @@
                 const inputPin = prompt("Masukkan PIN Keamanan Admin:");
                 if (inputPin === ADMIN_PIN) {
                     isAdminAuthenticated = true;
-                    const inputs = document.querySelectorAll(".note-text-input");
-                    inputs.forEach(inp => inp.removeAttribute("readonly"));
+                    
+                    // Remake list ke versi Box Input agar bisa diketik
+                    const savedStateText = rawNotesLines.join("\n");
+                    renderNotesList(savedStateText);
+
                     configBox.style.display = "grid"; 
                     btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan &amp; Kunci';
                     btnAdmin.style.background = "#ff007f";
@@ -292,7 +337,7 @@
                 const base64Content = btoa(unescape(encodeURIComponent(combinedText)));
 
                 const bodyPayload = {
-                    message: "Update list bernomor via web panel",
+                    message: "Update live text divider via web panel",
                     content: base64Content
                 };
                 
@@ -310,8 +355,7 @@
                         const resData = await res.json();
                         currentFileSha = resData.content.sha;
                         isAdminAuthenticated = false;
-                        const inputs = document.querySelectorAll(".note-text-input");
-                        inputs.forEach(inp => inp.setAttribute("readonly", "true"));
+                        
                         configBox.style.display = "none"; 
                         btnAdmin.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit';
                         btnAdmin.style.background = "#1a1535";
@@ -319,6 +363,7 @@
                         statusLabel.innerText = "(Mode Pantau Aktif)";
                         statusLabel.style.color = "#00ffcc";
                         showToast("Tersimpan secara Global! ☁️");
+                        
                         renderNotesList(combinedText);
                     } else { throw new Error(); }
                 } catch(e) {
