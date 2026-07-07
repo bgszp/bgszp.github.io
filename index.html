@@ -147,7 +147,7 @@
             opacity: 1;
         }
 
-        /* SMS STYLES & CONFIG AREA */
+        /* SMS STYLES */
         .sms-info-tag {
             background: #1a1535;
             border: 1px solid #3d3463;
@@ -256,7 +256,7 @@
         </button>
 
         <div id="smsLoadingText" class="sms-loading">
-            <i class="fa-solid fa-circle-notch fa-spin"></i> Menghubungkan ke API SMSCode...
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Menghubungkan via CORS Proxy...
         </div>
 
         <div id="smsResultBox" class="sms-result-box">
@@ -298,30 +298,28 @@
     </div>
 
     <script>
-        // Menggunakan proxy AllOrigins (Gratis dan tanpa perlu registrasi)
-const API_BASE_URL = "https://api.allorigins.win/raw?url=https://api.smscode.gg/v1"; 
+        // Menggunakan CORS Proxy AllOrigins agar diizinkan berjalan di GitHub Pages
+        const PROXY_URL = "https://api.allorigins.win/raw?url=";
+        const TARGET_API = "https://api.smscode.gg/v1/orders"; 
+
         let DATA_DUMMY_DATABASE = [];
 
         document.addEventListener("DOMContentLoaded", function() {
-            // Ambil database dummy
             fetch('./data_pengguna.json')
                 .then(response => response.ok ? response.json() : [])
                 .then(data => { DATA_DUMMY_DATABASE = data; })
                 .catch(err => console.error("Error JSON:", err));
 
-            // Muat API Key yang tersimpan di browser jika ada
             const savedKey = localStorage.getItem("smscode_user_api_key");
             if (savedKey) {
                 document.getElementById("smsApiKeyField").value = savedKey;
             }
 
-            // Muat data catatan
             if(localStorage.getItem("aplikasi_notes")) document.getElementById("userNotes").value = localStorage.getItem("aplikasi_notes");
             if(localStorage.getItem("aplikasi_notes_2")) document.getElementById("userNotes2").value = localStorage.getItem("aplikasi_notes_2");
             if(localStorage.getItem("aplikasi_notes_3")) document.getElementById("userNotes3").value = localStorage.getItem("aplikasi_notes_3");
         });
 
-        // Menyimpan API Key otomatis ketika diketik/diganti
         function saveCurrentApiKey() {
             const currentKey = document.getElementById("smsApiKeyField").value.trim();
             localStorage.setItem("smscode_user_api_key", currentKey);
@@ -335,7 +333,6 @@ const API_BASE_URL = "https://api.allorigins.win/raw?url=https://api.smscode.gg/
             const resPhone = document.getElementById('smsResPhone');
             const resId = document.getElementById('smsResId');
 
-            // Mengambil API Key langsung dari input tampilan
             const activeApiKey = document.getElementById("smsApiKeyField").value.trim();
 
             btnSms.disabled = true;
@@ -343,7 +340,6 @@ const API_BASE_URL = "https://api.allorigins.win/raw?url=https://api.smscode.gg/
             resultBox.style.display = "none";
             resultBox.classList.remove('sms-error-mode');
 
-            // Validasi jika kolom input kosong
             if (!activeApiKey) {
                 setTimeout(() => {
                     loadingText.style.display = "none";
@@ -359,7 +355,8 @@ const API_BASE_URL = "https://api.allorigins.win/raw?url=https://api.smscode.gg/
             }
 
             try {
-                const response = await fetch(`${API_BASE_URL}/orders`, {
+                // Request ditembak melalui proxy bypass CORS
+                const response = await fetch(`${PROXY_URL}${encodeURIComponent(TARGET_API)}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -392,7 +389,7 @@ const API_BASE_URL = "https://api.allorigins.win/raw?url=https://api.smscode.gg/
                 resStatus.innerText = "Gagal Mengubungi API";
                 resStatus.style.color = "#ff4a4a";
                 resPhone.innerText = "Koneksi Terblokir / Gagal";
-                resId.innerText = error.message + " (Pastikan token API Key Anda benar, saldo mencukupi, dan browser Anda tidak memblokir koneksi CORS eksternal)";
+                resId.innerText = error.message + " (Pastikan token API Key Anda benar dan saldo mencukupi)";
             } finally {
                 loadingText.style.display = "none";
                 btnSms.disabled = false;
