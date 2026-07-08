@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik v3.4</title>
+    <title>Generator Data Futuristik v3.5</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     
@@ -110,8 +110,7 @@
                     </button>
                 </div>
                 
-                <div id="notesContainer" class="notes-list-container">
-                    </div>
+                <div id="notesContainer" class="notes-list-container"></div>
 
                 <button type="button" class="btn-admin-control" id="btnAdminAuth" onclick="toggleAdminAccess()">
                     <i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit
@@ -174,6 +173,29 @@
 
         function saveLocalNotes(id, key) { localStorage.setItem(key, document.getElementById(id).value); }
 
+        // --- FUNGSI UNIVERSAL COPY (Dukungan penuh untuk Android WebView / APK / Browser) ---
+        function eksekusiSalinTeks(teks) {
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(teks);
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = teks;
+                textArea.style.position = "fixed"; 
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Gagal menyalin teks cadangan', err);
+                }
+                document.body.removeChild(textArea);
+                return Promise.resolve();
+            }
+        }
+
         function renderNotesList(fullText) {
             const container = document.getElementById("notesContainer");
             container.innerHTML = "";
@@ -201,8 +223,8 @@
                             finalCopyText = currentInpValue.split("|")[0].trim();
                         }
 
-                        if (navigator.clipboard && window.isSecureContext && finalCopyText !== "") {
-                            navigator.clipboard.writeText(finalCopyText).then(() => {
+                        if(finalCopyText !== "") {
+                            eksekusiSalinTeks(finalCopyText).then(() => {
                                 showToast(`Salin Baris ${rowNum}! ✨`);
                             });
                         }
@@ -386,21 +408,25 @@
             if (DATA_DUMMY_DATABASE.length === 0) return;
             const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
             const res = `${item.nama}, ${item.alamat}, ${item.no_hp}`;
-            tampilkanDanSalin(res); tambahKeRiwayat(res);
+            document.getElementById('genNameOutput').value = res;
+            eksekusiSalinTeks(res).then(() => showToast("Berhasil Disalin! ✨"));
+            tambahKeRiwayat(res);
         };
         window.generateUsername = function() {
             const val = document.getElementById('genNameOutput').value;
             if (!val || val === "Data akan muncul di sini") return;
             const res = val.split(',')[0].trim().replace(/\s+/g, '.').toLowerCase();
-            tampilkanDanSalin(res); tambahKeRiwayat(res);
+            document.getElementById('genNameOutput').value = res;
+            eksekusiSalinTeks(res).then(() => showToast("Berhasil Disalin! ✨"));
+            tambahKeRiwayat(res);
         };
-        function tampilkanDanSalin(t) {
-            document.getElementById('genNameOutput').value = t;
-            if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(t).then(() => showToast("Berhasil Disalin! ✨")); }
-        }
         function tambahKeRiwayat(t) {
             const list = document.getElementById('historyList'); const item = document.createElement('div');
-            item.className = 'history-item'; item.innerText = t; item.onclick = function() { tampilkanDanSalin(t); };
+            item.className = 'history-item'; item.innerText = t; 
+            item.onclick = function() { 
+                document.getElementById('genNameOutput').value = t;
+                eksekusiSalinTeks(t).then(() => showToast("Berhasil Disalin! ✨"));
+            };
             list.insertBefore(item, list.firstChild);
         }
         function clearHistory() { document.getElementById('historyList').innerHTML = ''; }
