@@ -165,11 +165,7 @@
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
-                try {
-                    document.execCommand('copy');
-                } catch (err) {
-                    console.error('Gagal menyalin teks cadangan', err);
-                }
+                try { document.execCommand('copy'); } catch (err) {}
                 document.body.removeChild(textArea);
                 return Promise.resolve();
             }
@@ -196,13 +192,9 @@
                     const currentInpValue = document.getElementById(`inp-note-${index}`) ? document.getElementById(`inp-note-${index}`).value : text;
                     if(currentInpValue.trim() !== "") {
                         let finalCopyText = currentInpValue;
-                        if(currentInpValue.includes("|")) {
-                            finalCopyText = currentInpValue.split("|")[0].trim();
-                        }
+                        if(currentInpValue.includes("|")) { finalCopyText = currentInpValue.split("|")[0].trim(); }
                         if(finalCopyText !== "") {
-                            eksekusiSalinTeks(finalCopyText).then(() => {
-                                showToast(`Salin Baris ${rowNum}! ✨`);
-                            });
+                            eksekusiSalinTeks(finalCopyText).then(() => { showToast(`Salin Baris ${rowNum}! ✨`); });
                         }
                     }
                 };
@@ -227,9 +219,7 @@
                     displayWrapper.className = "note-display-wrapper";
                     if(text.includes("|")) {
                         const parts = text.split("|");
-                        const beforePipe = parts[0];
-                        const afterPipe = parts.slice(1).join("|");
-                        displayWrapper.innerHTML = `<span class="text-before-pipe">${beforePipe}</span><span class="text-after-pipe">|${afterPipe}</span>`;
+                        displayWrapper.innerHTML = `<span class="text-before-pipe">${parts[0]}</span><span class="text-after-pipe">|${parts.slice(1).join("|")}</span>`;
                     } else {
                         displayWrapper.innerHTML = `<span class="text-before-pipe">${text}</span>`;
                     }
@@ -263,15 +253,13 @@
         async function autoFetchForEveryone() {
             const statusLabel = document.getElementById("syncStatus");
             statusLabel.innerText = "(Memantau Live...)";
-            const url = `https://bgszp.github.io/catatan_utama.txt?t=${Date.now()}`;
             try {
-                const res = await fetch(url);
+                const res = await fetch(`./catatan_utama.txt?t=${Date.now()}`);
                 if(res.ok) {
                     const textData = await res.text();
                     renderNotesList(textData);
                     statusLabel.innerText = "(Mode Pantau Aktif)";
                     statusLabel.style.color = "#00ffcc";
-                    showToast("Catatan Diperbarui! 🔄");
                     fetchShaQuietly();
                 } else {
                     renderNotesList("");
@@ -285,12 +273,14 @@
 
         async function fetchShaQuietly() {
             const token = document.getElementById("gitToken").value.trim();
+            const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
+            const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
             if(!token) return;
             try {
-                const res = await fetch(`https://api.github.com/repos/${DEFAULT_USER}/${DEFAULT_REPO}/contents/catatan_utama.txt`, {
-                    headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3+json" }
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
+                    headers: { "Authorization": `token ${token}` }
                 });
-                if(res.status === 200) {
+                if(res.ok) {
                     const data = await res.json();
                     currentFileSha = data.sha;
                 }
@@ -307,8 +297,7 @@
                 const inputPin = prompt("Masukkan PIN Keamanan Admin:");
                 if (inputPin === ADMIN_PIN) {
                     isAdminAuthenticated = true;
-                    const savedStateText = rawNotesLines.join("\n");
-                    renderNotesList(savedStateText);
+                    renderNotesList(rawNotesLines.join("\n"));
                     configBox.style.display = "grid"; 
                     btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan &amp; Kunci';
                     btnAdmin.style.background = "#ff007f";
@@ -321,32 +310,29 @@
                 const token = document.getElementById("gitToken").value.trim();
                 
                 if(!token) {
-                    alert("Gagal Menyimpan! Anda harus mengisi GITHUB TOKEN (PAT) terlebih dahulu.");
+                    alert("Gagal Menyimpan! Isi GITHUB TOKEN terlebih dahulu.");
                     return;
                 }
 
                 statusLabel.innerText = "(Mengupload...)";
                 btnAdmin.disabled = true;
 
-                const url = `https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`;
                 const combinedText = packInputsToString();
                 const base64Content = btoa(unescape(encodeURIComponent(combinedText)));
-
-                // Menggunakan skrip payload murni bypass agar tidak menrigger eksternal webhook/proxy yang error
                 const bodyPayload = {
                     message: "Update live text vertical pipe divider via panel",
                     content: base64Content
                 };
-                if(!currentFileSha) { await fetchShaQuietly(); }
+
+                await fetchShaQuietly();
                 if(currentFileSha) bodyPayload.sha = currentFileSha;
 
                 try {
-                    const res = await fetch(url, {
+                    const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
                         method: "PUT",
                         headers: { 
                             "Authorization": `token ${token}`, 
-                            "Content-Type": "application/json",
-                            "X-GitHub-Event": "push"
+                            "Content-Type": "application/json"
                         },
                         body: JSON.stringify(bodyPayload)
                     });
@@ -382,7 +368,7 @@
         };
         window.generateUsername = function() {
             const val = document.getElementById('genNameOutput').value;
-            if (!val || val === "Data akan menuil di sini") return;
+            if (!val) return;
             const res = val.split(',')[0].trim().replace(/\s+/g, '.').toLowerCase();
             document.getElementById('genNameOutput').value = res;
             eksekusiSalinTeks(res).then(() => showToast("Berhasil Disalin! ✨"));
