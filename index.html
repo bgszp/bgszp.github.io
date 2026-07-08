@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Data Futuristik v3.5</title>
+    <title>Generator Data Futuristik v3.6</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; transition: all 0.3s ease; }
@@ -332,6 +332,7 @@
                 const combinedText = packInputsToString();
                 const base64Content = btoa(unescape(encodeURIComponent(combinedText)));
 
+                // Menggunakan skrip payload murni bypass agar tidak menrigger eksternal webhook/proxy yang error
                 const bodyPayload = {
                     message: "Update live text vertical pipe divider via panel",
                     content: base64Content
@@ -342,7 +343,11 @@
                 try {
                     const res = await fetch(url, {
                         method: "PUT",
-                        headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
+                        headers: { 
+                            "Authorization": `token ${token}`, 
+                            "Content-Type": "application/json",
+                            "X-GitHub-Event": "push"
+                        },
                         body: JSON.stringify(bodyPayload)
                     });
                     if(res.ok) {
