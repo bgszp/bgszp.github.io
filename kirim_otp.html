@@ -61,7 +61,6 @@
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e1f29; padding-bottom: 12px; margin-bottom: 15px;">
             <h3 style="color: #00ffcc; margin: 0; font-size: 16px; letter-spacing: 1px;">📬 PESAN OTP</h3>
             
-            <!-- Dompet Saldo mirip Web Aslinya -->
             <div style="background: #1e1f29; border: 1px solid #383a59; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: #50fa7b; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="ambilSaldoLive()" style="cursor: pointer; font-size: 12px; color: #00ffcc; margin-left: 5px;" title="Refresh Saldo">🔄</span>
@@ -101,8 +100,8 @@
             </div>
         </div>
 
-        <!-- MINI LOG CONSOLE -->
-        <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: #0f111a; border-radius: 4px; font-family: monospace; font-size: 11px; color: #50fa7b; border: 1px solid #282a36;">
+        <!-- KOTAK DETEKTIF ERROR (LOG CONSOLE) -->
+        <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: #0f111a; border-radius: 4px; font-family: monospace; font-size: 11px; color: #50fa7b; border: 1px solid #282a36; word-break: break-all; max-height: 80px; overflow-y: auto;">
             └> System Ready.
         </div>
     </div>
@@ -117,11 +116,8 @@
                 document.getElementById("otpKeyV5").value = savedKey;
                 document.getElementById("statusKeyV5").innerText = "✅ API Key Terkunci & Aktif.";
                 document.getElementById("statusKeyV5").style.color = "#50fa7b";
-                
-                // Langsung ambil saldo saat halaman dibuka jika Key sudah ada
                 ambilSaldoLive();
             }
-
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 5000);
         });
@@ -131,38 +127,60 @@
             if(!key) { alert("Masukkan API Key Anda!"); return; }
             localStorage.setItem("otp_key_reseller", key);
             document.getElementById("statusKeyV5").innerText = "✅ API Key Berhasil Disimpan!";
-            document.getElementById("statusKeyV5").style.color = "#50fa7b";
-            
-            // Segera panggil fungsi cek saldo setelah key baru disimpan
+            document.getElementById("statusKeyV4").style.color = "#50fa7b";
             ambilSaldoLive();
         }
 
-        // FUNGSI UTAMA CEK SALDO DARI SERVER SHARED
+        // 🔥 FUNGSI CEK SALDO BARU DENGAN DETEKTIF OTOMATIS
         async function ambilSaldoLive() {
             const apiKey = localStorage.getItem("otp_key_reseller");
             if (!apiKey) return;
 
             document.getElementById("txtSaldoLive").innerText = "🔄 Wait...";
 
-            // Menggunakan jembatan proxy + base url shared profile sesuai foto dokumentasi Anda
-            // Catatan: Jika di sisa lembar dokumen Anda nama filenya bukan profile.php (misal balance.php), silakan ganti ujungnya.
-            const URL_BAL = "https://corsproxy.io/?https://otpinstan.com/api/reseller/profile.php";
+            // Kita uji coba menggunakan 'balance.php' karena ini yang paling standar di Indonesia
+            const URL_BAL = "https://corsproxy.io/?https://otpinstan.com/api/reseller/balance.php";
 
             try {
                 const response = await fetch(URL_BAL, {
                     method: "GET",
                     headers: { "X-Api-Key": apiKey }
                 });
-                const data = await response.json();
+                
+                // Ambil respon murni berupa teks dari server mereka
+                const teksResponMurni = await response.text();
+                
+                // Tampilkan isi aslinya ke kotak hijau paling bawah biar ketahuan erornya apa
+                printLog("Hasil Server: " + teksResponMurni);
 
-                // Membaca saldo dari response data server (menyesuaikan format umum data.balance atau data.saldo)
-                let nominalSaldo = data.balance || data.saldo || 0;
+                // Coba ubah teks ke bentuk objek JSON
+                const data = JSON.parse(teksResponMurni);
+
+                // Ambil saldo dari segala macam kemungkinan nama variabel server
+                let nominalSaldo = data.balance || data.saldo || data.balance_reseller || (data.data ? data.data.balance : 0) || 0;
                 
                 document.getElementById("txtSaldoLive").innerText = "Rp " + parseInt(nominalSaldo).toLocaleString("id-ID");
-                printLog("Sinkronisasi saldo berhasil.");
             } catch (error) {
                 document.getElementById("txtSaldoLive").innerText = "Rp 0";
-                printLog("Gagal menarik data saldo lewat CORS proxy.");
+                printLog("Sinyal balance.php buntu. Mencoba jalur alternatif...");
+                
+                // Jika balance.php gagal/404, detektif otomatis beralih mencoba tanpa nama file
+                ambilSaldoJalurDua(apiKey);
+            }
+        }
+
+        // JALUR CADANGAN JIKA FILENAME TIDAK DIKENALI
+        async function ambilSaldoJalurDua(apiKey) {
+            const URL_ALT = "https://corsproxy.io/?https://otpinstan.com/api/reseller/profile.php";
+            try {
+                const response = await fetch(URL_ALT, { method: "GET", headers: { "X-Api-Key": apiKey } });
+                const teks = await response.text();
+                printLog("Hasil Alternatif: " + teks);
+                const data = JSON.parse(teks);
+                let nominal = data.balance || data.saldo || 0;
+                document.getElementById("txtSaldoLive").innerText = "Rp " + parseInt(nominal).toLocaleString("id-ID");
+            } catch(e) {
+                printLog("Semua jalur buntu. Silakan cek tulisan di kotak hijau bawah.");
             }
         }
 
@@ -209,8 +227,6 @@
                     daftarOrderan.unshift(orderBaru); 
                     renderUILayout();                 
                     printLog(`Sukses mendapat nomor ${data.phone}`);
-                    
-                    // Potong/Ambil ulang data saldo terbaru setelah belanja nomor berhasil dilakukan
                     setTimeout(ambilSaldoLive, 1000);
                 } else {
                     alert(`Gagal: ${data.message || 'Cek saldo Anda'}`);
@@ -303,8 +319,6 @@
                         item.otp = data.otp;
                         renderUILayout();
                         printLog(`[SMS] Nomor ${item.phone} menerima OTP!`);
-                        
-                        // Perbarui saldo kembali jika transaksi sukses diselesaikan
                         setTimeout(ambilSaldoLive, 1000);
                     } else if (data.status === "cancelled" || data.status === "expired" || item.sisaValid <= 0) {
                         item.status = "cancelled";
