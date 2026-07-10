@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>1000 Data Generator Instan</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #111; color: #fff; text-align: center; }
+        textarea { width: 90%; height: 400px; background: #222; color: #00ffcc; font-family: monospace; padding: 15px; border-radius: 8px; border: 1px solid #333; }
+        button { padding: 12px 24px; font-size: 16px; font-weight: bold; background: #00ffcc; color: #111; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>Generator 1000 Data Pengguna Pulau Jawa</h2>
+    <p>Klik tombol di bawah untuk menghasilkan 1000 data unik secara instan!</p>
+    <button onclick="bikinSeribuData()">Hasilkan 1000 Data JSON</button>
+    <br>
+    <textarea id="outputJson" placeholder="Hasil JSON akan muncul di sini..."></textarea>
+
+    <script>
+        const namaDepan = ["Ahmad", "Budi", "Dedi", "Eko", "Fajar", "Hendra", "Iwan", "Rian", "Roni", "Rudi", "Taufik", "Zainal", "Agus", "Andi", "Aditya", "Heri", "Bayu", "Asep", "Cecep", "Dani", "Jajang", "Ujang", "Dadang", "Wawan", "Toto", "Nana", "Koko", "Mumu", "Aceng", "Tatang", "Gatot", "Arjuna", "Petruk", "Gareng", "Bagong", "Setyo", "Bambang", "Joko", "Slamet", "Anam", "Roni", "Edi", "Aris", "Deni", "Yayan"];
+        const namaBelakang = ["Subagja", "Santoso", "Setiadi", "Prasetyo", "Shidiq", "Wijaya", "Hidayat", "Gunawan", "Hartono", "Abidin", "Raharjo", "Nugraha", "Kiswanto", "Segara", "Sunandar", "Supriadi", "Hamdani", "Suhartono", "Sukmana", "Mulyana", "Saepudin", "Suhendar", "Rohman", "Abdurrahman", "Supriatna", "Kempot", "Ruhian", "Sadikin", "Setiawan", "Koswara", "Mulyadi", "Fikri", "Sutarma", "Ruzhanul", "Komarudin", "Supono", "Hercules", "Chandra", "Suherman", "Kunaefi", "Rahmat", "Gorbachev", "Tingkir", "Siliwangi", "Badranaya"];
+        const namaPerempuan = ["Siti", "Dewi", "Rina", "Mega", "Fitriani", "Sri", "Yani", "Novianti", "Ratna", "Lilis", "Diana", "Yanti", "Maya", "Rini", "Dewi", "Ani", "Indah", "Cucu", "Imas", "Eni", "Mia", "Yeyen", "Tini", "Nenden", "Ade", "Eli", "Iis", "Cici", "Euis", "Lala", "Pipit", "Iceu", "Santi", "Gita", "Oneng", "Apriani", "Nyi", "Srikandi", "Utami", "Aminah", "Lestari", "Wahyuni", "Suryani", "Sari", "Karlina", "Nurjanah", "Putri", "Ruslan", "Sofiah", "Anggraeni", "Susanti", "Rahayu", "Maryani", "Permata", "Hasanah", "Masitoh", "Rohaeni", "Audina", "Lidya", "Kartini", "Nuraini", "Irma", "Herlina", "Dahlia", "Roromenggolo", "Paramida", "Komariah", "Karmela", "Pitriani", "Wong", "Widia", "Kencana"];
+
+        const listJalan = ["Jl. Merdeka", "Jl. Pemuda", "Jl. Garuda", "Jl. Mawar", "Jl. Sudirman", "Jl. Melati", "Jl. Dahlia", "Jl. Diponegoro", "Jl. Anggrek", "Jl. Cendrawasih", "Jl. Veteran", "Jl. Pahlawan", "Jl. Kartini", "Jl. Flamboyan", "Jl. Gajah Mada", "Jl. Imam Bonjol", "Jl. Hayam Wuruk", "Jl. Pangeran Jayakarta", "Jl. KH Ahmad Dahlan", "Jl. Siliwangi", "Jl. Pajajaran", "Jl. Pasir Putih", "Jl. Sukajadi", "Jl. Buah Batu", "Jl. Jakarta", "Jl. Otista", "Jl. Laswi", "Jl. Kopo", "Jl. Soekarno Hatta", "Jl. Riau", "Jl. Solo", "Jl. Asia Afrika", "Jl. RE Martadinata", "Jl. Cihampelas", "Jl. Dayeuhkolot", "Jl. Garut", "Jl. Tasikmalaya", "Jl. Cirebon", "Jl. Singaparna", "Jl. Sumedang", "Jl. Cianjur", "Jl. Sukabumi", "Jl. Demak", "Jl. Pantai Selatan", "Jl. Panah"];
+        const listPatokan = ["Depan Toko Kelontong Bu Siti", "Rumah Pagar Hijau Ujung", "Sebelah Lapangan Voli", "Dekat Pos Satpam", "Samping Konter Pulsa Berkah", "Belakang Pabrik Tahu", "Depan Laundry Kilat", "Samping Masjid Jami", "Sebelah Bank BRI", "Depan Warung Makan Tegal", "Samping Bengkel Motor AHASS", "Dekat Gerbang Utama", "Belakang Alfamart Simpang", "Depan Rumah Pak RT", "Sebelah Toko Cat Lancar", "Dekat Jembatan Merah", "Depan Kosan Putri Salma", "Samping Taman", "Sebelah Apotek K-24", "Belakang Rumah Makan Padang", "Samping Lapangan Futsal", "Dekat Pohon Beringin Besar", "Depan Bengkel Las Bubut", "Depan Fasum", "Dekat Warung Madura", "Samping Warnet Nusantara", "Belakang Menara Telkomsel", "Dekat Pos Ronda", "Sebelah Salon Kecantikan", "Depan SDN Curug 01", "Samping Kedai Kopi Kita", "Belakang Toko Baju Ramai", "Depan Kantor Kecamatan", "Samping Mushola", "Dekat Palang Kereta", "Belakang Pasar Burung", "Samping Agen Elpiji", "Dekat TK Islam", "Depan Showroom Motor Bekas", "Rumah Cat Kuning Pagar Hitam", "Samping RM Ayam Goreng", "Dekat Kandang Ayam", "Sebelah Pangkalan Ojek", "Depan Lapangan Utama", "Samping Toko Sepatu Jaya"];
+
+        const wilayahJawa = [
+            {kel: "Gambir", kec: "Gambir", kota: "Kota Jakarta Pusat"},
+            {kel: "Sekeloa", kec: "Coblong", kota: "Kota Bandung"},
+            {kel: "Sekayu", kec: "Semarang Tengah", kota: "Kota Semarang"},
+            {kel: "Sosromenduran", kec: "Gedongtengen", kota: "Kota Yogyakarta"},
+            {kel: "Gubeng", kec: "Gubeng", kota: "Kota Surabaya"},
+            {kel: "Cililitan", kec: "Kramat Jati", kota: "Kota Jakarta Timur"},
+            {kel: "Melawai", kec: "Kebayoran Baru", kota: "Kota Jakarta Selatan"},
+            {kel: "Tomang", kec: "Grogol Petamburan", kota: "Kota Jakarta Barat"},
+            {kel: "Penjaringan", kec: "Penjaringan", kota: "Kota Jakarta Utara"},
+            {kel: "Pasteur", kec: "Sukajadi", kota: "Kota Bandung"},
+            {kel: "Manahan", kec: "Banjarsari", kota: "Kota Surakarta"},
+            {kel: "Oro-Oro Dowo", kec: "Klojen", kota: "Kota Malang"},
+            {kel: "Mustikajaya", kec: "Mustikajaya", kota: "Kota Bekasi"},
+            {kel: "Baranangsiang", kec: "Bogor Timur", kota: "Kota Bogor"},
+            {kel: "Kesenden", kec: "Kejaksan", kota: "Kota Cirebon"},
+            {kel: "Tegalsari", kec: "Tegalsari", kota: "Kota Tegal"},
+            {kel: "Curug", kec: "Cimanggis", kota: "Kota Depok"},
+            {kel: "Regol Wetan", kec: "Sumedang Selatan", kota: "Kab. Sumedang"}
+        ];
+
+        const prefixHp = ["0812", "0813", "0821", "0822", "0856", "0857", "0878", "0896", "0823", "0819"];
+
+        function acak(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        function angkaAcak(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+        function bikinSeribuData() {
+            let kumpulanData = [];
+            let totalDataTerget = 1000;
+
+            for(let i = 0; i < totalDataTerget; i++) {
+                let namaFinal = "";
+                if(Math.random() > 0.5) {
+                    namaFinal = acak(namaDepan) + " " + acak(namaBelakang);
+                } else {
+                    namaFinal = acak(namaPerempuan);
+                    if(Math.random() > 0.4) namaFinal += " " + acak(namaBelakang);
+                }
+
+                let jln = acak(listJalan) + " No. " + angkaAcak(1, 250);
+                let pat = "(" + acak(listPatokan) + ")";
+                let wil = acak(wilayahJawa);
+                let alamatFinal = `${jln} ${pat}, Kel. ${wil.kel}, Kec. ${wil.kec}, ${wil.kota}`;
+
+                let noHpFinal = acak(prefixHp) + angkaAcak(10000000, 99999999);
+
+                kumpulanData.push({
+                    nama: namaFinal,
+                    alamat: alamatFinal,
+                    no_hp: noHpFinal
+                });
+            }
+
+            document.getElementById("outputJson").value = JSON.stringify(kumpulanData, null, 2);
+            alert("Selesai! 1000 Data Berhasil Dibuat. Silakan copy isi kotak teks.");
+        }
+    </script>
+</body>
+</html>
