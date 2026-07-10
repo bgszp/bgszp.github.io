@@ -57,19 +57,45 @@
             cursor: not-allowed;
         }
         
-        /* Gaya Custom List Box Sesuai Foto Server */
-        .wrapper-layanan {
+        /* 📱 GAYA BARU: Desain Pemicu Dropdown Lipat */
+        .pemicu-dropdown {
             background: #181933;
             border: 1px solid #32356b;
             border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            color: #fff;
+            transition: background 0.2s;
+            user-select: none;
+        }
+        .pemicu-dropdown:hover {
+            background: #1e2042;
+        }
+
+        /* Wadah list yang meluncur di bawah pemicu */
+        .wrapper-layanan {
+            background: #181933;
+            border: 1px solid #32356b;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
             overflow: hidden;
-            margin-top: 8px;
+            margin-top: -1px;
+            display: none; /* Tersembunyi default, muncul saat diklik */
+            position: relative;
+            z-index: 10;
+            max-height: 200px;
+            overflow-y: auto;
         }
         .opsi-shopee {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 14px 16px;
+            padding: 12px 16px;
             cursor: pointer;
             border-bottom: 1px solid #222448;
             transition: all 0.2s ease;
@@ -152,9 +178,17 @@
             <small id="statusKeyV5" style="color: #ff5555; font-size: 11px; display: block; margin-top: 6px;">⚠️ API Key belum aktif.</small>
         </div>
 
-        <!-- LIST SELECTION BOX (HANYA SHOPEE) -->
+        <!-- DROPDOWN SELECTION BOX (HEMAT TEMPAT) -->
         <div>
-            <label style="font-size: 13px; color: #8b8da9; display: block;">Layanan (Shopee Only)</label>
+            <label style="font-size: 13px; color: #8b8da9; display: block; margin-bottom: 5px;">Layanan (Shopee Only)</label>
+            
+            <!-- Tombol Utama Dropdown -->
+            <div class="pemicu-dropdown" id="btnTriggerDropdown" onclick="toggleMekanismeDropdown()">
+                <span id="txtLayananTerpilihHeader">Menghubungkan server...</span>
+                <span id="ikonPanahDropdown" style="transition: transform 0.2s; font-size: 12px;">▼</span>
+            </div>
+
+            <!-- List Menu yang bisa melipat/tersembunyi -->
             <div class="wrapper-layanan" id="boxLayananShopee">
                 <div style="text-align: center; padding: 20px; color: #6272a4; font-style: italic; font-size: 13px;">
                     Menghubungkan harga server...
@@ -232,6 +266,23 @@
             localStorage.setItem("daftar_orderan_live", JSON.stringify(daftarOrderan));
         }
 
+        // 🔄 FUNGSI BARU: Buka Tutup Menu Dropdown saat di klik
+        function toggleMekanismeDropdown() {
+            const box = document.getElementById("boxLayananShopee");
+            const panah = document.getElementById("ikonPanahDropdown");
+            const tombol = document.getElementById("btnTriggerDropdown");
+
+            if (box.style.display === "none" || box.style.display === "") {
+                box.style.display = "block";
+                panah.style.transform = "rotate(180deg)";
+                tombol.style.borderRadius = "12px 12px 0 0"; // Sisi bawah rata saat list terbuka
+            } else {
+                box.style.display = "none";
+                panah.style.transform = "rotate(0deg)";
+                tombol.style.borderRadius = "12px"; // Bulat kembali saat menutup
+            }
+        }
+
         async function ambilLayananLive() {
             const apiKey = localStorage.getItem("otp_key_reseller");
             const boxLayanan = document.getElementById("boxLayananShopee");
@@ -263,14 +314,16 @@
                             idLayananTerpilih = id;
                             namaLayananTerpilih = name;
                             hargaLayananTerpilih = price;
+                            // Set tampilan awal teks tombol dropdown
+                            document.getElementById("txtLayananTerpilihHeader").innerHTML = `${name} — <span style="color:#b4b7ff;">Rp ${price.toLocaleString('id-ID')}</span>`;
                         }
 
                         htmlList += `
                             <div class="opsi-shopee ${classTerpilih}" onclick="pilihOpsiShopee(this, '${id}', '${name}', ${price})">
-                                <div style="font-size: 14px; font-weight: 600; color: #fff;">
-                                    ${name} <span style="color: #8b8da9; font-size: 12px; font-weight: normal; margin-left: 4px;">(${stock} stok)</span>
+                                <div style="font-size: 13px; font-weight: 600; color: #fff;">
+                                    ${name} <span style="color: #8b8da9; font-size: 11px; font-weight: normal; margin-left: 4px;">(${stock} stok)</span>
                                 </div>
-                                <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">
+                                <div style="color: #b4b7ff; font-weight: bold; font-size: 13px;">
                                     Rp ${price.toLocaleString('id-ID')}
                                 </div>
                             </div>
@@ -295,26 +348,33 @@
             idLayananTerpilih = id;
             namaLayananTerpilih = nama;
             hargaLayananTerpilih = harga;
+            
+            // Perbarui teks utama pada tombol pemicu dropdown
+            document.getElementById("txtLayananTerpilihHeader").innerHTML = `${nama} — <span style="color:#b4b7ff;">Rp ${harga.toLocaleString('id-ID')}</span>`;
             printLog(`Memilih: ${nama} - Rp ${harga.toLocaleString('id-ID')}`);
+            
+            // Otomatis lipat/tutup kembali setelah memilih
+            toggleMekanismeDropdown();
         }
 
         function muatMenuShopeeManual() {
             idLayananTerpilih = "21";
             namaLayananTerpilih = "Shopee";
             hargaLayananTerpilih = 340;
+            document.getElementById("txtLayananTerpilihHeader").innerHTML = `Shopee — <span style="color:#b4b7ff;">Rp 340</span>`;
 
             document.getElementById("boxLayananShopee").innerHTML = `
                 <div class="opsi-shopee terpilih" onclick="pilihOpsiShopee(this, '21', 'Shopee', 340)">
-                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(2092 stok)</span></div>
-                    <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 340</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 11px; font-weight:normal;">(2092 stok)</span></div>
+                    <div style="color: #b4b7ff; font-weight: bold; font-size: 13px;">Rp 340</div>
                 </div>
                 <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v2', 'Shopee', 321)">
-                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(268 stok)</span></div>
-                    <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 321</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 11px; font-weight:normal;">(268 stok)</span></div>
+                    <div style="color: #b4b7ff; font-weight: bold; font-size: 13px;">Rp 321</div>
                 </div>
-                <div class="opsi-shopee" onclick="pignalOpsiShopee(this, '21_v3', 'Shopee', 415)">
-                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(282 stok)</span></div>
-                    <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 415</div>
+                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v3', 'Shopee', 415)">
+                    <div style="font-size: 13px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 11px; font-weight:normal;">(282 stok)</span></div>
+                    <div style="color: #b4b7ff; font-weight: bold; font-size: 13px;">Rp 415</div>
                 </div>
             `;
         }
@@ -395,7 +455,6 @@
             }
         }
 
-        // 🔥 PERBAIKAN TOTAL & COCOK UNTUK SERVER PHP (Menggunakan Form URL Encoded + URL Query)
         async function eksekusiBatalkanServer(index) {
             const apiKey = localStorage.getItem("otp_key_reseller");
             if (!apiKey) { alert("API Key tidak ditemukan!"); return; }
@@ -403,38 +462,30 @@
             const item = daftarOrderan[index];
             printLog(`Memproses Pembatalan ID: ${item.order_id}...`);
 
-            // 1. Tempel order_id di URL langsung (Mengantisipasi jika server membaca $_GET)
             const URL_CANCEL = `https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/cancel.php?order_id=${item.order_id}&t=` + Date.now();
             
-            // 2. Buat bodi data dengan format URLSearchParams / x-www-form-urlencoded (Mengantisipasi jika server membaca $_POST)
             const formBody = new URLSearchParams();
             formBody.append('order_id', item.order_id);
             
             try {
                 const response = await fetch(URL_CANCEL, { 
                     method: "POST", 
-                    headers: { 
-                        "X-Api-Key": apiKey
-                        // Kita tidak memakai application/json lagi agar dibaca resmi sebagai input data form oleh PHP
-                    },
+                    headers: { "X-Api-Key": apiKey },
                     body: formBody
                 });
                 
                 const textData = await response.text();
                 printLog(`Respon Server: ${textData}`);
                 
-                // Kembalikan status di aplikasi menjadi batal
                 item.status = "cancelled";
                 renderUILayout();
                 simpanDaftarOrderanKeLokal();
 
-                // Lakukan penambahan saldo bayangan secara instan sambil menunggu hit saldo riil dari pusat
                 if(item.harga) {
                     saldoSekarangGlobal += item.harga;
                     document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
                 }
                 
-                // Ambil ulang saldo asli terbaru dari server utama
                 setTimeout(refreshSemuaDataLive, 1000);
             } catch (error) {
                 printLog("Koneksi gagal, membatalkan secara lokal...");
@@ -466,7 +517,8 @@
                 let sisaValid = 1200 - detikBerlalu;
                 if (sisaValid < 0) sisaValid = 0;
 
-                let cooldownBatal = 120 - detikBerlalu;
+                // ⏱️ PENGATURAN COOLDOWN TETAP DIJAGA 17 DETIK
+                let cooldownBatal = 17 - detikBerlalu; 
                 if (cooldownBatal < 0) cooldownBatal = 0;
 
                 const m = Math.floor(sisaValid / 60);
