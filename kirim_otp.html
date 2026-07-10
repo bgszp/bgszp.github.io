@@ -3,140 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel OTP</title>
     <style>
-        body { background-color: #0b0c16; margin: 0; padding: 15px; font-family: sans-serif; color: #f8f8f2; }
-        .card-order { background: #1a1b35; border: 1px solid #2c2e5c; border-radius: 12px; padding: 15px; margin-top: 15px; }
-        .pemicu-dropdown { background: #181933; border: 1px solid #32356b; border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: #fff; font-size: 14px; }
-        .wrapper-layanan { background: #181933; border: 1px solid #32356b; border-top: none; border-radius: 0 0 12px 12px; display: none; max-height: 200px; overflow-y: auto; }
-        .opsi-shopee { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #222448; }
-        .opsi-shopee:hover { background: #20224a; }
-        .terpilih { background: #2a2c63; border-left: 4px solid #6c5ce7; }
-        .btn-pesan-premium { width: 100%; padding: 14px; background: #5f27cd; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        .btn-batal { background: #ff5555; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; width: 100%; margin-top: 10px; }
+        body { background-color: #0b0c16; color: #f8f8f2; font-family: sans-serif; margin: 0; padding: 15px; }
+        .card { background: #1a1b35; border: 1px solid #2c2e5c; border-radius: 12px; padding: 15px; margin-bottom: 10px; }
+        .btn-main { width: 100%; padding: 12px; background: #5f27cd; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        input { width: 100%; padding: 10px; border-radius: 5px; background: #0b0c16; border: 1px solid #32356b; color: #fff; box-sizing: border-box; }
+        .list-item { background: #181933; padding: 10px; border-radius: 8px; margin-bottom: 5px; font-size: 13px; }
     </style>
 </head>
 <body>
 
-    <!-- Header Panel -->
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2c2e5c; padding-bottom: 15px; margin-bottom: 15px;">
-        <h3 style="color: #fff; margin: 0; font-size: 16px;">📱 Panel Shopee</h3>
-        <div style="background: #181933; border: 1px solid #2c2e5c; padding: 6px 14px; border-radius: 20px; color: #50fa7b; font-weight: bold; font-size: 13px;">
-            👛 <span id="txtSaldoLive">Rp 0</span>
-            <span onclick="refreshSemuaDataLive()" style="cursor: pointer; margin-left: 8px;">🔄</span>
-        </div>
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0;">📱 Server Shopee</h3>
+        <button onclick="refreshData()" style="background:transparent; border:none; color:#00ffcc; cursor:pointer;">🔄 Refresh</button>
     </div>
 
     <!-- API Key -->
-    <div style="background: #181933; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #222448;">
-        <label style="font-size: 11px; color: #00ffcc; font-weight: bold;">🔑 API KEY:</label>
-        <div style="display: flex; margin-top: 5px; gap: 8px;">
-            <input type="password" id="otpKeyV5" placeholder="Masukkan token..." style="flex: 1; padding: 10px; border-radius: 5px; background: #0b0c16; border: 1px solid #32356b; color: #fff;">
-            <button onclick="simpanKeyV5()" style="padding: 10px; background: #00ffcc; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Save</button>
+    <div class="card">
+        <label style="font-size: 11px; color: #8b8da9;">API KEY:</label>
+        <div style="display: flex; gap: 5px; margin-top: 5px;">
+            <input type="password" id="apiKey" placeholder="Masukkan API Key...">
+            <button onclick="saveKey()" style="background:#00ffcc; border:none; padding:0 15px; border-radius:5px; font-weight:bold;">OK</button>
         </div>
+        <div style="margin-top:5px; font-size:12px;">Saldo: <span id="saldo">Rp 0</span></div>
     </div>
 
-    <!-- Dropdown Layanan -->
-    <div>
-        <div class="pemicu-dropdown" id="btnTriggerDropdown" onclick="toggleMekanismeDropdown()">
-            <span id="txtLayananTerpilihHeader">Pilih Layanan...</span>
-            <span id="ikonPanahDropdown">▼</span>
-        </div>
-        <div class="wrapper-layanan" id="boxLayananShopee"></div>
-        <button onclick="prosesPesanSekarang()" class="btn-pesan-premium">🛒 PESAN SEKARANG</button>
-    </div>
+    <!-- Order -->
+    <button class="btn-main" onclick="orderShopee()">🛒 PESAN NOMOR</button>
 
-    <!-- Daftar Nomor -->
-    <div style="margin-top: 25px; border-top: 1px solid #2c2e5c; padding-top: 15px;">
-        <div style="color: #50fa7b; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between;">
-            <span>📱 Riwayat Aktif:</span>
-            <span onclick="hapusRiwayatSelesai()" style="cursor: pointer; color: #ff5555; font-size: 12px;">Bersihkan</span>
+    <div style="margin-top: 20px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <strong>Riwayat</strong>
+            <span onclick="clearHistory()" style="cursor:pointer; color:#ff5555; font-size:12px;">Hapus</span>
         </div>
-        <div id="containerListOrder"></div>
+        <div id="historyList"></div>
     </div>
-
-    <div id="miniConsoleLog" style="margin-top: 15px; font-family: monospace; font-size: 11px; color: #50fa7b;">└> System Ready.</div>
 
     <script>
-        // Copy-paste fungsi JS dari versi sebelumnya di sini...
-        // (Saya tidak mengubah logika, hanya membuang tampilan yang tidak diinginkan)
+        let orders = JSON.parse(localStorage.getItem('my_orders') || '[]');
         
-        let daftarOrderan = []; 
-        let saldoSekarangGlobal = 0;
-        let idLayananTerpilih = null;
-        let namaLayananTerpilih = "";
-        let hargaLayananTerpilih = 0;
-
-        document.addEventListener("DOMContentLoaded", function() {
-            const savedKey = localStorage.getItem("otp_key_reseller");
-            if(savedKey) { document.getElementById("otpKeyV5").value = savedKey; refreshSemuaDataLive(); }
-            const orderanLokal = localStorage.getItem("daftar_orderan_live");
-            if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
-            setInterval(mesinWaktuTerpusat, 1000);
-            setInterval(mesinCekSmsTerpusat, 5000);
-        });
-
-        function simpanKeyV5() {
-            const key = document.getElementById("otpKeyV5").value.trim();
-            localStorage.setItem("otp_key_reseller", key);
-            refreshSemuaDataLive();
+        async function saveKey() {
+            localStorage.setItem('otp_key', document.getElementById('apiKey').value);
+            refreshData();
         }
 
-        function toggleMekanismeDropdown() {
-            const box = document.getElementById("boxLayananShopee");
-            box.style.display = box.style.display === "block" ? "none" : "block";
+        async function refreshData() {
+            const key = localStorage.getItem('otp_key');
+            if(!key) return;
+            // Fetch Saldo
+            fetch(`https://corsproxy.io/?https://otpinstan.com/api/reseller/balance.php`, {headers: {'X-Api-Key': key}})
+            .then(res => res.json()).then(data => { document.getElementById('saldo').innerText = 'Rp ' + (data.saldo || 0); });
         }
 
-        async function ambilLayananLive() {
-            const apiKey = localStorage.getItem("otp_key_reseller");
-            if (!apiKey) return;
-            try {
-                const response = await fetch("https://corsproxy.io/?https://otpinstan.com/api/reseller/services.php?country_id=7&t=" + Date.now(), { headers: { "X-Api-Key": apiKey } });
-                const data = await response.json();
-                let list = (Array.isArray(data) ? data : (data.services || [])).filter(i => (i.name||"").toLowerCase().includes("shopee"));
-                let html = "";
-                list.forEach((item, index) => {
-                    if(index === 0) { idLayananTerpilih = item.id; namaLayananTerpilih = item.name; hargaLayananTerpilih = item.price; document.getElementById("txtLayananTerpilihHeader").innerText = item.name; }
-                    html += `<div class="opsi-shopee" onclick="pilihLayanan(this, '${item.id}', '${item.name}', ${item.price})">${item.name} - Rp ${item.price}</div>`;
-                });
-                document.getElementById("boxLayananShopee").innerHTML = html;
-            } catch(e) {}
-        }
-
-        function pilihLayanan(el, id, name, price) {
-            idLayananTerpilih = id; namaLayananTerpilih = name; hargaLayananTerpilih = price;
-            document.getElementById("txtLayananTerpilihHeader").innerText = name;
-            toggleMekanismeDropdown();
-        }
-
-        async function prosesPesanSekarang() {
-            const apiKey = localStorage.getItem("otp_key_reseller");
-            const res = await fetch("https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php?t=" + Date.now(), { method: "POST", headers: { "Content-Type": "application/json", "X-Api-Key": apiKey }, body: JSON.stringify({ platform_id: parseInt(idLayananTerpilih), country_id: 7 }) });
+        async function orderShopee() {
+            const key = localStorage.getItem('otp_key');
+            const res = await fetch(`https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php`, {
+                method: 'POST',
+                headers: {'X-Api-Key': key, 'Content-Type': 'application/json'},
+                body: JSON.stringify({platform_id: 21, country_id: 7})
+            });
             const data = await res.json();
-            if (data.phone) {
-                daftarOrderan.unshift({ order_id: data.order_id, phone: data.phone, status: "pending", waktu: Date.now() });
-                renderUILayout();
+            if(data.phone) {
+                orders.unshift({id: data.order_id, phone: data.phone, status: 'Menunggu...'});
+                localStorage.setItem('my_orders', JSON.stringify(orders));
+                render();
+            } else { alert("Gagal pesan: " + (data.message || "Error")); }
+        }
+
+        function render() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = orders.map(o => `
+                <div class="list-item">
+                    <div>${o.phone}</div>
+                    <div style="color:#50fa7b;">${o.status}</div>
+                </div>
+            `).join('');
+        }
+
+        function clearHistory() { orders = []; localStorage.removeItem('my_orders'); render(); }
+        
+        // Loop Cek SMS
+        setInterval(async () => {
+            const key = localStorage.getItem('otp_key');
+            for(let o of orders) {
+                if(o.status.includes('Menunggu')) {
+                    const res = await fetch(`https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/check.php?order_id=${o.id}`, {headers: {'X-Api-Key': key}});
+                    const d = await res.json();
+                    if(d.otp) { o.status = "OTP: " + d.otp; render(); localStorage.setItem('my_orders', JSON.stringify(orders)); }
+                }
             }
-        }
+        }, 5000);
 
-        function renderUILayout() {
-            const container = document.getElementById("containerListOrder");
-            container.innerHTML = daftarOrderan.map((item, index) => `
-                <div class="card-order">
-                    <div style="font-size:16px; font-weight:bold;">${item.phone}</div>
-                    <div style="color:${item.status === 'received' ? '#50fa7b' : '#ffb86c'}">${item.status}</div>
-                    ${item.otp ? `<div>OTP: ${item.otp}</div>` : ''}
-                </div>`).join('');
-        }
-
-        function refreshSemuaDataLive() { ambilSaldoLive(); ambilLayananLive(); }
-        async function ambilSaldoLive() {
-             // Tambahkan logic get balance di sini
-        }
-        function mesinWaktuTerpusat(){}
-        function mesinCekSmsTerpusat(){}
-        function hapusRiwayatSelesai(){ daftarOrderan = []; renderUILayout(); }
-        function printLog(t) { document.getElementById("miniConsoleLog").innerText = "└> " + t; }
-
+        window.onload = () => { 
+            document.getElementById('apiKey').value = localStorage.getItem('otp_key') || ''; 
+            render(); 
+        };
     </script>
 </body>
 </html>
