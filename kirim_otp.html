@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Otomatis Multi-OTP & Saldo Live</title>
+    <title>Panel Otomatis Multi-OTP - Shopee Only Edition</title>
     <style>
         body {
-            background-color: #0b0c10;
+            background-color: #0b0c16;
             margin: 0;
             padding: 15px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -20,16 +20,17 @@
         .container {
             width: 100%;
             max-width: 500px;
-            background: #0f111a;
-            border-radius: 12px;
-            border: 1px solid #383a59;
+            background: #121324;
+            border-radius: 16px;
+            border: 1px solid #2c2e5c;
             padding: 20px;
             box-sizing: border-box;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .card-order {
-            background: #1e1f29;
-            border: 1px solid #282a36;
-            border-radius: 10px;
+            background: #1a1b35;
+            border: 1px solid #2c2e5c;
+            border-radius: 12px;
             padding: 15px;
             margin-top: 15px;
             position: relative;
@@ -51,95 +52,121 @@
             color: #888;
             cursor: not-allowed;
         }
-        /* Style Tambahan untuk Tabel Harga */
-        .tabel-harga {
+        
+        /* Gaya Custom List Box Sesuai Foto Server */
+        .wrapper-layanan {
+            background: #181933;
+            border: 1px solid #32356b;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .opsi-shopee {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #222448;
+            transition: all 0.2s ease;
+        }
+        .opsi-shopee:last-child {
+            border-bottom: none;
+        }
+        .opsi-shopee:hover {
+            background: #20224a;
+        }
+        .opsi-shopee.terpilih {
+            background: #2a2c63;
+            border-left: 4px solid #6c5ce7;
+        }
+        .btn-pesan-premium {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 13px;
-        }
-        .tabel-harga th {
-            background: #1e1f29;
-            color: #00ffcc;
-            text-align: left;
-            padding: 8px;
-            border-bottom: 2px solid #383a59;
-            font-size: 11px;
+            padding: 14px;
+            background: #5f27cd;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
             text-transform: uppercase;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            box-shadow: 0 4px 12px rgba(95, 39, 205, 0.4);
+            transition: background 0.2s;
         }
-        .tabel-harga td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #282a36;
+        .btn-pesan-premium:hover {
+            background: #6c5ce7;
         }
-        .stok-aman { color: #50fa7b; font-weight: bold; }
-        .stok-habis { color: #ff5555; font-weight: bold; }
+        .badge-promo {
+            background: #3c1e70;
+            color: #b4b7ff;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         
-        <!-- HEADER DENGAN TAMPILAN SALDO LIVE -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e1f29; padding-bottom: 12px; margin-bottom: 15px;">
-            <h3 style="color: #00ffcc; margin: 0; font-size: 16px; letter-spacing: 1px;">📬 PESAN OTP</h3>
+        <!-- HEADER PANEL -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2c2e5c; padding-bottom: 12px; margin-bottom: 15px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 style="color: #fff; margin: 0; font-size: 17px; font-weight: 600;">📱 Server 1</h3>
+                <span class="badge-promo">Harga Promo</span>
+            </div>
             
-            <div style="background: #1e1f29; border: 1px solid #383a59; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: #50fa7b; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);">
+            <div style="background: #181933; border: 1px solid #2c2e5c; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: #50fa7b;">
                 👛 <span id="txtSaldoLive">Rp 0</span>
-                <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 12px; color: #00ffcc; margin-left: 5px;" title="Refresh Saldo & Harga">🔄</span>
+                <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 12px; color: #00ffcc; margin-left: 5px;" title="Refresh Data">🔄</span>
             </div>
         </div>
 
+        <!-- CONFIG NEGARA (INFORMASI SAJA) -->
+        <div style="margin-bottom: 15px;">
+            <label style="font-size: 12px; color: #8b8da9; display: block; margin-bottom: 5px;">Negara</label>
+            <div style="background: #181933; border: 1px solid #222448; padding: 12px; border-radius: 10px; color: #fff; font-weight: bold; font-size: 14px;">
+                Indonesia
+            </div>
+            <small style="color: #6c5ce7; font-size: 11px; display: block; margin-top: 5px;">🔮 Dipilih: Indonesia</small>
+        </div>
+
         <!-- INPUT API KEY -->
-        <div style="background: #1e1f29; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #282a36;">
+        <div style="background: #181933; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #222448;">
             <label style="font-size: 11px; color: #00ffcc; font-weight: bold;">🔑 Kode API Key Anda:</label>
             <div style="display: flex; margin-top: 5px; gap: 8px;">
-                <input type="password" id="otpKeyV5" placeholder="Masukkan token API Key" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #0f111a; color: #fff; font-size: 13px;">
+                <input type="password" id="otpKeyV5" placeholder="Masukkan token API Key" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #32356b; background: #0b0c16; color: #fff; font-size: 13px;">
                 <button onclick="simpanKeyV5()" style="padding: 10px 12px; background: #00ffcc; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px;">Simpan</button>
             </div>
             <small id="statusKeyV5" style="color: #ff5555; font-size: 11px; display: block; margin-top: 6px;">⚠️ API Key belum aktif.</small>
         </div>
 
-        <!-- FORM ORDER -->
-        <div style="background: #1e1f29; padding: 15px; border-radius: 8px; border: 1px solid #282a36;">
-            <div style="margin-bottom: 12px;">
-                <label style="font-size: 12px; color: #aaa;">Pilih Layanan Target:</label>
-                <select id="selectLayananLive" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; background: #0f111a; color: #fff; border: 1px solid #444; font-size: 14px; box-sizing: border-box;">
-                    <option value="">🔄 Memuat layanan...</option>
-                </select>
+        <!-- LIST SELECTION BOX (HANYA SHOPEE) -->
+        <div>
+            <label style="font-size: 13px; color: #8b8da9; display: block;">Layanan (Shopee Only)</label>
+            <div class="wrapper-layanan" id="boxLayananShopee">
+                <div style="text-align: center; padding: 20px; color: #6272a4; font-style: italic; font-size: 13px;">
+                    Menghubungkan harga server...
+                </div>
             </div>
-            <button onclick="prosesPesanSekarang()" style="width: 100%; padding: 12px; background: #6272a4; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; text-transform: uppercase; box-shadow: 0 3px 6px rgba(0,0,0,0.2);">
+            
+            <button onclick="prosesPesanSekarang()" class="btn-pesan-premium">
                 🛒 Pesan Sekarang
             </button>
         </div>
 
-        <!-- 🔥 BARU: TABEL MONITORING DAFTAR HARGA & STOK LIVE -->
-        <div style="background: #1e1f29; padding: 15px; border-radius: 8px; border: 1px solid #282a36; margin-top: 15px;">
-            <div style="font-size: 13px; font-weight: bold; color: #00ffcc; display: flex; align-items: center; gap: 6px;">
-                📊 Daftar Harga & Stok Terkini (Server 1)
-            </div>
-            <table class="tabel-harga">
-                <thead>
-                    <tr>
-                        <th>Aplikasi</th>
-                        <th>Harga</th>
-                        <th>Sisa Stok</th>
-                    </tr>
-                </thead>
-                <tbody id="tbodyDaftarHarga">
-                    <tr>
-                        <td colspan="3" style="text-align: center; color: #6272a4; font-style: italic; padding: 15px 0;">
-                            Menghubungkan ke API server...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
         <!-- AREA DAFTAR NOMOR -->
-        <div style="margin-top: 20px; border-top: 2px dashed #282a36; padding-top: 10px;">
+        <div style="margin-top: 25px; border-top: 2px dashed #2c2e5c; padding-top: 15px;">
             <div style="font-size: 14px; font-weight: bold; color: #50fa7b; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
-                <span onclick="hapusRiwayatSelesai()" style="cursor: pointer; font-size: 11px; color: #ff5555; background: #1e1f29; padding: 4px 10px; border-radius: 5px; border: 1px solid #383a59; font-weight: normal;">🧹 Bersihkan</span>
+                <span onclick="hapusRiwayatSelesai()" style="cursor: pointer; font-size: 11px; color: #ff5555; background: #181933; padding: 4px 10px; border-radius: 5px; border: 1px solid #2c2e5c; font-weight: normal;">🧹 Bersihkan</span>
             </div>
             <div id="containerListOrder">
                 <div id="panelKosong" style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">
@@ -149,7 +176,7 @@
         </div>
 
         <!-- KOTAK LOG CONSOLE -->
-        <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: #0f111a; border-radius: 4px; font-family: monospace; font-size: 11px; color: #50fa7b; border: 1px solid #282a36; word-break: break-all; max-height: 80px; overflow-y: auto;">
+        <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: #0b0c16; border-radius: 4px; font-family: monospace; font-size: 11px; color: #50fa7b; border: 1px solid #2c2e5c; word-break: break-all; max-height: 80px; overflow-y: auto;">
             └> System Ready.
         </div>
     </div>
@@ -157,6 +184,11 @@
     <script>
         let daftarOrderan = []; 
         let saldoSekarangGlobal = 0;
+        
+        // Variabel Penampung Layanan Terpilih
+        let idLayananTerpilih = null;
+        let namaLayananTerpilih = "";
+        let hargaLayananTerpilih = 0;
 
         document.addEventListener("DOMContentLoaded", function() {
             const savedKey = localStorage.getItem("otp_key_reseller");
@@ -166,7 +198,7 @@
                 document.getElementById("statusKeyV5").style.color = "#50fa7b";
                 refreshSemuaDataLive();
             } else {
-                muatMenuLayananManual(); 
+                muatMenuShopeeManual(); 
             }
 
             const orderanLokal = localStorage.getItem("daftar_orderan_live");
@@ -197,78 +229,108 @@
             localStorage.setItem("daftar_orderan_live", JSON.stringify(daftarOrderan));
         }
 
-        // FUNGSI UTAMA: MENAMPILKAN HARGA & STOK DI DROPDOWN SEKALIGUS DI TABEL MONITOR
+        // FUNGSI UTAMA: MENYARING HANYA SHOPEE & MEMBUAT TAMPILAN MATRIKS LIST
         async function ambilLayananLive() {
             const apiKey = localStorage.getItem("otp_key_reseller");
-            const selectEl = document.getElementById("selectLayananLive");
-            const tbodyHarga = document.getElementById("tbodyDaftarHarga");
+            const boxLayanan = document.getElementById("boxLayananShopee");
             if (!apiKey) return;
 
             const URL_SERVICES = "https://corsproxy.io/?https://otpinstan.com/api/reseller/services.php?country_id=7&t=" + Date.now();
 
             try {
-                const response = await fetch(URL_SERVICES, {
-                    method: "GET",
-                    headers: { "X-Api-Key": apiKey }
-                });
+                const response = await fetch(URL_SERVICES, { method: "GET", headers: { "X-Api-Key": apiKey } });
                 const data = await response.json();
                 
                 let listLayanan = Array.isArray(data) ? data : (data.services || data.data || []);
                 
-                if (listLayanan.length > 0) {
-                    let htmlOptions = "";
-                    let htmlTabel = "";
-
-                    listLayanan.forEach(item => {
+                // 🔥 PROSES FILTER: Hanya ambil yang mengandung kata 'shopee'
+                let listShopee = listLayanan.filter(item => {
+                    let nama = (item.name || item.service_name || item.title || "").toLowerCase();
+                    return nama.includes("shopee");
+                });
+                
+                if (listShopee.length > 0) {
+                    let htmlList = "";
+                    listShopee.forEach((item, index) => {
                         let id = item.id || item.platform_id || item.service_id;
                         let name = item.name || item.service_name || item.title;
                         let price = parseInt(item.price || item.cost || item.harga || 0);
                         let stock = item.stock !== undefined ? parseInt(item.stock) : parseInt(item.available || 0);
                         
-                        if (id && name) {
-                            // 1. Masukkan ke susunan dropdown atas
-                            htmlOptions += `<option value="${id}" data-nama="${name}" data-harga="${price}">Server 1 · ${name} - Rp ${price.toLocaleString('id-ID')} (Stok: ${stock})</option>`;
-                            
-                            // 2. Masukkan ke baris tabel monitor bawah dengan warna dinamis
-                            let kelasStok = stock > 0 ? "stok-aman" : "stok-habis";
-                            let teksStok = stock > 0 ? `${stock} Pcs` : "🔴 Habis";
-
-                            htmlTabel += `
-                                <tr>
-                                    <td style="font-weight:bold;">📱 ${name}</td>
-                                    <td style="color:#ffb86c;">Rp ${price.toLocaleString('id-ID')}</td>
-                                    <td class="${kelasStok}">${teksStok}</td>
-                                </tr>
-                            `;
+                        // Default pilih baris pertama otomatis saat load
+                        let classTerpilih = index === 0 ? "terpilih" : "";
+                        if(index === 0) {
+                            idLayananTerpilih = id;
+                            namaLayananTerpilih = name;
+                            hargaLayananTerpilih = price;
                         }
-                    });
 
-                    selectEl.innerHTML = htmlOptions;
-                    tbodyHarga.innerHTML = htmlTabel;
-                    printLog("Harga & Sisa Stok sinkron otomatis dengan server.");
+                        htmlList += `
+                            <div class="opsi-shopee ${classTerpilih}" onclick="pilihOpsiShopee(this, '${id}', '${name}', ${price})">
+                                <div style="font-size: 14px; font-weight: 600; color: #fff;">
+                                    ${name} <span style="color: #8b8da9; font-size: 12px; font-weight: normal; margin-left: 4px;">(${stock} stok)</span>
+                                </div>
+                                <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">
+                                    Rp ${price.toLocaleString('id-ID')}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    boxLayanan.innerHTML = htmlList;
+                    printLog("Sinkronisasi daftar harga Shopee berhasil.");
                 } else {
-                    muatMenuLayananManual();
+                    muatMenuShopeeManual();
                 }
             } catch (error) {
-                muatMenuLayananManual();
-                printLog("Gagal sinkron harga server, memakai data lokal.");
+                muatMenuShopeeManual();
+                printLog("Gagal sinkron server, memuat harga offline.");
             }
         }
 
-        // CADANGAN LOKAL (Jika API Server offline, tabel & dropdown tidak akan kosong melongpong)
-        function muatMenuLayananManual() {
-            document.getElementById("selectLayananLive").innerHTML = `
-                <option value="21" data-nama="Shopee" data-harga="340">Server 1 · Shopee - Rp 340</option>
-                <option value="1" data-nama="WhatsApp" data-harga="1400">Server 1 · WhatsApp - Rp 1.400</option>
-                <option value="2" data-nama="Telegram" data-harga="950">Server 1 · Telegram - Rp 950</option>
-                <option value="5" data-nama="TikTok" data-harga="415">Server 1 · TikTok - Rp 415</option>
-            `;
+        // AKSI SAAT BARIS SHOPEE DI-KLIK
+        function pilihOpsiShopee(elemen, id, nama, harga) {
+            // Hapus status terpilih dari semua baris
+            const semuaOpsi = document.querySelectorAll('.opsi-shopee');
+            semuaOpsi.forEach(opt => opt.classList.remove('terpilih'));
             
-            document.getElementById("tbodyDaftarHarga").innerHTML = `
-                <tr><td>📱 Shopee</td><td style="color:#ffb86c;">Rp 340</td><td class="stok-aman">Ready</td></tr>
-                <tr><td>📱 WhatsApp</td><td style="color:#ffb86c;">Rp 1.400</td><td class="stok-aman">Ready</td></tr>
-                <tr><td>📱 Telegram</td><td style="color:#ffb86c;">Rp 950</td><td class="stok-aman">Ready</td></tr>
-                <tr><td>📱 TikTok</td><td style="color:#ffb86c;">Rp 415</td><td class="stok-aman">Ready</td></tr>
+            // Tambah status aktif ke baris yang di-klik
+            elemen.classList.add('terpilih');
+            
+            // Simpan ke data order global
+            idLayananTerpilih = id;
+            namaLayananTerpilih = nama;
+            hargaLayananTerpilih = harga;
+            
+            printLog(`Memilih: ${nama} - Rp ${harga.toLocaleString('id-ID')}`);
+        }
+
+        // FALLBACK MANUAL JIKA KONEKSI DOWN (Mengikuti persis nominal contoh di foto Anda)
+        function muatMenuShopeeManual() {
+            idLayananTerpilih = "21";
+            namaLayananTerpilih = "Shopee";
+            hargaLayananTerpilih = 340;
+
+            document.getElementById("boxLayananShopee").innerHTML = `
+                <div class="opsi-shopee terpilih" onclick="pilihOpsiShopee(this, '21', 'Shopee', 340)">
+                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(2092 stok)</span></div>
+                    <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 340</div>
+                </div>
+                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v2', 'Shopee', 321)">
+                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(268 stok)</span></div>
+                    <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 321</div>
+                </div>
+                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v3', 'Shopee', 415)">
+                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(282 stok)</span></div>
+                    <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 415</div>
+                </div>
+                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v4', 'Shopee', 570)">
+                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(139 stok)</span></div>
+                    <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 570</div>
+                </div>
+                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v5', 'Shopee', 596)">
+                    <div style="font-size: 14px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 12px; font-weight:normal;">(316 stok)</span></div>
+                    <div style="color: #b4b7ff; font-weight: bold; font-size: 14px;">Rp 596</div>
+                </div>
             `;
         }
 
@@ -303,36 +365,31 @@
 
         async function prosesPesanSekarang() {
             const apiKey = localStorage.getItem("otp_key_reseller");
-            const selectEl = document.getElementById("selectLayananLive");
-            const platformId = selectEl.value;
             
-            if(!platformId) { alert("Pilih layanan terlebih dahulu!"); return; }
+            if(!idLayananTerpilih) { alert("Pilih salah satu tarif Shopee dahulu!"); return; }
             if(!apiKey) { alert("Simpan API Key dahulu!"); return; }
 
-            const namaLayanan = selectEl.options[selectEl.selectedIndex].getAttribute("data-nama");
-            const hargaLayanan = parseInt(selectEl.options[selectEl.selectedIndex].getAttribute("data-harga"));
-
-            printLog(`Meminta nomor baru untuk ${namaLayanan}...`);
+            printLog(`Meminta nomor baru untuk ${namaLayananTerpilih} (Rp ${hargaLayananTerpilih})...`);
             const URL_ORDER = "https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php?t=" + Date.now();
 
             try {
                 const response = await fetch(URL_ORDER, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-Api-Key": apiKey },
-                    body: JSON.stringify({ platform_id: parseInt(platformId), country_id: 7 })
+                    body: JSON.stringify({ platform_id: parseInt(idLayananTerpilih), country_id: 7 })
                 });
                 const data = await response.json();
 
                 if (data.order_id || data.phone) {
                     
-                    saldoSekarangGlobal -= hargaLayanan;
+                    saldoSekarangGlobal -= hargaLayananTerpilih;
                     if(saldoSekarangGlobal < 0) saldoSekarangGlobal = 0;
                     document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
 
                     const orderBaru = {
                         order_id: data.order_id,
                         phone: data.phone,
-                        layanan: namaLayanan,
+                        layanan: namaLayananTerpilih,
                         waktu_dibuat: Date.now(), 
                         status: "pending",       
                         otp: ""                  
