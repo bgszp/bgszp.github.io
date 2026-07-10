@@ -63,7 +63,8 @@
             
             <div style="background: #1e1f29; border: 1px solid #383a59; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: #50fa7b; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
-                <span onclick="ambilSaldoLive()" style="cursor: pointer; font-size: 12px; color: #00ffcc; margin-left: 5px;" title="Refresh Saldo">🔄</span>
+                <!-- Mengupdate saldo sekaligus list harga terbaru -->
+                <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 12px; color: #00ffcc; margin-left: 5px;" title="Refresh Saldo & Harga">🔄</span>
             </div>
         </div>
 
@@ -82,7 +83,7 @@
             <div style="margin-bottom: 12px;">
                 <label style="font-size: 12px; color: #aaa;">Pilih Layanan Target:</label>
                 <select id="selectLayananLive" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; background: #0f111a; color: #fff; border: 1px solid #444; font-size: 14px; box-sizing: border-box;">
-                    <!-- Pilihan otomatis termuat -->
+                    <option value="">🔄 Memuat harga & layanan dari server...</option>
                 </select>
             </div>
             <button onclick="prosesPesanSekarang()" style="width: 100%; padding: 12px; background: #6272a4; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; cursor: pointer; text-transform: uppercase; box-shadow: 0 3px 6px rgba(0,0,0,0.2);">
@@ -94,7 +95,6 @@
         <div style="margin-top: 20px; border-top: 2px dashed #282a36; padding-top: 10px;">
             <div style="font-size: 14px; font-weight: bold; color: #50fa7b; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
-                <!-- Tombol pembersih riwayat -->
                 <span onclick="hapusRiwayatSelesai()" style="cursor: pointer; font-size: 11px; color: #ff5555; background: #1e1f29; padding: 4px 10px; border-radius: 5px; border: 1px solid #383a59; font-weight: normal;">🧹 Bersihkan</span>
             </div>
             <div id="containerListOrder">
@@ -115,18 +115,16 @@
         let saldoSekarangGlobal = 0;
 
         document.addEventListener("DOMContentLoaded", function() {
-            muatMenuLayananManual();
-            
-            // 1. Muat API Key yang tersimpan
             const savedKey = localStorage.getItem("otp_key_reseller");
             if(savedKey) {
                 document.getElementById("otpKeyV5").value = savedKey;
                 document.getElementById("statusKeyV5").innerText = "✅ API Key Terkunci & Aktif.";
                 document.getElementById("statusKeyV5").style.color = "#50fa7b";
-                ambilSaldoLive();
+                refreshSemuaDataLive();
+            } else {
+                muatMenuLayananManual(); // Tampilkan menu lokal jika API key belum diinput
             }
 
-            // 2. AMBIL DATA ORDERAN DARI PENYIMPANAN LOKAL (ANTI-REFRESH)
             const orderanLokal = localStorage.getItem("daftar_orderan_live");
             if (orderanLokal) {
                 daftarOrderan = JSON.parse(orderanLokal);
@@ -143,11 +141,69 @@
             localStorage.setItem("otp_key_reseller", key);
             document.getElementById("statusKeyV5").innerText = "✅ API Key Berhasil Disimpan!";
             document.getElementById("statusKeyV5").style.color = "#50fa7b";
+            refreshSemuaDataLive();
+        }
+
+        function refreshSemuaDataLive() {
             ambilSaldoLive();
+            ambilLayananLive();
         }
 
         function simpanDaftarOrderanKeLokal() {
             localStorage.setItem("daftar_orderan_live", JSON.stringify(daftarOrderan));
+        }
+
+        // 1. FUNGSI TARIK LAYANAN & HARGA OTOMATIS DARI SERVER UTAMA
+        async function ambilLayananLive() {
+            const apiKey = localStorage.getItem("otp_key_reseller");
+            const selectEl = document.getElementById("selectLayananLive");
+            if (!apiKey) return;
+
+            // Menggunakan endpoint layanan server untuk ID negara Indonesia (7)
+            const URL_SERVICES = "https://corsproxy.io/?https://otpinstan.com/api/reseller/services.php?country_id=7&t=" + Date.now();
+
+            try {
+                const response = await fetch(URL_SERVICES, {
+                    method: "GET",
+                    headers: { "X-Api-Key": apiKey }
+                });
+                const data = await response.json();
+                
+                // Mendeteksi berbagai variasi format struktur data dari API server
+                let listLayanan = Array.isArray(data) ? data : (data.services || data.data || []);
+                
+                if (listLayanan.length > 0) {
+                    let htmlOptions = "";
+                    listLayanan.forEach(item => {
+                        let id = item.id || item.platform_id || item.service_id;
+                        let name = item.name || item.service_name || item.title;
+                        let price = item.price || item.cost || item.harga || 0;
+                        let stock = item.stock !== undefined ? item.stock : (item.available || 0);
+                        
+                        if (id && name) {
+                            htmlOptions += `<option value="${id}" data-nama="${name}" data-harga="${price}">Server 1 · ${name} - Rp ${parseInt(price).toLocaleString('id-ID')} (Stok: ${stock})</option>`;
+                        }
+                    });
+                    selectEl.innerHTML = htmlOptions;
+                    printLog("Daftar harga & stok berhasil di-update dari server pusat.");
+                } else {
+                    muatMenuLayananManual();
+                }
+            } catch (error) {
+                // Jika file endpoints di server utama namanya berbeda (misal: prices.php), jalankan fallback manual agar web tidak error
+                muatMenuLayananManual();
+                printLog("Gagal sync harga server, beralih ke harga lokal.");
+            }
+        }
+
+        // CADANGAN: Dipakai jika API harga server sedang offline/berubah struktur
+        function muatMenuLayananManual() {
+            document.getElementById("selectLayananLive").innerHTML = `
+                <option value="21" data-nama="Shopee" data-harga="340">Server 1 · Shopee - Rp 340</option>
+                <option value="1" data-nama="WhatsApp" data-harga="1400">Server 1 · WhatsApp - Rp 1.400</option>
+                <option value="2" data-nama="Telegram" data-harga="950">Server 1 · Telegram - Rp 950</option>
+                <option value="5" data-nama="TikTok" data-harga="415">Server 1 · TikTok - Rp 415</option>
+            `;
         }
 
         async function ambilSaldoLive() {
@@ -168,7 +224,7 @@
             }
         }
 
-        async function ambilSaldoJalurDua(apiKey) {
+        async function ambilSaldoJaurDua(apiKey) {
             const URL_ALT = "https://corsproxy.io/?https://otpinstan.com/api/reseller/profile.php?t=" + Date.now();
             try {
                 const response = await fetch(URL_ALT, { method: "GET", headers: { "X-Api-Key": apiKey } });
@@ -179,23 +235,16 @@
             } catch(e) {}
         }
 
-        function muatMenuLayananManual() {
-            document.getElementById("selectLayananLive").innerHTML = `
-                <option value="21" data-nama="Shopee" data-harga="340">Server 1 · Shopee - Rp 340</option>
-                <option value="1" data-nama="WhatsApp" data-harga="1400">Server 1 · WhatsApp - Rp 1.400</option>
-                <option value="2" data-nama="Telegram" data-harga="950">Server 1 · Telegram - Rp 950</option>
-                <option value="5" data-nama="TikTok" data-harga="415">Server 1 · TikTok - Rp 415</option>
-            `;
-        }
-
         async function prosesPesanSekarang() {
             const apiKey = localStorage.getItem("otp_key_reseller");
             const selectEl = document.getElementById("selectLayananLive");
             const platformId = selectEl.value;
+            
+            if(!platformId) { alert("Pilih layanan terlebih dahulu!"); return; }
+            if(!apiKey) { alert("Simpan API Key dahulu!"); return; }
+
             const namaLayanan = selectEl.options[selectEl.selectedIndex].getAttribute("data-nama");
             const hargaLayanan = parseInt(selectEl.options[selectEl.selectedIndex].getAttribute("data-harga"));
-
-            if(!apiKey) { alert("Simpan API Key dahulu!"); return; }
 
             printLog(`Meminta nomor baru untuk ${namaLayanan}...`);
             const URL_ORDER = "https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php?t=" + Date.now();
@@ -214,7 +263,6 @@
                     if(saldoSekarangGlobal < 0) saldoSekarangGlobal = 0;
                     document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
 
-                    // 🔥 BERBASIS TIMESTAMP: Menggunakan jam buat untuk keakuratan sisa waktu
                     const orderBaru = {
                         order_id: data.order_id,
                         phone: data.phone,
@@ -226,10 +274,10 @@
 
                     daftarOrderan.unshift(orderBaru); 
                     renderUILayout();                 
-                    simpanDaftarOrderanKeLokal(); // Amankan ke local storage
+                    simpanDaftarOrderanKeLokal();
                     printLog(`Sukses mendapat nomor ${data.phone}`);
                     
-                    setTimeout(ambilSaldoLive, 3000);
+                    setTimeout(refreshSemuaDataLive, 3000);
                 } else {
                     alert(`Gagal: ${data.message || 'Stok nomor kosong / Cek saldo'}`);
                 }
@@ -249,10 +297,8 @@
             let dataHarusDisimpanUlang = false;
 
             daftarOrderan.forEach((item, index) => {
-                // Hitung selisih waktu detik berjalan nyata
                 let detikBerlalu = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
-                // Set batas kedaluwarsa otomatis di UI (1200 detik = 20 menit)
                 if (item.status === "pending" && detikBerlalu >= 1200) {
                     item.status = "cancelled";
                     dataHarusDisimpanUlang = true;
@@ -310,7 +356,6 @@
 
         function mesinWaktuTerpusat() {
             let adaPending = daftarOrderan.some(item => item.status === "pending");
-            // Selama ada orderan yang berjalan, UI akan di-refresh visual detiknya setiap 1 detik
             if (adaPending) renderUILayout();
         }
 
@@ -333,12 +378,12 @@
                         renderUILayout();
                         simpanDaftarOrderanKeLokal();
                         printLog(`[SMS] Nomor ${item.phone} menerima OTP!`);
-                        setTimeout(ambilSaldoLive, 2000);
+                        setTimeout(refreshSemuaDataLive, 2000);
                     } else if (data.status === "cancelled" || data.status === "expired") {
                         item.status = "cancelled";
                         renderUILayout();
                         simpanDaftarOrderanKeLokal();
-                        setTimeout(ambilSaldoLive, 2000);
+                        setTimeout(refreshSemuaDataLive, 2000);
                     }
                 } catch (e) {}
             });
@@ -350,11 +395,10 @@
             renderUILayout();
             simpanDaftarOrderanKeLokal();
             printLog(`Nomor ${item.phone} dibatalkan.`);
-            setTimeout(ambilSaldoLive, 2000);
+            setTimeout(refreshSemuaDataLive, 2000);
         }
 
         function hapusRiwayatSelesai() {
-            // Hanya sisakan pesanan yang statusnya masih aktif berjalan (pending)
             daftarOrderan = daftarOrderan.filter(item => item.status === "pending");
             renderUILayout();
             simpanDaftarOrderanKeLokal();
