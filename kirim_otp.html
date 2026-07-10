@@ -1,208 +1,154 @@
-<!-- ================= PANEL OTP INSTAN LENGKAP V2 ================= -->
-<div style="margin-top: 30px; padding: 20px; background: #111; border-radius: 12px; border: 2px solid #00ffcc; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; font-family: 'Segoe UI', sans-serif; color: #fff; box-sizing: border-box;">
-    
-    <h3 style="color: #00ffcc; margin-top: 0; text-align: center; border-bottom: 2px dashed #222; padding-bottom: 10px; font-size: 18px;">
-        📲 PANEL VIRTUAL NUMBER & OTP INSTAN
-    </h3>
-
-    <!-- 1. PENGATURAN API KEY -->
-    <div style="background: #1a1a1a; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333;">
-        <label style="font-size: 12px; color: #00ffcc; font-weight: bold;">🔑 API Key Anda (Disimpan di HP):</label>
-        <div style="display: flex; margin-top: 5px; gap: 8px;">
-            <input type="password" id="otpKeyV2" placeholder="Masukkan API Key Anda" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #000; color: #fff; font-size: 14px;">
-            <button onclick="simpanKeyV2()" style="padding: 10px 15px; background: #00ffcc; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 13px;">Simpan</button>
-        </div>
-        <small id="statusKeyV2" style="color: #ff3333; font-size: 11px; display: block; margin-top: 5px;">⚠️ API Key belum tersimpan!</small>
-    </div>
-
-    <!-- 2. DAFTAR HARGA & ORDER NOMOR -->
-    <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 20px;">
-        <h4 style="margin-top: 0; color: #fff; border-bottom: 1px solid #333; padding-bottom: 5px; font-size: 14px;">🛒 1. Pilih Layanan & Order Nomor</h4>
-        <p style="font-size: 12px; color: #aaa; margin-top: 0;">Pilih aplikasi yang ingin Anda aktivasi:</p>
-        
-        <select id="pilihLayanan" style="width: 100%; padding: 12px; border-radius: 5px; background: #000; color: #fff; border: 1px solid #444; font-size: 15px; margin-bottom: 15px;">
-            <!-- Anda bisa mengubah nama aplikasi dan harga di bawah ini sesuai tarif OTP Instan asli -->
-            <option value="whatsapp|1500">WhatsApp (Rp 1.500)</option>
-            <option value="telegram|1200">Telegram (Rp 1.200)</option>
-            <option value="tiktok|800">TikTok (Rp 800)</option>
-            <option value="shopee|1000">Shopee (Rp 1.000)</option>
-            <option value="gojek|900">Gojek / Grab (Rp 900)</option>
-        </select>
-
-        <button onclick="beliNomorBaru()" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 15px; cursor: pointer;">
-            🛒 Beli Nomor Virtual Sekarang
-        </button>
-    </div>
-
-    <!-- 3. MENAMPILKAN NOMOR DAN OTP YANG MASUK -->
-    <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333;">
-        <h4 style="margin-top: 0; color: #fff; border-bottom: 1px solid #333; padding-bottom: 5px; font-size: 14px;">📥 2. Nomor Aktif & Kode OTP Masuk</h4>
-        
-        <!-- Tabel Data Transaksi / OTP -->
-        <div style="overflow-x: auto; margin-top: 10px;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
-                <thead>
-                    <tr style="border-bottom: 2px solid #333; color: #00ffcc;">
-                        <th style="padding: 8px 5px;">Aplikasi</th>
-                        <th style="padding: 8px 5px;">Nomor HP</th>
-                        <th style="padding: 8px 5px; text-align: center;">Kode OTP</th>
-                        <th style="padding: 8px 5px; text-align: right;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelOrderOtp">
-                    <tr>
-                        <td colspan="4" style="padding: 20px; text-align: center; color: #666; font-style: italic;">
-                            Belum ada nomor yang di-order. Silakan klik tombol beli di atas.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- LOG MONITOR (UNTUK DEBUG ERROR/SUKSES) -->
-    <div id="logKonsolV2" style="margin-top: 15px; padding: 10px; background: #000; border-radius: 5px; font-family: monospace; font-size: 11px; color: #00ff00; display: none; border: 1px solid #222; max-height: 80px; overflow-y: auto;"></div>
-
-</div>
-
 <script>
-    // Variabel lokal untuk menyimpan ID Transaksi yang sedang aktif
-    let idTransaksiAktif = null;
+    let currentTrxId = null;     // Menyimpan order_id dari server
+    let pollingInterval = null;  // Mesin pencari otomatis
 
-    // Load API Key saat web dibuka
+    // 1. OTOMATIS BERJALAN SAAT APLIKASI DIBUKA
     document.addEventListener("DOMContentLoaded", function() {
-        const savedKey = localStorage.getItem("otp_key_v2");
+        const savedKey = localStorage.getItem("otp_key_reseller");
         if(savedKey) {
-            document.getElementById("otpKeyV2").value = savedKey;
-            const statusLabel = document.getElementById("statusKeyV2");
-            statusLabel.innerText = "✅ API Key Tersimpan Aman di Browser.";
-            statusLabel.style.color = "#00ffcc";
+            document.getElementById("otpKeyV3").value = savedKey;
+            document.getElementById("statusKeyV3").innerText = "✅ API Key Terpasang. Siap melakukan order.";
+            document.getElementById("statusKeyV3").style.color = "#50fa7b";
+            
+            // Definisikan daftar layanan berdasarkan ID Platform Server 1 secara manual
+            // karena endpoint list service biasanya membutuhkan scroll ke bawah lagi di dokumentasi.
+            muatMenuLayananManual();
         }
     });
 
-    function simpanKeyV2() {
-        const key = document.getElementById("otpKeyV2").value.trim();
-        if(!key) { alert("Isi API Key dulu!"); return; }
-        localStorage.setItem("otp_key_v2", key);
-        const statusLabel = document.getElementById("statusKeyV2");
-        statusLabel.innerText = "✅ API Key Terupdate!";
-        statusLabel.style.color = "#00ffcc";
-        alert("API Key berhasil dikunci!");
+    function simpanKeyV3() {
+        const key = document.getElementById("otpKeyV3").value.trim();
+        if(!key) { alert("Masukkan API Key Anda!"); return; }
+        localStorage.setItem("otp_key_reseller", key);
+        document.getElementById("statusKeyV3").innerText = "✅ API Key Berhasil Disimpan!";
+        document.getElementById("statusKeyV3").style.color = "#50fa7b";
+        muatMenuLayananManual();
+        alert("API Key berhasil dikunci ke dalam aplikasi!");
     }
 
-    // FUNGSI ORDER NOMOR BARU
-    async function beliNomorBaru() {
-        const apiKey = localStorage.getItem("otp_key_v2");
-        if(!apiKey) { alert("Harap simpan API Key Anda terlebih dahulu di atas!"); return; }
+    // Mengisi menu dropdown sesuai platform_id (Sesuaikan angka id dengan dashboard Anda jika berbeda)
+    function muatMenuLayananManual() {
+        const selectMenu = document.getElementById("selectLayananLive");
+        selectMenu.innerHTML = `
+            <option value="21">Shopee (Server 1 Promo) - Rp 340</option>
+            <option value="1">WhatsApp (Server 1) - Rp 1.400</option>
+            <option value="2">Telegram (Server 1) - Rp 950</option>
+            <option value="5">TikTok (Server 1) - Rp 415</option>
+        `;
+        printLog("Menu Layanan siap digunakan.");
+    }
 
-        const layananData = document.getElementById("pilihLayanan").value.split("|");
-        const namaAplikasi = layananData[0];
-        const hargaAplikasi = layananData[1];
+    // 2. FUNGSI UTAMA: ORDER NOMOR (POST REQUEST KE SERVER ASLI)
+    async function prosesPesanSekarang() {
+        if(pollingInterval) clearInterval(pollingInterval); // Hentikan tracking lama jika ada
 
-        tulisLog(`[Request] Membeli nomor untuk ${namaAplikasi}...`);
+        const apiKey = localStorage.getItem("otp_key_reseller");
+        const platformIdTerpilih = document.getElementById("selectLayananLive").value;
 
-        // --- SESUAIKAN DENGAN URL API OTPINSTAN.COM ---
-        const URL_ORDER = "https://otpinstan.com/api/v1/order"; // Cek URL order nomor di dokumentasi mereka
+        if(!apiKey) { alert("Simpan API Key reseller Anda terlebih dahulu!"); return; }
+        if(!platformIdTerpilih) { alert("Silakan pilih layanan terlebih dahulu!"); return; }
+
+        printLog("Menghubungkan ke server untuk meminta nomor baru...");
+
+        // Sesuai screenshot: URL untuk melakukan order di Server 1
+        const URL_ORDER = "https://otpinstan.com/api/reseller/s1/order.php";
 
         try {
-            // Simulasi Request ke Server (Ganti block ini dengan Fetch asli jika dokumen API sudah siap)
-            // Di bawah ini adalah struktur standard response dari API OTP
-            
-            /* HAPUS KOMENTAR INI JIKA MAU MENEMBAK API ASLI:
             const response = await fetch(URL_ORDER, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-                body: JSON.stringify({ service: namaAplikasi })
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Api-Key": apiKey // Menggunakan format header sesuai dokumentasi gambar Anda
+                },
+                body: JSON.stringify({
+                    platform_id: parseInt(platformIdTerpilih),
+                    country_id: 7 // Angka 7 merujuk pada kode negara Indonesia di contoh screenshot
+                })
             });
+
             const data = await response.json();
-            */
 
-            // --- CONTOH JIKA SUKSES MENERIMA NOMOR DARI SERVER ---
-            // Kita buat simulasi data masuk agar Anda bisa melihat tampilannya langsung
-            const nomorHpDariServer = "08" + Math.floor(1000000000 + Math.random() * 9000000000); // Simulasi nomor masuk
-            idTransaksiAktif = "TRX" + Math.floor(Math.random() * 100000); // Simpan ID Transaksi
+            // Membaca response sukses dari server (Mendapatkan nomor HP & order ID)
+            if (data.order_id || data.phone) {
+                currentTrxId = data.order_id; // Simpan ID order untuk cek status SMS nanti
 
-            // Update isi tabel secara otomatis
-            const tabel = document.getElementById("tabelOrderOtp");
-            tabel.innerHTML = `
-                <tr style="border-bottom: 1px solid #222;">
-                    <td style="padding: 10px 5px; font-weight: bold; color: #fff;">${namaAplikasi.toUpperCase()}</td>
-                    <td style="padding: 10px 5px; color: #ffcc00; font-family: monospace;">${nomorHpDariServer}</td>
-                    <td style="padding: 10px 5px; text-align: center;">
-                        <span id="boxKodeOtp" style="background: #222; padding: 4px 8px; border-radius: 4px; color: #666; font-weight: bold; font-family: monospace; animation: blink 1s infinite;">
-                            ⏳ Menunggu SMS...
-                        </span>
-                    </td>
-                    <td style="padding: 10px 5px; text-align: right;">
-                        <button onclick="cekSmsOtpMasuk()" style="background: #00ffcc; color: #000; border: none; padding: 5px 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px;">🔄 Cek OTP</button>
-                    </td>
-                </tr>
-            `;
+                // Tampilkan komponen nomor ke layar aplikasi Anda
+                document.getElementById("panelNomorKosong").style.display = "none";
+                document.getElementById("panelNomorAktif").style.display = "block";
+                
+                // Pasang nomor HP yang diberikan oleh server ke layar
+                document.getElementById("txtNomorHp").innerText = data.phone;
+                
+                // Atur teks status awal ke mode standby berkedip
+                const txtOtp = document.getElementById("txtStatusOtp");
+                txtOtp.innerText = "⏳ Menunggu SMS...";
+                txtOtp.style.background = "#0f111a";
+                txtOtp.style.color = "#ff5555";
 
-            tulisLog(`[Success] Nomor berhasil didapatkan: ${nomorHpDariServer}`);
+                printLog(`Nomor didapat! ID: ${currentTrxId}. Sistem memantau SMS secara real-time...`);
+
+                // 🔥 JALANKAN POLLING OTOMATIS SETIAP 5 DETIK SESUAI REKOMENDASI TIPS DI GAMBAR
+                pollingInterval = setInterval(pantauOtpMasukRealtime, 5000);
+            } else {
+                // Jika server merespon tapi gagal (misal: Saldo Rp 0 atau stok habis)
+                printLog(`Gagal dari server: ${data.message || JSON.stringify(data)}`);
+                alert(`Gagal Order: ${data.message || 'Periksa saldo Anda'}`);
+            }
 
         } catch (error) {
-            tulisLog(`[Error] Gagal order nomor: ${error.message}`);
+            printLog("Koneksi gagal/Terhalang CORS: " + error.message);
         }
     }
 
-    // FUNGSI TOMBOL "CEK OTP" UNTUK MEMBACA SMS MASUK
-    async function cekSmsOtpMasuk() {
-        const apiKey = localStorage.getItem("otp_key_v2");
-        const boxOtp = document.getElementById("boxKodeOtp");
-        
-        if(!idTransaksiAktif) { alert("Tidak ada transaksi aktif."); return; }
-        
-        tulisLog(`[Checking] Memeriksa SMS masuk untuk ID: ${idTransaksiAktif}...`);
-        boxOtp.innerText = "⏳ Mengecek...";
-        boxOtp.style.color = "orange";
+    // 3. FUNGSI PELACAK SMS MASUK REAL-TIME (GET REQUEST)
+    async function pantauOtpMasukRealtime() {
+        if(!currentTrxId) return;
 
-        // --- SESUAIKAN DENGAN URL API CEK STATUS SMS OTPINSTAN.COM ---
-        const URL_STATUS = `https://otpinstan.com/api/v1/status?id=${idTransaksiAktif}`;
+        const apiKey = localStorage.getItem("otp_key_reseller");
+        
+        // Sesuai screenshot: URL untuk cek status order
+        const URL_CHECK = `https://otpinstan.com/api/reseller/s1/check.php?order_id=${currentTrxId}`;
 
         try {
-            /* HAPUS KOMENTAR INI JIKA MENEMBAK SERVER ASLI:
-            const response = await fetch(URL_STATUS, {
+            const response = await fetch(URL_CHECK, {
                 method: "GET",
-                headers: { "Authorization": `Bearer ${apiKey}` }
+                headers: {
+                    "X-Api-Key": apiKey
+                }
             });
-            const data = await response.json();
-            // Misal jika data.otp sudah ada nilainya, tampilkan ke boxOtp
-            */
 
-            // --- SIMULASI MENERIMA OTP ---
-            // Anggap saja setelah di-klik, server mengirimkan kode 4-6 digit angka
-            setTimeout(() => {
-                const kodeOtpPalsu = Math.floor(1000 + Math.random() * 9000); // contoh kode: 5821
+            const data = await response.json();
+
+            // Sesuai keterangan gambar: Cek apakah status sudah 'received' atau field 'otp' sudah terisi
+            if (data.status === "received" || data.otp) {
+                clearInterval(pollingInterval); // 🛑 Hentikan loop otomatis karena SMS sudah masuk!
                 
-                boxOtp.innerText = kodeOtpPalsu;
-                boxOtp.style.background = "#00ffcc";
-                boxOtp.style.color = "#000";
-                boxOtp.style.fontSize = "16px";
+                // Ambil kode OTP dari field 'otp' seperti instruksi di gambar Anda
+                const kodeOtpAsli = data.otp; 
                 
-                tulisLog(`[Sms Received] OTP Ditemukan: ${kodeOtpPalsu}`);
-                alert(`🎉 Kode OTP Anda Telah Masuk: ${kodeOtpPalsu}`);
-            }, 1000);
+                // Tampilkan hasil sukses ke antarmuka aplikasi
+                const txtOtp = document.getElementById("txtStatusOtp");
+                txtOtp.innerText = kodeOtpAsli;
+                txtOtp.style.background = "#50fa7b"; // Ubah latar menjadi hijau neon sukses
+                txtOtp.style.color = "#000";
+                
+                printLog(`[SUKSES] SMS masuk! Kode OTP Anda adalah: ${kodeOtpAsli}`);
+                alert(`🎉 OTP Baru Berhasil Diterima: ${kodeOtpAsli}`);
+            } else if (data.status === "cancelled" || data.status === "expired") {
+                clearInterval(pollingInterval);
+                printLog("Transaksi dibatalkan otomatis oleh sistem/provider.");
+                document.getElementById("txtStatusOtp").innerText = "❌ Batal / Expired";
+            } else {
+                printLog(`[Monitoring...] Status order masih: ${data.status || 'pending'}`);
+            }
 
         } catch (error) {
-            boxOtp.innerText = "❌ Gagal Cek";
-            tulisLog(`[Error] Gagal mengambil status SMS: ${error.message}`);
+            // Kita biarkan terus berjalan walaupun ada satu interupsi RTO kecil di jaringan
+            printLog("Sedang mencoba sinkronisasi ulang dengan server...");
         }
     }
 
-    function tulisLog(teks) {
-        const logBox = document.getElementById("logKonsolV2");
-        logBox.style.display = "block";
-        logBox.innerText = teks;
+    function printLog(text) {
+        document.getElementById("miniConsoleLog").innerText = "└> " + text;
     }
 </script>
-
-<style>
-    /* Animasi text berkedip biar keren saat menunggu SMS */
-    @keyframes blink {
-        0% { opacity: 0.4; }
-        50% { opacity: 1; }
-        100% { opacity: 0.4; }
-    }
-</style>
-<!-- ================= SELESAI PANEL OTP INSTAN LENGKAP V2 ================= -->
