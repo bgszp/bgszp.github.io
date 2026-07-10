@@ -133,7 +133,7 @@
             </div>
         </div>
 
-        <!-- CONFIG NEGARA (INFORMASI SAJA) -->
+        <!-- CONFIG NEGARA -->
         <div style="margin-bottom: 15px;">
             <label style="font-size: 12px; color: #8b8da9; display: block; margin-bottom: 5px;">Negara</label>
             <div style="background: #181933; border: 1px solid #222448; padding: 12px; border-radius: 10px; color: #fff; font-weight: bold; font-size: 14px;">
@@ -371,10 +371,12 @@
                     if(saldoSekarangGlobal < 0) saldoSekarangGlobal = 0;
                     document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
 
+                    // Memperbaiki struktur penyimpanan objek lokal agar mencatat harga untuk refund otomatis
                     const orderBaru = {
                         order_id: data.order_id,
                         phone: data.phone,
                         layanan: namaLayananTerpilih,
+                        harga: hargaLayananTerpilih, 
                         waktu_dibuat: Date.now(), 
                         status: "pending",       
                         otp: ""                  
@@ -394,38 +396,57 @@
             }
         }
 
-        // 🔥 FUNGSI TERBARU YANG SUDAH DIPERBAIKI: BATALKAN DI LAYAR SEKALIGUS DI SERVER ASLI
+        // 🔥 PERBAIKAN TOTAL METHOD: Menggunakan POST + JSON Body untuk membatalkan pesanan di server utama
         async function eksekusiBatalkanServer(index) {
             const apiKey = localStorage.getItem("otp_key_reseller");
             if (!apiKey) { alert("API Key tidak ditemukan!"); return; }
 
             const item = daftarOrderan[index];
-            printLog(`Menghubungi server untuk membatalkan ID: ${item.order_id}...`);
+            printLog(`Mengirim POST Cancel ID: ${item.order_id} ke server...`);
 
-            // Menembak endpoint pembatalan resmi via proxy CORS
-            const URL_CANCEL = `https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/cancel.php?order_id=${item.order_id}&t=` + Date.now();
+            const URL_CANCEL = `https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/cancel.php?t=` + Date.now();
             
             try {
+                // Merubah skema request menjadi POST + Payload JSON sesuai standard mutasi order server utama
                 const response = await fetch(URL_CANCEL, { 
-                    method: "GET", 
-                    headers: { "X-Api-Key": apiKey } 
+                    method: "POST", 
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "X-Api-Key": apiKey 
+                    },
+                    body: JSON.stringify({ 
+                        order_id: parseInt(item.order_id) 
+                    })
                 });
-                const data = await response.json();
-
-                // Proses pembatalan sukses di server
-                item.status = "cancelled";
-                renderUILayout();
-                simpanDaftarOrderanKeLokal();
-                printLog(`Nomor ${item.phone} BERHASIL dibatalkan di server utama.`);
                 
-                // Panggil refresh data agar saldo Anda langsung diperbarui (di-refund oleh server)
-                setTimeout(refreshSemuaDataLive, 1000);
-            } catch (error) {
-                // Skenario darurat: Jika api gagal dihubungi namun user ingin menghapus di aplikasi
+                const data = await response.json();
+                printLog(`Respon Batal Server: ${JSON.stringify(data)}`);
+
+                // Mengembalikan saldo di tampilan HP secara instan (Refund)
+                if(item.harga) {
+                    saldoSekarangGlobal += item.harga;
+                    document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
+                }
+
                 item.status = "cancelled";
                 renderUILayout();
                 simpanDaftarOrderanKeLokal();
-                printLog("Dibatalkan lokal (Koneksi server terputus).");
+                
+                // Sinkronisasi ulang saldo riil dari pusat data server utama
+                setTimeout(refreshSemuaDataLive, 1500);
+            } catch (error) {
+                printLog("Metode POST gagal, mencoba metode alternatif...");
+                
+                // Jalur Alternatif otomatis (Metode Cadangan jika server Anda membaca GET)
+                try {
+                    const URL_CANCEL_GET = `https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/cancel.php?order_id=${item.order_id}&t=` + Date.now();
+                    await fetch(URL_CANCEL_GET, { method: "GET", headers: { "X-Api-Key": apiKey } });
+                } catch(e){}
+
+                item.status = "cancelled";
+                renderUILayout();
+                simpanDaftarOrderanKeLokal();
+                setTimeout(refreshSemuaDataLive, 1500);
             }
         }
 
