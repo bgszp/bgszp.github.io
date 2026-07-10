@@ -3,62 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel OTP</title>
     <style>
-        body { background-color: #0b0c16; color: #f8f8f2; font-family: sans-serif; margin: 0; padding: 15px; }
-        .card { background: #1a1b35; border: 1px solid #2c2e5c; border-radius: 12px; padding: 15px; margin-bottom: 10px; }
-        .btn-main { width: 100%; padding: 12px; background: #5f27cd; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        input { width: 100%; padding: 10px; border-radius: 5px; background: #0b0c16; border: 1px solid #32356b; color: #fff; box-sizing: border-box; }
-        .list-item { background: #181933; padding: 10px; border-radius: 8px; margin-bottom: 5px; font-size: 13px; }
+        body { background-color: #0b0c16; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 15px; }
+        .card { background: #1a1b35; border: 1px solid #2c2e5c; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        
+        /* Gaya Kartu SMS */
+        .sms-card { background: #16172e; border-left: 5px solid #6272a4; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .sms-card.received { border-left-color: #50fa7b; }
+        .sms-card.pending { border-left-color: #ffb86c; }
+        
+        .otp-text { font-size: 18px; font-weight: bold; color: #fff; letter-spacing: 2px; }
+        .btn-copy { background: #6c5ce7; border: none; color: white; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        
+        input { width: 100%; padding: 12px; border-radius: 8px; background: #0b0c16; border: 1px solid #32356b; color: #fff; box-sizing: border-box; margin-top: 5px; }
+        button { cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="margin: 0;">📱 Server Shopee</h3>
-        <button onclick="refreshData()" style="background:transparent; border:none; color:#00ffcc; cursor:pointer;">🔄 Refresh</button>
+    <div style="margin-bottom: 20px;">
+        <h3 style="margin: 0; color: #fff;">📱 Panel OTP Shopee</h3>
+        <p style="font-size: 12px; color: #6272a4;">Pastikan API Key sudah tersimpan</p>
     </div>
 
-    <!-- API Key -->
+    <!-- API Key Section -->
     <div class="card">
-        <label style="font-size: 11px; color: #8b8da9;">API KEY:</label>
-        <div style="display: flex; gap: 5px; margin-top: 5px;">
-            <input type="password" id="apiKey" placeholder="Masukkan API Key...">
-            <button onclick="saveKey()" style="background:#00ffcc; border:none; padding:0 15px; border-radius:5px; font-weight:bold;">OK</button>
+        <input type="password" id="apiKey" placeholder="Masukkan API Key...">
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button onclick="saveKey()" style="flex:1; padding: 10px; background:#00ffcc; border:none; border-radius:8px; font-weight:bold;">SIMPAN KEY</button>
+            <button onclick="refreshData()" style="padding: 10px 20px; background:#2c2e5c; border:none; color:white; border-radius:8px;">🔄</button>
         </div>
-        <div style="margin-top:5px; font-size:12px;">Saldo: <span id="saldo">Rp 0</span></div>
+        <div style="margin-top:10px; font-size:13px; color:#50fa7b;">Saldo: <span id="saldo">Rp 0</span></div>
     </div>
 
-    <!-- Order -->
-    <button class="btn-main" onclick="orderShopee()">🛒 PESAN NOMOR</button>
+    <button onclick="orderShopee()" style="width: 100%; padding: 15px; background: #5f27cd; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px;">🛒 PESAN NOMOR BARU</button>
 
-    <div style="margin-top: 20px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-            <strong>Riwayat</strong>
-            <span onclick="clearHistory()" style="cursor:pointer; color:#ff5555; font-size:12px;">Hapus</span>
+    <div style="margin-top: 25px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; color:#8b8da9; font-size: 13px;">
+            <span>RIWAYAT AKTIF</span>
+            <span onclick="clearHistory()" style="cursor:pointer; color:#ff5555;">Hapus Riwayat</span>
         </div>
         <div id="historyList"></div>
     </div>
 
     <script>
         let orders = JSON.parse(localStorage.getItem('my_orders') || '[]');
-        
-        async function saveKey() {
+
+        function saveKey() {
             localStorage.setItem('otp_key', document.getElementById('apiKey').value);
+            alert("API Key Disimpan!");
             refreshData();
         }
 
         async function refreshData() {
             const key = localStorage.getItem('otp_key');
             if(!key) return;
-            // Fetch Saldo
-            fetch(`https://corsproxy.io/?https://otpinstan.com/api/reseller/balance.php`, {headers: {'X-Api-Key': key}})
-            .then(res => res.json()).then(data => { document.getElementById('saldo').innerText = 'Rp ' + (data.saldo || 0); });
+            try {
+                const res = await fetch(`https://corsproxy.io/?https://otpinstan.com/api/reseller/balance.php`, {headers: {'X-Api-Key': key}});
+                const data = await res.json();
+                document.getElementById('saldo').innerText = 'Rp ' + (data.saldo || 0);
+            } catch(e) { console.log("Gagal ambil saldo"); }
         }
 
         async function orderShopee() {
             const key = localStorage.getItem('otp_key');
+            if(!key) { alert("Isi API Key dulu!"); return; }
             const res = await fetch(`https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php`, {
                 method: 'POST',
                 headers: {'X-Api-Key': key, 'Content-Type': 'application/json'},
@@ -66,40 +75,46 @@
             });
             const data = await res.json();
             if(data.phone) {
-                orders.unshift({id: data.order_id, phone: data.phone, status: 'Menunggu...'});
+                orders.unshift({id: data.order_id, phone: data.phone, status: 'pending', otp: ''});
                 localStorage.setItem('my_orders', JSON.stringify(orders));
                 render();
-            } else { alert("Gagal pesan: " + (data.message || "Error")); }
+            } else { alert("Gagal: " + (data.message || "Stok habis")); }
+        }
+
+        function copyOTP(otp) {
+            navigator.clipboard.writeText(otp);
+            alert("OTP " + otp + " disalin!");
         }
 
         function render() {
             const list = document.getElementById('historyList');
             list.innerHTML = orders.map(o => `
-                <div class="list-item">
-                    <div>${o.phone}</div>
-                    <div style="color:#50fa7b;">${o.status}</div>
+                <div class="sms-card ${o.otp ? 'received' : 'pending'}">
+                    <div>
+                        <div style="font-size:12px; color:#8b8da9;">${o.phone}</div>
+                        <div class="otp-text">${o.otp ? o.otp : 'Menunggu SMS...'}</div>
+                    </div>
+                    ${o.otp ? `<button class="btn-copy" onclick="copyOTP('${o.otp}')">Salin</button>` : ''}
                 </div>
             `).join('');
         }
 
         function clearHistory() { orders = []; localStorage.removeItem('my_orders'); render(); }
         
-        // Loop Cek SMS
+        // Loop cek SMS
         setInterval(async () => {
             const key = localStorage.getItem('otp_key');
+            if(!key) return;
             for(let o of orders) {
-                if(o.status.includes('Menunggu')) {
+                if(o.status === 'pending') {
                     const res = await fetch(`https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/check.php?order_id=${o.id}`, {headers: {'X-Api-Key': key}});
                     const d = await res.json();
-                    if(d.otp) { o.status = "OTP: " + d.otp; render(); localStorage.setItem('my_orders', JSON.stringify(orders)); }
+                    if(d.otp) { o.status = "received"; o.otp = d.otp; render(); localStorage.setItem('my_orders', JSON.stringify(orders)); }
                 }
             }
         }, 5000);
 
-        window.onload = () => { 
-            document.getElementById('apiKey').value = localStorage.getItem('otp_key') || ''; 
-            render(); 
-        };
+        window.onload = () => { document.getElementById('apiKey').value = localStorage.getItem('otp_key') || ''; render(); refreshData(); };
     </script>
 </body>
 </html>
