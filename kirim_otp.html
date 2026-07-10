@@ -508,7 +508,6 @@
                 let sisaValid = 1200 - detikBerlalu;
                 if (sisaValid < 0) sisaValid = 0;
 
-                // ⏱️ DIKEMBALIKAN KE 120 DETIK (2 MENIT) AGAR COCOK DENGAN ATURAN VALIDASI SERVER PUSAT
                 let cooldownBatal = 120 - detikBerlalu; 
                 if (cooldownBatal < 0) cooldownBatal = 0;
 
@@ -519,8 +518,9 @@
                 let statusSmsText = `🔄 Menunggu SMS... (${detikBerlalu}s)`;
                 let statusColor = "#ffb86c";
                 
+                // 📝 MODIFIKASI: Menambahkan icon copy khusus untuk OTP ketika status received
                 if (item.status === "received") {
-                    statusSmsText = `🎉 OTP: <span style="background:#50fa7b; color:#000; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:16px;">${item.otp}</span>`;
+                    statusSmsText = `🎉 OTP: <span style="background:#50fa7b; color:#000; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:16px;">${item.otp}</span> <span onclick="salinOTP('${item.otp}')" style="cursor:pointer; font-size:15px; color:#50fa7b; margin-left:8px;" title="Salin Kode OTP">📝</span>`;
                     statusColor = "#50fa7b";
                 } else if (item.status === "cancelled") {
                     statusSmsText = "❌ Dibatalkan / Expired";
@@ -532,7 +532,7 @@
                         <div style="font-size:11px; color:#aaa;">Server 1 · ${item.layanan}</div>
                         <div style="font-size:20px; font-weight:bold; color:#fff; margin:5px 0; display:flex; align-items:center; gap:8px;">
                             ${item.phone}
-                            <span onclick="salinNomor('${item.phone}')" style="cursor:pointer; font-size:14px; color:#00ffcc;">📋</span>
+                            <span onclick="salinNomor('${item.phone}')" style="cursor:pointer; font-size:14px; color:#00ffcc;" title="Salin Nomor HP">📋</span>
                         </div>
                         
                         <div style="font-size:13px; color:${statusColor}; margin-top:5px;">
@@ -601,6 +601,12 @@
         function salinNomor(num) {
             navigator.clipboard.writeText(num);
             printLog(`Nomor ${num} disalin!`);
+        }
+
+        // 📝 FUNGSI BARU: Khusus menyalin Kode OTP saja
+        function salinOTP(otp) {
+            navigator.clipboard.writeText(otp);
+            printLog(`Kode OTP ${otp} disalin!`);
         }
 
         function printLog(text) {
