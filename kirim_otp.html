@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Otomatis Multi-OTP & Saldo</title>
+    <title>Panel Otomatis Multi-OTP & Saldo Live</title>
     <style>
         body {
             background-color: #0b0c10;
@@ -100,7 +100,7 @@
             </div>
         </div>
 
-        <!-- KOTAK DETEKTIF ERROR (LOG CONSOLE) -->
+        <!-- KOTAK LOG CONSOLE -->
         <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: #0f111a; border-radius: 4px; font-family: monospace; font-size: 11px; color: #50fa7b; border: 1px solid #282a36; word-break: break-all; max-height: 80px; overflow-y: auto;">
             └> System Ready.
         </div>
@@ -108,6 +108,7 @@
 
     <script>
         let daftarOrderan = []; 
+        let saldoSekarangGlobal = 0; // Menyimpan nominal angka saldo aktif secara global
 
         document.addEventListener("DOMContentLoaded", function() {
             muatMenuLayananManual();
@@ -127,19 +128,17 @@
             if(!key) { alert("Masukkan API Key Anda!"); return; }
             localStorage.setItem("otp_key_reseller", key);
             document.getElementById("statusKeyV5").innerText = "✅ API Key Berhasil Disimpan!";
-            document.getElementById("statusKeyV4").style.color = "#50fa7b";
+            document.getElementById("statusKeyV5").style.color = "#50fa7b";
             ambilSaldoLive();
         }
 
-        // 🔥 FUNGSI CEK SALDO BARU DENGAN DETEKTIF OTOMATIS
+        // FUNGSI TARIK SALDO REAL-TIME (DENGAN CODES ANTI-CACHE DATA BASI)
         async function ambilSaldoLive() {
             const apiKey = localStorage.getItem("otp_key_reseller");
             if (!apiKey) return;
 
-            document.getElementById("txtSaldoLive").innerText = "🔄 Wait...";
-
-            // Kita uji coba menggunakan 'balance.php' karena ini yang paling standar di Indonesia
-            const URL_BAL = "https://corsproxy.io/?https://otpinstan.com/api/reseller/balance.php";
+            // Memasang query waktu unik (?t=...) agar proxy dipaksa selalu meminta data ter-gres dari pusat
+            const URL_BAL = "https://corsproxy.io/?https://otpinstan.com/api/reseller/balance.php?t=" + Date.now();
 
             try {
                 const response = await fetch(URL_BAL, {
@@ -147,49 +146,39 @@
                     headers: { "X-Api-Key": apiKey }
                 });
                 
-                // Ambil respon murni berupa teks dari server mereka
                 const teksResponMurni = await response.text();
-                
-                // Tampilkan isi aslinya ke kotak hijau paling bawah biar ketahuan erornya apa
-                printLog("Hasil Server: " + teksResponMurni);
-
-                // Coba ubah teks ke bentuk objek JSON
                 const data = JSON.parse(teksResponMurni);
 
-                // Ambil saldo dari segala macam kemungkinan nama variabel server
                 let nominalSaldo = data.balance || data.saldo || data.balance_reseller || (data.data ? data.data.balance : 0) || 0;
                 
-                document.getElementById("txtSaldoLive").innerText = "Rp " + parseInt(nominalSaldo).toLocaleString("id-ID");
-            } catch (error) {
-                document.getElementById("txtSaldoLive").innerText = "Rp 0";
-                printLog("Sinyal balance.php buntu. Mencoba jalur alternatif...");
+                // Simpan angka asli dari server ke memori global aplikasi
+                saldoSekarangGlobal = parseInt(nominalSaldo);
                 
-                // Jika balance.php gagal/404, detektif otomatis beralih mencoba tanpa nama file
+                document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
+            } catch (error) {
+                // Jika balance.php buntu, lakukan bypass lewat profile.php
                 ambilSaldoJalurDua(apiKey);
             }
         }
 
-        // JALUR CADANGAN JIKA FILENAME TIDAK DIKENALI
         async function ambilSaldoJalurDua(apiKey) {
-            const URL_ALT = "https://corsproxy.io/?https://otpinstan.com/api/reseller/profile.php";
+            const URL_ALT = "https://corsproxy.io/?https://otpinstan.com/api/reseller/profile.php?t=" + Date.now();
             try {
                 const response = await fetch(URL_ALT, { method: "GET", headers: { "X-Api-Key": apiKey } });
-                const teks = await response.text();
-                printLog("Hasil Alternatif: " + teks);
-                const data = JSON.parse(teks);
+                const data = await response.json();
                 let nominal = data.balance || data.saldo || 0;
-                document.getElementById("txtSaldoLive").innerText = "Rp " + parseInt(nominal).toLocaleString("id-ID");
-            } catch(e) {
-                printLog("Semua jalur buntu. Silakan cek tulisan di kotak hijau bawah.");
-            }
+                saldoSekarangGlobal = parseInt(nominal);
+                document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
+            } catch(e) {}
         }
 
         function muatMenuLayananManual() {
+            // Ditambahkan parameter data-harga untuk memotong saldo di layar secara instan
             document.getElementById("selectLayananLive").innerHTML = `
-                <option value="21" data-nama="Shopee">Server 1 · Shopee - Rp 340</option>
-                <option value="1" data-nama="WhatsApp">Server 1 · WhatsApp - Rp 1.400</option>
-                <option value="2" data-nama="Telegram">Server 1 · Telegram - Rp 950</option>
-                <option value="5" data-nama="TikTok">Server 1 · TikTok - Rp 415</option>
+                <option value="21" data-nama="Shopee" data-harga="340">Server 1 · Shopee - Rp 340</option>
+                <option value="1" data-nama="WhatsApp" data-harga="1400">Server 1 · WhatsApp - Rp 1.400</option>
+                <option value="2" data-nama="Telegram" data-harga="950">Server 1 · Telegram - Rp 950</option>
+                <option value="5" data-nama="TikTok" data-harga="415">Server 1 · TikTok - Rp 415</option>
             `;
         }
 
@@ -198,6 +187,7 @@
             const selectEl = document.getElementById("selectLayananLive");
             const platformId = selectEl.value;
             const namaLayanan = selectEl.options[selectEl.selectedIndex].getAttribute("data-nama");
+            const hargaLayanan = parseInt(selectEl.options[selectEl.selectedIndex].getAttribute("data-harga"));
 
             if(!apiKey) { alert("Simpan API Key dahulu!"); return; }
 
@@ -213,6 +203,12 @@
                 const data = await response.json();
 
                 if (data.order_id || data.phone) {
+                    
+                    // 🔥 1. POTONG SALDO DI LAYAR SECARA INSTAN (OPTIMISTIC UI)
+                    saldoSekarangGlobal -= hargaLayanan;
+                    if(saldoSekarangGlobal < 0) saldoSekarangGlobal = 0;
+                    document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
+
                     const orderBaru = {
                         order_id: data.order_id,
                         phone: data.phone,
@@ -227,7 +223,9 @@
                     daftarOrderan.unshift(orderBaru); 
                     renderUILayout();                 
                     printLog(`Sukses mendapat nomor ${data.phone}`);
-                    setTimeout(ambilSaldoLive, 1000);
+                    
+                    // ⏱️ Beri jeda 3 detik baru tarik data saldo asli server agar database server selesai update
+                    setTimeout(ambilSaldoLive, 3000);
                 } else {
                     alert(`Gagal: ${data.message || 'Cek saldo Anda'}`);
                 }
@@ -308,7 +306,7 @@
             daftarOrderan.forEach(async (item) => {
                 if (item.status !== "pending") return; 
 
-                const URL_CHECK = `https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/check.php?order_id=${item.order_id}`;
+                const URL_CHECK = `https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/check.php?order_id=${item.order_id}&t=` + Date.now();
                 
                 try {
                     const response = await fetch(URL_CHECK, { method: "GET", headers: { "X-Api-Key": apiKey } });
@@ -319,11 +317,11 @@
                         item.otp = data.otp;
                         renderUILayout();
                         printLog(`[SMS] Nomor ${item.phone} menerima OTP!`);
-                        setTimeout(ambilSaldoLive, 1000);
+                        setTimeout(ambilSaldoLive, 2000);
                     } else if (data.status === "cancelled" || data.status === "expired" || item.sisaValid <= 0) {
                         item.status = "cancelled";
                         renderUILayout();
-                        setTimeout(ambilSaldoLive, 1000);
+                        setTimeout(ambilSaldoLive, 2000);
                     }
                 } catch (e) {}
             });
@@ -334,7 +332,7 @@
             item.status = "cancelled";
             renderUILayout();
             printLog(`Nomor ${item.phone} dibatalkan.`);
-            setTimeout(ambilSaldoLive, 1000);
+            setTimeout(ambilSaldoLive, 2000);
         }
 
         function salinNomor(num) {
