@@ -144,11 +144,11 @@
 
     <div class="container">
         
-        <!-- HEADER PANEL (SALDO TETAP TAMPIL DI SINI) -->
+        <!-- HEADER PANEL -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2c2e5c; padding-bottom: 12px; margin-bottom: 15px;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <h3 style="color: #fff; margin: 0; font-size: 17px; font-weight: 600;">📱 Server 1</h3>
-                <span class="badge-promo">Harga Promo</span>
+                <span class="badge-promo">Live Auto-Sync</span>
             </div>
             
             <div style="background: #181933; border: 1px solid #2c2e5c; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: #50fa7b;">
@@ -157,16 +157,15 @@
             </div>
         </div>
 
-        <!-- CONFIG NEGARA (DISEMBUNYIKAN AGAR TAMPILAN LEBIH RINGKAS & BERSIH) -->
+        <!-- CONFIG NEGARA (DISEMBUNYIKAN) -->
         <div style="display: none;">
             <label style="font-size: 12px; color: #8b8da9; display: block; margin-bottom: 5px;">Negara</label>
             <div style="background: #181933; border: 1px solid #222448; padding: 12px; border-radius: 10px; color: #fff; font-weight: bold; font-size: 14px;">
                 Indonesia
             </div>
-            <small style="color: #6c5ce7; font-size: 11px; display: block; margin-top: 5px;">🔮 Dipilih: Indonesia</small>
         </div>
 
-        <!-- INPUT API KEY (DIUBAH MENJADI DROPDOWN YANG BISA DILIPAT) -->
+        <!-- INPUT API KEY -->
         <div style="margin-bottom: 15px;">
             <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()" style="padding: 12px 16px; border-radius: 10px; font-size: 13px; color: #00ffcc;">
                 <span>🔑 Konfigurasi API Key</span>
@@ -216,7 +215,7 @@
             </div>
         </div>
 
-        <!-- KOTAK LOG CONSOLE (TETAP UTUH SAMA SEPERTI ASLINYA) -->
+        <!-- KOTAK LOG CONSOLE -->
         <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: #0b0c16; border-radius: 4px; font-family: monospace; font-size: 11px; color: #50fa7b; border: 1px solid #2c2e5c; word-break: break-all; max-height: 80px; overflow-y: auto;">
             └> System Ready.
         </div>
@@ -229,8 +228,8 @@
         let idLayananTerpilih = null;
         let namaLayananTerpilih = "";
         let hargaLayananTerpilih = 0;
+        let stokLayananTerpilih = 0;
 
-        // FUNGSI BARU: Buka/Tutup Dropdown API Key
         function toggleApiKeyDropdown() {
             const wadah = document.getElementById("wadahApiKeyDropdown");
             const panah = document.getElementById("panahApiKey");
@@ -252,7 +251,7 @@
                 refreshSemuaDataLive();
             } else {
                 muatMenuShopeeManual(); 
-                toggleApiKeyDropdown(); // Otomatis buka dropdown jika API Key belum ada
+                toggleApiKeyDropdown();
             }
 
             const orderanLokal = localStorage.getItem("daftar_orderan_live");
@@ -263,6 +262,9 @@
 
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 5000);
+            
+            // 🔥 POLLING OTOMATIS: Update stok & harga live server setiap 10 detik
+            setInterval(ambilLayananLive, 10000);
         });
 
         function simpanKeyV5() {
@@ -272,7 +274,7 @@
             document.getElementById("statusKeyV5").innerText = "✅ API Key Berhasil Disimpan!";
             document.getElementById("statusKeyV5").style.color = "#50fa7b";
             refreshSemuaDataLive();
-            toggleApiKeyDropdown(); // Otomatis lipat dropdown setelah berhasil disimpan
+            toggleApiKeyDropdown();
         }
 
         function refreshSemuaDataLive() {
@@ -300,6 +302,7 @@
             }
         }
 
+        // 🔥 FUNGSI UPDATE HARGA & STOK MENGIKUTI SERVER SECARA LIVE
         async function ambilLayananLive() {
             const apiKey = localStorage.getItem("otp_key_reseller");
             const boxLayanan = document.getElementById("boxLayananShopee");
@@ -311,31 +314,43 @@
                 const response = await fetch(URL_SERVICES, { method: "GET", headers: { "X-Api-Key": apiKey } });
                 const data = await response.json();
                 
-                let listLayanan = Array.isArray(data) ? data : (data.services || data.data || []);
+                let listLayanan = Array.isArray(data) ? data : (data.services || data.data || data.result || []);
                 
                 let listShopee = listLayanan.filter(item => {
-                    let nama = (item.name || item.service_name || item.title || "").toLowerCase();
+                    let nama = (item.name || item.service_name || item.title || item.layanan || "").toLowerCase();
                     return nama.includes("shopee");
                 });
                 
                 if (listShopee.length > 0) {
                     let htmlList = "";
+                    let adaItemTerpilih = false;
+
                     listShopee.forEach((item, index) => {
-                        let id = item.id || item.platform_id || item.service_id;
-                        let name = item.name || item.service_name || item.title;
-                        let price = parseInt(item.price || item.cost || item.harga || 0);
-                        let stock = item.stock !== undefined ? parseInt(item.stock) : parseInt(item.available || 0);
+                        let id = String(item.id || item.platform_id || item.service_id || item.code || "");
+                        let name = item.name || item.service_name || item.title || item.layanan || "Shopee";
                         
-                        let classTerpilih = index === 0 ? "terpilih" : "";
-                        if(index === 0) {
+                        // Cek semua kemungkinan parameter harga & stok dari server
+                        let price = parseInt(item.price || item.cost || item.harga || item.rate || item.selling_price || 0);
+                        let stock = item.stock !== undefined ? parseInt(item.stock) : (item.stok !== undefined ? parseInt(item.stok) : parseInt(item.available || item.qty || item.count || 0));
+                        
+                        // Pertahankan pilihan user jika sudah memilih sebelumnya, kalau belum, default ke item pertama (index 0)
+                        let isSelected = (idLayananTerpilih !== null && String(idLayananTerpilih) === id) || (idLayananTerpilih === null && index === 0);
+                        
+                        if (isSelected && !adaItemTerpilih) {
+                            adaItemTerpilih = true;
                             idLayananTerpilih = id;
                             namaLayananTerpilih = name;
                             hargaLayananTerpilih = price;
-                            document.getElementById("txtLayananTerpilihHeader").innerHTML = `${name} — <span style="color:#b4b7ff;">Rp ${price.toLocaleString('id-ID')}</span>`;
+                            stokLayananTerpilih = stock;
+                            
+                            // Update header secara live (harga dan stok langsung berubah mengikuti server!)
+                            document.getElementById("txtLayananTerpilihHeader").innerHTML = `${name} <span style="color: #8b8da9; font-size: 11px; font-weight: normal;">(${stock} stok)</span> — <span style="color:#b4b7ff;">Rp ${price.toLocaleString('id-ID')}</span>`;
                         }
 
+                        let classTerpilih = (isSelected && adaItemTerpilih && String(idLayananTerpilih) === id) ? "terpilih" : "";
+
                         htmlList += `
-                            <div class="opsi-shopee ${classTerpilih}" onclick="pilihOpsiShopee(this, '${id}', '${name}', ${price})">
+                            <div class="opsi-shopee ${classTerpilih}" onclick="pilihOpsiShopee(this, '${id}', '${name}', ${price}, ${stock})">
                                 <div style="font-size: 13px; font-weight: 600; color: #fff;">
                                     ${name} <span style="color: #8b8da9; font-size: 11px; font-weight: normal; margin-left: 4px;">(${stock} stok)</span>
                                 </div>
@@ -345,18 +360,35 @@
                             </div>
                         `;
                     });
+
+                    // Jika ID yang sebelumnya dipilih tidak lagi ada di server, otomatis pilih opsi pertama
+                    if (!adaItemTerpilih && listShopee.length > 0) {
+                        let first = listShopee[0];
+                        let id = String(first.id || first.platform_id || first.service_id || first.code || "");
+                        let name = first.name || first.service_name || first.title || first.layanan || "Shopee";
+                        let price = parseInt(first.price || first.cost || first.harga || first.rate || first.selling_price || 0);
+                        let stock = first.stock !== undefined ? parseInt(first.stock) : (first.stok !== undefined ? parseInt(first.stok) : parseInt(first.available || first.qty || first.count || 0));
+                        
+                        idLayananTerpilih = id;
+                        namaLayananTerpilih = name;
+                        hargaLayananTerpilih = price;
+                        stokLayananTerpilih = stock;
+                        document.getElementById("txtLayananTerpilihHeader").innerHTML = `${name} <span style="color: #8b8da9; font-size: 11px; font-weight: normal;">(${stock} stok)</span> — <span style="color:#b4b7ff;">Rp ${price.toLocaleString('id-ID')}</span>`;
+                    }
+
                     boxLayanan.innerHTML = htmlList;
-                    printLog("Sinkronisasi daftar harga Shopee berhasil.");
                 } else {
                     muatMenuShopeeManual();
                 }
             } catch (error) {
-                muatMenuShopeeManual();
-                printLog("Gagal sinkron server, memuat harga offline.");
+                // Cegah loncatan tampilan ke menu offline jika koneksi internet sempat berkedip saat polling latar belakang
+                if (!idLayananTerpilih) {
+                    muatMenuShopeeManual();
+                }
             }
         }
 
-        function pilihOpsiShopee(elemen, id, nama, harga) {
+        function pilihOpsiShopee(elemen, id, nama, harga, stok) {
             const semuaOpsi = document.querySelectorAll('.opsi-shopee');
             semuaOpsi.forEach(opt => opt.classList.remove('terpilih'));
             elemen.classList.add('terpilih');
@@ -364,9 +396,10 @@
             idLayananTerpilih = id;
             namaLayananTerpilih = nama;
             hargaLayananTerpilih = harga;
+            stokLayananTerpilih = stok;
             
-            document.getElementById("txtLayananTerpilihHeader").innerHTML = `${nama} — <span style="color:#b4b7ff;">Rp ${harga.toLocaleString('id-ID')}</span>`;
-            printLog(`Memilih: ${nama} - Rp ${harga.toLocaleString('id-ID')}`);
+            document.getElementById("txtLayananTerpilihHeader").innerHTML = `${nama} <span style="color: #8b8da9; font-size: 11px; font-weight: normal;">(${stok} stok)</span> — <span style="color:#b4b7ff;">Rp ${harga.toLocaleString('id-ID')}</span>`;
+            printLog(`Memilih: ${nama} (${stok} stok) - Rp ${harga.toLocaleString('id-ID')}`);
             toggleMekanismeDropdown();
         }
 
@@ -374,18 +407,19 @@
             idLayananTerpilih = "21";
             namaLayananTerpilih = "Shopee";
             hargaLayananTerpilih = 340;
-            document.getElementById("txtLayananTerpilihHeader").innerHTML = `Shopee — <span style="color:#b4b7ff;">Rp 340</span>`;
+            stokLayananTerpilih = 2092;
+            document.getElementById("txtLayananTerpilihHeader").innerHTML = `Shopee <span style="color: #8b8da9; font-size: 11px; font-weight: normal;">(2092 stok)</span> — <span style="color:#b4b7ff;">Rp 340</span>`;
 
             document.getElementById("boxLayananShopee").innerHTML = `
-                <div class="opsi-shopee terpilih" onclick="pilihOpsiShopee(this, '21', 'Shopee', 340)">
+                <div class="opsi-shopee terpilih" onclick="pilihOpsiShopee(this, '21', 'Shopee', 340, 2092)">
                     <div style="font-size: 13px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 11px; font-weight:normal;">(2092 stok)</span></div>
                     <div style="color: #b4b7ff; font-weight: bold; font-size: 13px;">Rp 340</div>
                 </div>
-                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v2', 'Shopee', 321)">
+                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v2', 'Shopee', 321, 268)">
                     <div style="font-size: 13px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 11px; font-weight:normal;">(268 stok)</span></div>
                     <div style="color: #b4b7ff; font-weight: bold; font-size: 13px;">Rp 321</div>
                 </div>
-                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v3', 'Shopee', 415)">
+                <div class="opsi-shopee" onclick="pilihOpsiShopee(this, '21_v3', 'Shopee', 415, 282)">
                     <div style="font-size: 13px; font-weight: 600; color: #fff;">Shopee <span style="color: #8b8da9; font-size: 11px; font-weight:normal;">(282 stok)</span></div>
                     <div style="color: #b4b7ff; font-weight: bold; font-size: 13px;">Rp 415</div>
                 </div>
@@ -431,7 +465,7 @@
                 return; 
             }
 
-            printLog(`Meminta nomor baru untuk ${namaLayananTerpilih} (Rp ${hargaLayananTerpilih})...`);
+            printLog(`Meminta nomor baru untuk ${namaLayananTerpilih} (Rp ${hargaLayananTerpilih.toLocaleString('id-ID')})...`);
             const URL_ORDER = "https://corsproxy.io/?https://otpinstan.com/api/reseller/s1/order.php?t=" + Date.now();
 
             try {
@@ -443,7 +477,6 @@
                 const data = await response.json();
 
                 if (data.order_id || data.phone) {
-                    
                     saldoSekarangGlobal -= hargaLayananTerpilih;
                     if(saldoSekarangGlobal < 0) saldoSekarangGlobal = 0;
                     document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
@@ -603,7 +636,6 @@
                         item.status = "received";
                         item.otp = data.otp;
                         
-                        // 🔔 EKSEKUSI SUARA ALARM DING-DONG
                         putarSuaraNotif();
 
                         renderUILayout();
@@ -620,7 +652,6 @@
             });
         }
 
-        // 🎵 FUNGSI BARU: Generator Suara Ding-Dong tanpa asset eksternal
         function putarSuaraNotif() {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
