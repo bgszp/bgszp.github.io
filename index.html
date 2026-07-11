@@ -38,25 +38,104 @@
         .btn-refresh-note { background: #1a1535; border: 1px solid #3d3463; color: #00ffcc; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: bold; }
         .btn-refresh-note:hover { background: #3d3463; box-shadow: 0 0 8px rgba(0, 255, 204, 0.4); }
         .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
-        .note-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-        .note-num-btn { 
-            background: #3d3463; color: #00ffcc; border: 1px solid #5a4f8c; padding: 8px 14px; border-radius: 8px; 
-            font-size: 15px; font-weight: 800; cursor: pointer; min-width: 52px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        
+        /* === MODIFIKASI TAMPILAN BARIS CATATAN (FULL BUTTON COPY & EDIT) === */
+        .note-row { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            margin-bottom: 8px;
+            background: #1a1535;
+            border: 1px solid #3d3463;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
         }
-        .note-num-btn:hover { background: #00ffcc; color: #141026; box-shadow: 0 0 12px #00ffcc; }
-        .note-num-btn:active { transform: scale(0.95); }
-        .note-text-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 14px; padding: 6px 0; display: block; width: 100%; }
-        .note-display-wrapper { flex: 1; font-size: 14px; padding: 6px 0; word-break: break-all; }
-        .text-before-pipe { color: #ffffff; font-weight: 500; }
-        .text-after-pipe { color: #6e678a; font-style: italic; }
+        .note-row:hover {
+            background: #251e4a;
+            border-color: #00ffcc;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.25);
+            transform: translateY(-1px);
+        }
+        .note-row:active {
+            transform: scale(0.98);
+        }
+        .note-row.admin-mode {
+            cursor: default; /* Ubah kursor saat mode edit aktif */
+            background: #1e1233;
+            border-color: #ff007f;
+        }
+        .note-num-badge { 
+            background: rgba(0, 255, 204, 0.1); 
+            color: #00ffcc; 
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            font-size: 12px; 
+            font-weight: 800; 
+            min-width: 38px; 
+            text-align: center;
+            flex-shrink: 0;
+            user-select: none;
+        }
+        .note-row.admin-mode .note-num-badge {
+            background: rgba(255, 0, 127, 0.15);
+            color: #ff007f;
+            border-color: rgba(255, 0, 127, 0.4);
+        }
+        .note-text-input { 
+            flex: 1; 
+            background: rgba(0, 0, 0, 0.3); 
+            border: 1px dashed #ff007f; 
+            border-radius: 4px;
+            outline: none; 
+            color: #fff; 
+            font-size: 14px; 
+            padding: 6px 10px; 
+            display: block; 
+            width: 100%;
+            font-family: inherit;
+        }
+        .note-text-input:focus {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: #00ffcc;
+            box-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
+        }
+        .note-display-wrapper { 
+            flex: 1; 
+            font-size: 14px; 
+            word-break: break-all;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .text-before-pipe { color: #ffffff; font-weight: 600; }
+        .text-after-pipe { color: #8e85b3; font-style: italic; font-size: 13px; margin-left: 4px; }
+        .copy-hint-icon {
+            color: #6e678a;
+            font-size: 14px;
+            opacity: 0.5;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+        .note-row:hover .copy-hint-icon {
+            color: #00ffcc;
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        /* =================================================================== */
 
         /* === CSS MODIFIKASI TOMBOL KOTAK KECIL === */
         .pemicu-menu-utama {
             background: #1a1535;
             border: 1px solid #5f27cd;
-            border-radius: 0px; /* Sudut siku (kotak) */
-            padding: 8px 14px; /* Ukuran kompak & kecil */
-            display: inline-flex; /* Agar lebarnya hanya seukuran teks */
+            border-radius: 0px; 
+            padding: 8px 14px; 
+            display: inline-flex; 
             align-items: center;
             gap: 10px;
             cursor: pointer;
@@ -66,18 +145,15 @@
             transition: all 0.2s ease;
             user-select: none;
         }
-
         .pemicu-menu-utama:hover {
             background: #251e4a;
             border-color: #00ffcc;
             box-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
         }
-
         #panahMenuUtama {
             transition: transform 0.2s ease;
             font-size: 11px;
         }
-
         #wadahOTP {
             display: none; 
             margin-top: 10px; 
@@ -236,6 +312,7 @@
             }
         }
 
+        /* === FUNGSI RENDER NOTES DENGAN TAMPILAN FULL BUTTON === */
         function renderNotesList(fullText) {
             const container = document.getElementById("notesContainer");
             container.innerHTML = "";
@@ -248,30 +325,21 @@
             rawNotesLines.forEach((text, index) => {
                 const rowNum = index + 1;
                 const rowDiv = document.createElement("div");
-                rowDiv.className = "note-row";
+                rowDiv.className = isAdminAuthenticated ? "note-row admin-mode" : "note-row";
 
-                const numBtn = document.createElement("button");
-                numBtn.className = "note-num-btn";
-                numBtn.innerText = `[${rowNum}]`;
-                numBtn.onclick = function() {
-                    const currentInpValue = document.getElementById(`inp-note-${index}`) ? document.getElementById(`inp-note-${index}`).value : text;
-                    if(currentInpValue.trim() !== "") {
-                        let finalCopyText = currentInpValue;
-                        if(currentInpValue.includes("|")) { finalCopyText = currentInpValue.split("|")[0].trim(); }
-                        if(finalCopyText !== "") {
-                            eksekusiSalinTeks(finalCopyText).then(() => { showToast(`Salin Baris ${rowNum}! ✨`); });
-                        }
-                    }
-                };
-
-                rowDiv.appendChild(numBtn);
+                const badge = document.createElement("div");
+                badge.className = "note-num-badge";
+                badge.innerText = `[${rowNum}]`;
+                rowDiv.appendChild(badge);
 
                 if(isAdminAuthenticated) {
+                    // MODE EDIT (ADMIN): Menampilkan input teks yang bisa diedit langsung
                     const inputField = document.createElement("input");
                     inputField.type = "text";
                     inputField.id = `inp-note-${index}`;
                     inputField.className = "note-text-input";
                     inputField.value = text;
+                    inputField.placeholder = "Ketik catatan di sini (Enter untuk baris baru)...";
                     inputField.onkeydown = function(e) {
                         if (e.key === "Enter") {
                             e.preventDefault();
@@ -280,19 +348,42 @@
                     };
                     rowDiv.appendChild(inputField);
                 } else {
+                    // MODE BACA (NORMAL): Seluruh baris menjadi tombol copy
                     const displayWrapper = document.createElement("div");
                     displayWrapper.className = "note-display-wrapper";
+                    
                     if(text.includes("|")) {
                         const parts = text.split("|");
-                        displayWrapper.innerHTML = `<span class="text-before-pipe">${parts[0]}</span><span class="text-after-pipe">|${parts.slice(1).join("|")}</span>`;
+                        displayWrapper.innerHTML = `<div><span class="text-before-pipe">${parts[0]}</span><span class="text-after-pipe">|${parts.slice(1).join("|")}</span></div>`;
                     } else {
-                        displayWrapper.innerHTML = `<span class="text-before-pipe">${text}</span>`;
+                        displayWrapper.innerHTML = `<div><span class="text-before-pipe">${text || '<span style="color:#555;">(Baris Kosong)</span>'}</span></div>`;
                     }
+                    
+                    // Tambahkan ikon copy di ujung kanan agar tampak seperti tombol
+                    displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`;
                     rowDiv.appendChild(displayWrapper);
+
+                    // Aksi klik pada seluruh baris (Full Button Click)
+                    rowDiv.onclick = function() {
+                        const currentInpValue = text;
+                        if(currentInpValue.trim() !== "") {
+                            let finalCopyText = currentInpValue;
+                            // Jika ada tanda pipa, yang disalin hanya teks sebelum pipa
+                            if(currentInpValue.includes("|")) { 
+                                finalCopyText = currentInpValue.split("|")[0].trim(); 
+                            }
+                            if(finalCopyText !== "") {
+                                eksekusiSalinTeks(finalCopyText).then(() => { 
+                                    showToast(`Baris ${rowNum} Disalin! ✨`); 
+                                });
+                            }
+                        }
+                    };
                 }
                 container.appendChild(rowDiv);
             });
         }
+        /* ======================================================== */
 
         function insertNewRowAfter(currentIndex) {
             let newLines = [];
