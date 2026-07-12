@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Otomatis Multi-OTP & Sync Notes</title>
+    <title>Panel Otomatis OTP - Shopee Only</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -30,7 +30,6 @@
             min-height: 100vh;
         }
 
-        /* Kelas Container untuk membuat kotak-kotak terpisah */
         .container {
             width: 100%; max-width: 500px;
             background: var(--bg-card); border-radius: 18px;
@@ -39,6 +38,7 @@
         }
 
         .badge-promo { background: #3c1e70; color: #b4b7ff; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: bold; }
+        
         .pemicu-dropdown {
             background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px;
             padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;
@@ -81,44 +81,10 @@
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-top: 15px; }
         .btn-batal {
             background: var(--accent-red); color: white; border: none; padding: 10px 12px;
-            border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 12px;
+            border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 12px; display: flex; justify-content: center; align-items: center; gap: 6px;
         }
         .btn-batal:hover:not(:disabled) { background: #ff3333; }
         .btn-batal:disabled { background: #2f3148; color: #727598; cursor: not-allowed; border: 1px solid #3d3f5e; }
-
-        .header-notes { text-align: center; font-size: 17px; font-weight: 700; margin-bottom: 15px; color: #fff; }
-        .status-bar-notes {
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255, 85, 85, 0.1); border: 1px solid rgba(255, 85, 85, 0.3);
-            padding: 10px 14px; border-radius: 12px; margin-bottom: 15px;
-        }
-        .btn-refresh-notes {
-            background: var(--bg-item); color: var(--accent-cyan); border: 1px solid var(--border-color);
-            padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px;
-        }
-        .btn-refresh-notes:hover { background: var(--accent-purple); color: #fff; }
-        
-        .note-row { 
-            display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
-            background: #1a1535; border: 1px solid #3d3463; border-radius: 8px; padding: 10px 14px;
-            cursor: pointer; position: relative; overflow: hidden;
-        }
-        .note-row:hover { background: #251e4a; border-color: var(--accent-cyan); transform: translateY(-1px); }
-        .note-row.admin-mode { cursor: default; background: #1e1233; border-color: #ff007f; }
-        .note-num-badge { 
-            background: rgba(0, 255, 204, 0.1); color: var(--accent-cyan); border: 1px solid rgba(0, 255, 204, 0.3);
-            padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; flex-shrink: 0;
-        }
-        .note-row.admin-mode .note-num-badge { background: rgba(255, 0, 127, 0.15); color: #ff007f; border-color: rgba(255, 0, 127, 0.4); }
-        .note-text-input { 
-            flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #ff007f; border-radius: 4px;
-            outline: none; color: #fff; font-size: 14px; padding: 6px 10px; display: block; width: 100%; font-family: inherit;
-        }
-        .note-display-wrapper { flex: 1; font-size: 14px; word-break: break-all; display: flex; align-items: center; justify-content: space-between; }
-        .text-before-pipe { color: #ffffff; font-weight: 600; }
-        .text-after-pipe { color: #8e85b3; font-style: italic; font-size: 13px; margin-left: 4px; }
-        .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; margin-left: 8px; }
-        .note-row:hover .copy-hint-icon { color: var(--accent-cyan); opacity: 1; transform: scale(1.1); }
         
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
@@ -126,11 +92,11 @@
 </head>
 <body>
 
-    <!-- KOTAK 1: KHUSUS PANEL MULTI-OTP (SERVER 1) -->
+    <!-- KOTAK UTAMA: KHUSUS PANEL MULTI-OTP (SERVER 1) -->
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <h3 style="color: #fff; margin: 0; font-size: 17px; font-weight: 600;">📱 Server 1 (OTP)</h3>
+                <h3 style="color: #fff; margin: 0; font-size: 17px; font-weight: 600;">📱 Server 1 (Shopee Only Panel)</h3>
                 <span class="badge-promo">Live Dynamic</span>
             </div>
             
@@ -192,30 +158,6 @@
             └> System Ready.
         </div>
     </div>
-
-    <!-- KOTAK 2: KHUSUS CATATAN SINKRONISASI MULTI-DEVICE -->
-    <div class="container">
-        <div class="header-notes" style="margin-top: 5px;">☁️ Catatan Sinkronisasi Multi-Device</div>
-
-        <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 15px; flex-direction:column; gap: 10px;">
-            <input type="text" id="gitUser" class="search-input" placeholder="GITHUB USERNAME">
-            <input type="text" id="gitRepo" class="search-input" placeholder="NAMA REPO WEB">
-            <input type="password" id="gitToken" class="search-input" placeholder="GITHUB TOKEN (PAT)">
-        </div>
-
-        <div class="status-bar-notes">
-            <div>
-                <div style="font-size: 12px; font-weight: bold; color: var(--accent-red);"><i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA (LIVE)</div>
-                <small id="syncStatus" style="color: var(--text-sub); font-size: 11px;">(Memantau Live...)</small>
-            </div>
-            <button class="btn-refresh-notes" onclick="autoFetchForEveryone()">🔄 Refresh</button>
-        </div>
-
-        <div id="notesContainer"></div>
-        <button type="button" id="btnAdminAuth" onclick="toggleAdminAccess()" style="width:100%; margin-top:8px; padding:10px; font-size:12px; font-weight:bold; border-radius:8px; border:1px solid #3d3463; background:#1a1535; color:#d6c7ff; cursor:pointer;">
-            <i class="fa-solid fa-key"></i> Unlock Admin & Edit Mode
-        </button>
-    </div>
     
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
@@ -226,11 +168,6 @@
         let idLayananTerpilih = null;
         let namaLayananTerpilih = "";
         let hargaLayananTerpilih = 0;
-
-        const ADMIN_PIN = "1234"; 
-        let isAdminAuthenticated = false;
-        let currentFileSha = ""; 
-        let rawNotesLines = [];
 
         async function fetchSmartProxy(targetUrl, isPost = false, postBody = null) {
             const isStateChanging = targetUrl.includes("order.php") || targetUrl.includes("cancel.php");
@@ -280,14 +217,6 @@
 
             const orderanLokal = localStorage.getItem("daftar_orderan_live");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
-
-            if(!localStorage.getItem("git_user")) document.getElementById("gitUser").value = "bgszp";
-            else document.getElementById("gitUser").value = localStorage.getItem("git_user");
-            if(!localStorage.getItem("git_repo")) document.getElementById("gitRepo").value = "bgszp.github.io";
-            else document.getElementById("gitRepo").value = localStorage.getItem("git_repo");
-            if(localStorage.getItem("git_token")) document.getElementById("gitToken").value = localStorage.getItem("git_token");
-
-            autoFetchForEveryone();
 
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 4000);
@@ -444,14 +373,38 @@
             }
         }
 
+        // UPDATE V9: FUNGSI BATAL PESANAN DENGAN METODE POST DAN VALIDASI KETAT
         async function eksekusiBatalkanServer(index) {
             const apiKey = localStorage.getItem("otp_key_reseller"); if (!apiKey) return;
-            const item = daftarOrderan[index]; printLog(`Membatalkan order...`);
+            const item = daftarOrderan[index];
+            printLog(`Membatalkan order ${item.phone} ke server...`);
+            
             try {
-                await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/cancel.php?order_id=${item.order_id}&api_key=${apiKey}&t=${Date.now()}`);
-                item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal();
-                refreshSemuaDataLive();
-            } catch (e) { item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); }
+                // Mengirimkan via POST & GET sekaligus agar diterima sistem OTPInstan
+                const res = await fetchSmartProxy(`https://otpinstan.com/api/reseller/s1/cancel.php?order_id=${item.order_id}&api_key=${apiKey}&t=${Date.now()}`, true, {
+                    api_key: apiKey,
+                    order_id: item.order_id
+                });
+                
+                // Cek verifikasi status keberhasilan dari server OTPInstan
+                let isSuccess = res.status === true || res.status === "success" || res.status === "cancelled" || res.status === "ok" || (res.msg && (res.msg.toLowerCase().includes("berhasil") || res.msg.toLowerCase().includes("batal") || res.msg.toLowerCase().includes("cancel") || res.msg.toLowerCase().includes("dibatalkan")));
+
+                if (isSuccess) {
+                    item.status = "cancelled";
+                    printLog(`✅ Pesanan ${item.phone} resmi dibatalkan.`);
+                    showToast("Pesanan Berhasil Dibatalkan! ✨");
+                    renderUILayout(); 
+                    simpanDaftarOrderanKeLokal();
+                    refreshSemuaDataLive();
+                } else {
+                    // Jika server OTPInstan menolak pembatalan
+                    printLog(`❌ Gagal Batal: ${res.msg || res.message || 'Ditolak server'}`);
+                    alert(`⚠️ Server OTPInstan menolak pembatalan:\n\n"${res.msg || res.message || 'Pesanan tidak dapat dibatalkan saat ini.'}"\n\n(Kemungkinan masa cooldown dari server pusat belum tercapai atau status order berubah)`);
+                }
+            } catch (e) {
+                printLog("Error koneksi saat batal: " + e.message);
+                alert("⚠️ Gagal terhubung ke server OTPInstan untuk membatalkan pesanan.\nPeriksa koneksi internet Anda atau coba lagi beberapa saat.");
+            }
         }
 
         async function mesinCekSmsTerpusat() {
@@ -479,7 +432,7 @@
                 if (item.status === "pending" && sec >= 1200) { item.status = "cancelled"; flagSimpan = true; }
                 let sisa = Math.max(0, 1200 - sec); 
                 
-                // UPDATE V8: Waktu tunggu batalkan pesanan diubah menjadi 120 detik (2 menit)
+                // Cooldown 120 Detik sebelum tombol batalkan bisa diklik
                 let cool = Math.max(0, 120 - sec);
                 
                 let textStat = `🔄 Menunggu SMS... (${sec}s)`; let colStat = "#ffb86c";
@@ -504,95 +457,6 @@
         function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin! ✨"); }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => { t.classList.remove('show'); }, 2000); }
         function printLog(t) { document.getElementById("miniConsoleLog").innerText = "└> " + t; }
-
-        // ========================== SYNC CATATAN MODULE ==========================
-        function renderNotesList(fullText) {
-            const container = document.getElementById("notesContainer"); container.innerHTML = "";
-            rawNotesLines = fullText.split("\n"); if(rawNotesLines.length === 0 || (rawNotesLines.length === 1 && rawNotesLines[0].trim() === "")) rawNotesLines = [""];
-            rawNotesLines.forEach((text, index) => {
-                const rowNum = index + 1; const rowDiv = document.createElement("div");
-                rowDiv.className = isAdminAuthenticated ? "note-row admin-mode" : "note-row";
-                const badge = document.createElement("div"); badge.className = "note-num-badge"; badge.innerText = `[${rowNum}]`; rowDiv.appendChild(badge);
-                if(isAdminAuthenticated) {
-                    const inputField = document.createElement("input"); inputField.type = "text"; inputField.id = `inp-note-${index}`;
-                    inputField.className = "note-text-input"; inputField.value = text;
-                    inputField.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); insertNewRowAfter(index); } };
-                    rowDiv.appendChild(inputField);
-                } else {
-                    const wrap = document.createElement("div"); wrap.className = "note-display-wrapper";
-                    if(text.includes("|")) { const p = text.split("|"); wrap.innerHTML = `<div><span class="text-before-pipe">${p[0]}</span><span class="text-after-pipe">|${p.slice(1).join("|")}</span></div>`; } 
-                    else { wrap.innerHTML = `<div><span class="text-before-pipe">${text || '<span style="color:#555;">(Kosong)</span>'}</span></div>`; }
-                    wrap.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`; rowDiv.appendChild(wrap);
-                    rowDiv.onclick = function() {
-                        if(text.trim() !== "") {
-                            let copyT = text.includes("|") ? text.split("|")[0].trim() : text;
-                            if(copyT !== "") { navigator.clipboard.writeText(copyT); showToast(`Baris ${rowNum} Disalin! ✨`); }
-                        }
-                    };
-                }
-                container.appendChild(rowDiv);
-            });
-        }
-
-        function insertNewRowAfter(cIdx) {
-            let n = []; rawNotesLines.forEach((_, idx) => { const el = document.getElementById(`inp-note-${idx}`); n.push(el ? el.value : ""); });
-            n.splice(cIdx + 1, 0, ""); renderNotesList(n.join("\n"));
-            const tgt = document.getElementById(`inp-note-${cIdx + 1}`); if(tgt) tgt.focus();
-        }
-
-        async function autoFetchForEveryone() {
-            const st = document.getElementById("syncStatus"); st.innerText = "(Memantau Live...)";
-            try {
-                const res = await fetch(`./catatan_utama.txt?t=${Date.now()}`);
-                if(res.ok) { const txt = await res.text(); renderNotesList(txt); st.innerText = "(Mode Pantau Aktif)"; st.style.color = "#00ffcc"; fetchShaQuietly(); } 
-                else { renderNotesList(""); st.innerText = "(Catatan Kosong)"; }
-            } catch(e) { st.innerText = "(Gagal Memuat)"; st.style.color = "#ff4a4a"; }
-        }
-
-        async function fetchShaQuietly() {
-            const token = document.getElementById("gitToken").value.trim(); const user = document.getElementById("gitUser").value.trim(); const repo = document.getElementById("gitRepo").value.trim();
-            if(!token) return;
-            try {
-                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, { headers: { "Authorization": `token ${token}` } });
-                if(res.ok) { const data = await res.json(); currentFileSha = data.sha; }
-            } catch(e){}
-        }
-
-        async function toggleAdminAccess() {
-            const btn = document.getElementById("btnAdminAuth"); const lock = document.getElementById("adminLockIcon");
-            const st = document.getElementById("syncStatus"); const box = document.getElementById("adminConfigBox");
-
-            if (!isAdminAuthenticated) {
-                const pin = prompt("Masukkan PIN Admin:");
-                if (pin === ADMIN_PIN) {
-                    isAdminAuthenticated = true; renderNotesList(rawNotesLines.join("\n")); box.style.display = "flex"; 
-                    btn.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan & Kunci'; btn.style.background = "#ff007f";
-                    lock.className = "fa-solid fa-lock-open"; showToast("Admin Terbuka! 🔓");
-                } else if (pin !== null) alert("PIN Salah!");
-            } else {
-                const user = document.getElementById("gitUser").value.trim(); const repo = document.getElementById("gitRepo").value.trim(); const token = document.getElementById("gitToken").value.trim();
-                localStorage.setItem("git_user", user); localStorage.setItem("git_repo", repo); localStorage.setItem("git_token", token);
-                if(!token) { alert("Isi GITHUB TOKEN!"); return; }
-                st.innerText = "(Mengupload...)"; btn.disabled = true;
-                
-                let lines = []; rawNotesLines.forEach((_, idx) => { const el = document.getElementById(`inp-note-${idx}`); lines.push(el ? el.value : ""); });
-                const combined = lines.join("\n"); const b64 = btoa(unescape(encodeURIComponent(combined)));
-                const payload = { message: "Update via panel", content: b64 };
-                
-                await fetchShaQuietly(); if(currentFileSha) payload.sha = currentFileSha;
-                try {
-                    const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
-                        method: "PUT", headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(payload)
-                    });
-                    if(res.ok) {
-                        const d = await res.json(); currentFileSha = d.content.sha; isAdminAuthenticated = false;
-                        box.style.display = "none"; btn.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin & Edit Mode'; btn.style.background = "#1a1535";
-                        lock.className = "fa-solid fa-lock"; st.innerText = "(Mode Pantau Aktif)"; st.style.color = "#00ffcc";
-                        showToast("Tersimpan Global! ☁️"); renderNotesList(combined);
-                    } else throw new Error();
-                } catch(e) { alert("Gagal update Cloud!"); st.innerText = "(Gagal)"; } finally { btn.disabled = false; }
-            }
-        }
     </script>
 </body>
 </html>
