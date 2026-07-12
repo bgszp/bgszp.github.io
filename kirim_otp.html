@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Otomatis Multi-OTP - Server 1 Edition</title>
+    <title>Panel Otomatis Multi-OTP & Sync Notes</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -30,11 +30,12 @@
             min-height: 100vh;
         }
 
+        /* Kelas Container untuk membuat kotak-kotak terpisah */
         .container {
             width: 100%; max-width: 500px;
             background: var(--bg-card); border-radius: 18px;
             border: 1px solid var(--border-color); padding: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6); margin-bottom: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6); margin-bottom: 20px;
         }
 
         .badge-promo { background: #3c1e70; color: #b4b7ff; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: bold; }
@@ -79,14 +80,13 @@
         
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-top: 15px; }
         .btn-batal {
-            background: var(--accent-red); color: white; border: none; padding: 8px 12px;
-            border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px;
+            background: var(--accent-red); color: white; border: none; padding: 10px 12px;
+            border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 12px;
         }
         .btn-batal:hover:not(:disabled) { background: #ff3333; }
-        .btn-batal:disabled { background: #44475a; color: #888; cursor: not-allowed; }
+        .btn-batal:disabled { background: #2f3148; color: #727598; cursor: not-allowed; border: 1px solid #3d3f5e; }
 
-        .section-divider { border-top: 2px dashed var(--border-color); margin: 25px 0; padding-top: 20px; }
-        .header-notes { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 15px; color: #fff; }
+        .header-notes { text-align: center; font-size: 17px; font-weight: 700; margin-bottom: 15px; color: #fff; }
         .status-bar-notes {
             display: flex; justify-content: space-between; align-items: center;
             background: rgba(255, 85, 85, 0.1); border: 1px solid rgba(255, 85, 85, 0.3);
@@ -126,8 +126,8 @@
 </head>
 <body>
 
+    <!-- KOTAK 1: KHUSUS PANEL MULTI-OTP (SERVER 1) -->
     <div class="container">
-        <!-- PART 1: LIVE SERVER MULTI-OTP (SERVER 1) -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <h3 style="color: #fff; margin: 0; font-size: 17px; font-weight: 600;">📱 Server 1 (OTP)</h3>
@@ -191,10 +191,11 @@
         <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 11px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 80px; overflow-y: auto;">
             └> System Ready.
         </div>
+    </div>
 
-        <!-- PART 2: SYNC NOTES GITHUB -->
-        <div class="section-divider"></div>
-        <div class="header-notes">☁️ Catatan Sinkronisasi Multi-Device</div>
+    <!-- KOTAK 2: KHUSUS CATATAN SINKRONISASI MULTI-DEVICE -->
+    <div class="container">
+        <div class="header-notes" style="margin-top: 5px;">☁️ Catatan Sinkronisasi Multi-Device</div>
 
         <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 15px; flex-direction:column; gap: 10px;">
             <input type="text" id="gitUser" class="search-input" placeholder="GITHUB USERNAME">
@@ -214,7 +215,6 @@
         <button type="button" id="btnAdminAuth" onclick="toggleAdminAccess()" style="width:100%; margin-top:8px; padding:10px; font-size:12px; font-weight:bold; border-radius:8px; border:1px solid #3d3463; background:#1a1535; color:#d6c7ff; cursor:pointer;">
             <i class="fa-solid fa-key"></i> Unlock Admin & Edit Mode
         </button>
-
     </div>
     
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
@@ -232,14 +232,8 @@
         let currentFileSha = ""; 
         let rawNotesLines = [];
 
-        // UPDATE v7: Mencegah Efek Samping CORS & Double Order pada transaksi
         async function fetchSmartProxy(targetUrl, isPost = false, postBody = null) {
-            // Cek apakah ini perintah transaksi yang merubah saldo (order/cancel)
             const isStateChanging = targetUrl.includes("order.php") || targetUrl.includes("cancel.php");
-            
-            // JIKA ini transaksi order/cancel, LANGSUNG gunakan Proxy!
-            // Jangan coba jalur Direct (""), karena jika browser memblokir CORS,
-            // proxy akan mengirim order ke-2 kali dan memotong saldo Anda lagi!
             const proxies = isStateChanging ? [
                 "https://corsproxy.io/?",
                 "https://api.codetabs.com/v1/proxy?quest="
@@ -250,7 +244,6 @@
             ];
 
             let options = { method: isPost ? "POST" : "GET" };
-            
             if (isPost && postBody) {
                 options.headers = { "Content-Type": "application/x-www-form-urlencoded" };
                 options.body = new URLSearchParams(postBody).toString();
@@ -411,7 +404,6 @@
             if(!idLayananTerpilih) { alert("Pilih layanan terlebih dahulu!"); return; }
             if(!apiKey) { toggleApiKeyDropdown(); return; }
 
-            // PENGAMAN: Kunci tombol agar tidak bisa diklik 2 kali selama proses request!
             const btn = document.getElementById("btnPesanUtama");
             const teksAsli = btn.innerHTML;
             btn.disabled = true;
@@ -447,7 +439,6 @@
                 printLog("Order Error: " + e.message); 
                 alert("Gagal memproses pesanan: " + e.message);
             } finally {
-                // Buka kembali kunci tombol setelah proses selesai
                 btn.disabled = false;
                 btn.innerHTML = teksAsli;
             }
@@ -481,12 +472,16 @@
 
         function renderUILayout() {
             const container = document.getElementById("containerListOrder");
-            if (daftarOrderan.length === 0) { container.innerHTML = `<div id="panelKosong" style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">Belum ada pesanan aktif.</div>`; return; }
+            if (daftarOrderan.length === 0) { container.innerHTML = `<div id="panelKosong" style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">Belum ada pesanan aktif. Klik pesan di atas.</div>`; return; }
             let html = ""; let flagSimpan = false;
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 if (item.status === "pending" && sec >= 1200) { item.status = "cancelled"; flagSimpan = true; }
-                let sisa = Math.max(0, 1200 - sec); let cool = Math.max(0, 15 - sec);
+                let sisa = Math.max(0, 1200 - sec); 
+                
+                // UPDATE V8: Waktu tunggu batalkan pesanan diubah menjadi 120 detik (2 menit)
+                let cool = Math.max(0, 120 - sec);
+                
                 let textStat = `🔄 Menunggu SMS... (${sec}s)`; let colStat = "#ffb86c";
                 if (item.status === "received") { textStat = `🎉 OTP: <span style="background:#50fa7b; color:#000; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:16px;">${item.otp}</span> <span onclick="salinTeksToast('${item.otp}')" style="cursor:pointer; font-size:15px; color:#50fa7b; margin-left:8px;">📝</span>`; colStat = "#50fa7b"; } 
                 else if (item.status === "cancelled") { textStat = "❌ Dibatalkan / Expired"; colStat = "#ff5555"; }
