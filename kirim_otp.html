@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Otomatis OTP - Shopee Only</title>
+    <title>Panel Otomatis OTP - Shopee Only (v14)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -108,12 +108,12 @@
 </head>
 <body>
 
-    <!-- KOTAK UTAMA: KHUSUS PANEL MULTI-OTP (SERVER 1) -->
+    <!-- KOTAK UTAMA: KHUSUS PANEL MULTI-OTP -->
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <h3 style="color: #fff; margin: 0; font-size: 17px; font-weight: 600;">📱 Server 1 (Shopee Only Panel)</h3>
-                <span class="badge-promo">Turbo OTP + PopUp</span>
+                <span class="badge-promo">Push Notification v14</span>
             </div>
             
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: var(--accent-green);">
@@ -190,7 +190,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 11px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 80px; overflow-y: auto;">
-            └> System Ready (Turbo + PopUp Active).
+            └> System Ready (Push Notification Enabled).
         </div>
     </div>
     
@@ -241,6 +241,13 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
+            // MINTA IZIN NOTIFIKASI SISTEM SAAT HALAMAN DIBUKA
+            if ("Notification" in window) {
+                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    Notification.requestPermission();
+                }
+            }
+
             const savedKey = localStorage.getItem("otp_key_reseller");
             if(savedKey) {
                 document.getElementById("otpKeyV5").value = savedKey;
@@ -258,7 +265,7 @@
             if (histLokal) { riwayatOrderan = JSON.parse(histLokal); renderHistoryLayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
-            setInterval(mesinCekSmsTerpusat, 2000); // Interval cek OTP tetap agresif (2 detik)
+            setInterval(mesinCekSmsTerpusat, 2000); 
             setInterval(ambilLayananLive, 8000); 
         });
 
@@ -270,7 +277,6 @@
             } else { w.style.display = "none"; p.style.transform = "rotate(0deg)"; }
         }
 
-        /* [Fungsi-fungsi manajemen API & Dropdown dipertahankan] */
         function simpanKeyV5() {
             const key = document.getElementById("otpKeyV5").value.trim();
             if(!key) { alert("Masukkan API Key!"); return; }
@@ -460,7 +466,7 @@
             }
         }
 
-        // ==================== FITUR BARU: TURBO CHECKER + POPUP ALERT ====================
+        // ==================== UPDATE v14: TURBO CHECKER + PUSH NOTIFICATION SYSTEM ====================
         async function mesinCekSmsTerpusat() {
             const k = localStorage.getItem("otp_key_reseller"); if (!k) return;
             daftarOrderan.forEach(async (i) => {
@@ -477,7 +483,16 @@
                         updateHistoryLog(i);
                         printLog(`🎉 OTP MASUK (${i.otp}) untuk nomor ${i.phone}!`);
                         
-                        // EFEK POP UP PEMBERITAHUAN (ALERT) INSTAN SAAT OTP MASUK
+                        // 1. KIRIM NOTIFIKASI SISTEM (TEMBUS APLIKASI LAIN)
+                        if ("Notification" in window && Notification.permission === "granted") {
+                            new Notification("🎉 OTP MASUK! (Shopee Panel)", {
+                                body: `Nomor: ${i.phone}\nKode OTP: ${i.otp}`,
+                                icon: "https://cdn-icons-png.flaticon.com/512/1037/1037323.png",
+                                requireInteraction: true // Notifikasi tetap di layar sampai di-swipe/klik
+                            });
+                        }
+
+                        // 2. BACKUP POP-UP ALERT BIASA
                         setTimeout(() => {
                             alert(`🎉 OTP MASUK!\n\nNomor: ${i.phone}\nKode OTP: ${i.otp}`);
                         }, 100);
