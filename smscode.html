@@ -86,7 +86,6 @@
             return 'idempotency-' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
         }
 
-        // SISTEM PROXY MULTI-GATEWAY UNTUK MENGHINDARI "FAILED TO FETCH" / BLOKIR CORS
         async function apiSMSCode(endpoint, method = "GET", payload = null, customHeaders = {}) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
@@ -102,41 +101,35 @@
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            const gateways = [
-                "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
-                "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
-                targetUrl
-            ];
-
-            let lastError = "Gagal terhubung ke jaringan.";
-
-            for (let url of gateways) {
-                try {
-                    const res = await fetch(url, options);
-                    const textResponse = await res.text();
-                    
-                    if (!textResponse || textResponse.trim() === "") continue;
-
-                    let data;
+            try {
+                const res = await fetch(targetUrl, options);
+                const textResponse = await res.text();
+                
+                let data = {};
+                if (textResponse && textResponse.trim() !== "") {
                     try {
                         data = JSON.parse(textResponse);
-                    } catch (parseErr) {
-                        continue; // Lewati jika proxy mengembalikan halaman HTML error
-                    }
-
-                    if (res.ok) {
-                        return data;
-                    } else {
-                        throw new Error(data.error?.message || data.message || `Gagal dari server (HTTP ${res.status})`);
-                    }
-                } catch (e) {
-                    lastError = e.message;
-                    if (e.message !== "Failed to fetch" && !e.message.toLowerCase().includes("network")) {
-                        throw e; // Lempar jika error berasal langsung dari logika API SMSCode
+                    } catch (err) {
+                        throw new Error("Respon server bukan format JSON yang valid.");
                     }
                 }
+
+                if (!res.ok) {
+                    throw new Error(data.error?.message || data.message || `Gagal dari server (HTTP ${res.status})`);
+                }
+                return data;
+            } catch (e) {
+                // Jika masih terkena pembatasan CORS browser langsung, gunakan fallback corsproxy otomatis
+                if (e.message.includes("Failed to fetch") || e.message.includes("NetworkError")) {
+                    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+                    const resProxy = await fetch(proxyUrl, options);
+                    const textProxy = await resProxy.text();
+                    let dataProxy = JSON.parse(textProxy);
+                    if (!resProxy.ok) throw new Error(dataProxy.error?.message || dataProxy.message || "Gagal via Proxy.");
+                    return dataProxy;
+                }
+                throw e;
             }
-            throw new Error(lastError);
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -192,17 +185,13 @@
             btn.innerHTML = `Memproses...`;
 
             try {
-                printLog("Mencari katalog Shopee ID...");
-                const catalogRes = await apiSMSCode('catalog/products?country_id=7', 'GET');
-                const productsList = catalogRes.data || catalogRes.products || [];
-                
-                let targetProduct = productsList.find(p => p.name && p.name.toLowerCase().includes('shopee'));
-                let catalogProductId = targetProduct ? (targetProduct.catalog_product_id || targetProduct.id) : (productsList[0]?.catalog_product_id || productsList[0]?.id || 87);
+                // Menggunakan ID Katalog Statis resmi untuk Shopee Indonesia (ID 87 berdasarkan dokumentasi resmi API v1)
+                const catalogProductId = 87;
 
-                printLog(`Membuat pesanan (Katalog ID: ${catalogProductId})...`);
+                printLog(`Membuat pesanan Shopee (Katalog ID: ${catalogProductId})...`);
                 const idempotencyKey = generateIdempotencyKey();
                 const payloadOrder = {
-                    catalog_product_id: parseInt(catalogProductId),
+                    catalog_product_id: catalogProductId,
                     max_price: 15000, 
                     quantity: 1
                 };
