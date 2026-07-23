@@ -63,20 +63,19 @@
         .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
         .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
 
-        /* === STYLING MENU TOMBOL SERVER GANDA (SUDAH DIEDIT) === */
+        /* === STYLING MENU TOMBOL SERVER GANDA === */
         .wrapper-menu-server {
             width: 100%; 
-            max-width: 900px; /* Dilebarkan agar simetris dengan panel notes di bawahnya */
-            margin-bottom: 15px; 
+            max-width: 900px;
+            margin-bottom: 10px; 
             display: flex; 
-            flex-direction: row; /* Berubah menjadi row agar berjejer horizontal */
-            gap: 15px; /* Jarak antar tombol server */
+            flex-direction: row; /* Berjejer horizontal */
+            gap: 15px; 
         }
         .server-col {
-            flex: 1; /* Agar masing-masing kotak membagi rata lebar (50:50) */
+            flex: 1; /* Bagi rata lebar 50-50 */
             display: flex; 
             flex-direction: column; 
-            gap: 8px;
         }
         .pemicu-menu-utama {
             background: #1a1535; border: 1px solid #5f27cd; border-radius: 8px; 
@@ -86,50 +85,64 @@
         .pemicu-menu-utama:hover { background: #251e4a; border-color: #00ffcc; box-shadow: 0 0 8px rgba(0, 255, 204, 0.3); }
         .wadah-iframe-server {
             display: none; width: 100%; border-radius: 8px; border: 1px solid #3d3463; background: #121324; overflow: hidden;
+            margin-bottom: 15px; /* Jarak bawah jika dibuka */
         }
     </style>
 </head>
 <body>
 
-<!-- === PANEL MENU SERVER 1 & SERVER 2 (SUDAH DIEDIT) === -->
+<!-- === PANEL MENU SERVER 1 & SERVER 2 (TATA LETAK DIPERBAIKI) === -->
 <div class="wrapper-menu-server">
-    <!-- Server 1 -->
+    <!-- Baris khusus Tombol Server 1 -->
     <div class="server-col">
         <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP1', 'panahSrv1')">
             <span>🛠️ Server 1 (OTP Instan)</span>
             <span id="panahSrv1">▼</span>
         </div>
-        <div id="wadahOTP1" class="wadah-iframe-server">
-            <iframe src="otpinstan.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
-        </div>
     </div>
 
-    <!-- Server 2 -->
+    <!-- Baris khusus Tombol Server 2 -->
     <div class="server-col">
-        <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP2', 'panahSrv2')" style="border-color: #00e5ff;"> <!-- Border Cyan mengikuti gambar -->
+        <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP2', 'panahSrv2')" style="border-color: #00e5ff;"> 
             <span>🔵 Server 2 (SMSCode.gg)</span>
             <span id="panahSrv2">▼</span>
         </div>
-        <div id="wadahOTP2" class="wadah-iframe-server">
-            <iframe src="smscode.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
-        </div>
     </div>
-
-    <script>
-        function toggleServerPanel(wadahId, panahId) {
-            const wadah = document.getElementById(wadahId);
-            const panah = document.getElementById(panahId);
-            
-            if (wadah.style.display === "none" || wadah.style.display === "") {
-                wadah.style.display = "block";
-                panah.style.transform = "rotate(180deg)";
-            } else {
-                wadah.style.display = "none";
-                panah.style.transform = "rotate(0deg)";
-            }
-        }
-    </script>
 </div>
+
+<!-- Wadah Iframe (Di luar kolom agar bisa mekar 100% penuh) -->
+<div style="width: 100%; max-width: 900px;">
+    <div id="wadahOTP1" class="wadah-iframe-server">
+        <iframe src="otpinstan.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+    </div>
+    <div id="wadahOTP2" class="wadah-iframe-server">
+        <iframe src="smscode.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+    </div>
+</div>
+
+<script>
+    function toggleServerPanel(wadahId, panahId) {
+        const wadah = document.getElementById(wadahId);
+        const panah = document.getElementById(panahId);
+        
+        // Cek apakah panel yang diklik sedang tertutup
+        if (wadah.style.display === "none" || wadah.style.display === "") {
+            // Sembunyikan SEMUA panel iframe & reset panah (Mode Tab)
+            document.getElementById('wadahOTP1').style.display = "none";
+            document.getElementById('wadahOTP2').style.display = "none";
+            document.getElementById('panahSrv1').style.transform = "rotate(0deg)";
+            document.getElementById('panahSrv2').style.transform = "rotate(0deg)";
+            
+            // Buka panel yang diklik saja
+            wadah.style.display = "block";
+            panah.style.transform = "rotate(180deg)";
+        } else {
+            // Tutup jika panel yang sama diklik lagi
+            wadah.style.display = "none";
+            panah.style.transform = "rotate(0deg)";
+        }
+    }
+</script>
 <!-- === SELESAI PANEL SERVER === -->
 
     <div class="container-card">
