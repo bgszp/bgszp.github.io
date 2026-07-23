@@ -101,35 +101,42 @@
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            try {
-                const res = await fetch(targetUrl, options);
-                const textResponse = await res.text();
-                
-                let data = {};
-                if (textResponse && textResponse.trim() !== "") {
+            // Menggunakan beberapa opsi jalur proxy alternatif agar tembus pembatasan browser GitHub Pages
+            const gateways = [
+                "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
+                "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
+                targetUrl
+            ];
+
+            let lastError = "Gagal terhubung ke jaringan.";
+
+            for (let url of gateways) {
+                try {
+                    const res = await fetch(url, options);
+                    const textResponse = await res.text();
+                    
+                    if (!textResponse || textResponse.trim() === "") continue;
+
+                    let data;
                     try {
                         data = JSON.parse(textResponse);
-                    } catch (err) {
-                        throw new Error("Respon server bukan format JSON yang valid.");
+                    } catch (parseErr) {
+                        continue; 
+                    }
+
+                    if (res.ok) {
+                        return data;
+                    } else {
+                        throw new Error(data.error?.message || data.message || `Gagal dari server (HTTP ${res.status})`);
+                    }
+                } catch (e) {
+                    lastError = e.message;
+                    if (e.message && !e.message.includes("Failed to fetch") && !e.message.includes("NetworkError")) {
+                        throw e;
                     }
                 }
-
-                if (!res.ok) {
-                    throw new Error(data.error?.message || data.message || `Gagal dari server (HTTP ${res.status})`);
-                }
-                return data;
-            } catch (e) {
-                // Jika masih terkena pembatasan CORS browser langsung, gunakan fallback corsproxy otomatis
-                if (e.message.includes("Failed to fetch") || e.message.includes("NetworkError")) {
-                    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
-                    const resProxy = await fetch(proxyUrl, options);
-                    const textProxy = await resProxy.text();
-                    let dataProxy = JSON.parse(textProxy);
-                    if (!resProxy.ok) throw new Error(dataProxy.error?.message || dataProxy.message || "Gagal via Proxy.");
-                    return dataProxy;
-                }
-                throw e;
             }
+            throw new Error(lastError);
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -185,7 +192,7 @@
             btn.innerHTML = `Memproses...`;
 
             try {
-                // Menggunakan ID Katalog Statis resmi untuk Shopee Indonesia (ID 87 berdasarkan dokumentasi resmi API v1)
+                // Menggunakan ID Katalog Statis resmi untuk Shopee Indonesia (ID 87)
                 const catalogProductId = 87;
 
                 printLog(`Membuat pesanan Shopee (Katalog ID: ${catalogProductId})...`);
