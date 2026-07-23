@@ -188,16 +188,15 @@
         async function muatKatalogAnyOnly() {
             try {
                 printLog("🔄 Menarik data server Shopee...");
-                // Ditingkatkan limitnya menjadi 500 agar produk Shopee tidak terlewat
                 const resProd = await apiSMSCode('catalog/products?country_id=7&limit=500', 'GET');
                 let arrData = resProd.data;
                 
                 let shopeeItems = arrData.filter(item => (item.name || "").toLowerCase().includes("shopee"));
-                if (shopeeItems.length === 0) throw new Error("Layanan Shopee tidak tersedia.");
+                if (shopeeItems.length === 0) throw new Error("Layanan Shopee kosong.");
 
                 shopeeItems.sort((a, b) => (a.price || 0) - (b.price || 0));
 
-                daftarServerTersedia = shopeeItems.map((item, index) => ({
+                daftarServerTersedia = shopeeItems.map((item) => ({
                     id: item.id,
                     stock: item.available || item.stock || 0,
                     price: item.price || 0,
@@ -212,8 +211,15 @@
                 }
                 printLog(`✅ Ditemukan ${daftarServerTersedia.length} pilihan server.`);
             } catch (e) {
-                printLog(`⚠️ Error: ${e.message}`);
-                document.getElementById("labelServerTerpilih").innerText = "Gagal memuat server";
+                printLog(`⚠️ Error API: ${e.message}. Menggunakan Mode Fallback Server.`);
+                
+                // Fallback manual jika server utama error 502 / gagal koneksi
+                daftarServerTersedia = [
+                    { id: 142, stock: "Available", price: 15000, name: "Shopee Tier 1 (Fallback)" },
+                    { id: 87, stock: "Available", price: 15000, name: "Shopee Tier 2 (Fallback)" }
+                ];
+                renderDropdownOptions();
+                pilihServerDropdown(0);
             }
         }
 
@@ -230,8 +236,6 @@
                 let html = "";
                 orders.forEach(ord => {
                     let statColor = ord.status === "COMPLETED" || ord.status === "OTP_RECEIVED" ? "#50fa7b" : (ord.status === "ACTIVE" ? "#ffb86c" : "#ff5555");
-                    
-                    // Format Waktu & Tanggal
                     let tanggalFormat = "-";
                     if (ord.created_at) {
                         let d = new Date(ord.created_at);
@@ -264,7 +268,7 @@
             } else {
                 list.classList.add("active");
                 panah.style.transform = "rotate(180deg)";
-                muatHistoryOrderAPI(); // Refresh otomatis saat dibuka
+                muatHistoryOrderAPI();
             }
         }
 
