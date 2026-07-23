@@ -69,13 +69,13 @@
                 <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Bearer Token:</label>
                 <input type="password" id="otpKeyV5" placeholder="Token API" class="search-input">
                 
-                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; margin-top:6px; display:block;">📡 Rute Katalog API (Opsional):</label>
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; margin-top:6px; display:block;">📡 Rute Katalog API (Sesuai Dokumentasi):</label>
                 <div style="display: flex; gap: 6px;">
-                    <input type="text" id="customCatalogRoute" placeholder="cth: catalog-products" class="search-input" style="margin-bottom:0;" title="Kosongkan untuk Mode Auto-Discovery">
+                    <input type="text" id="customCatalogRoute" placeholder="cth: catalog?country=id" class="search-input" style="margin-bottom:0;" title="Kosongkan untuk Mode Auto">
                     <button onclick="simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
                 </div>
                 
-                <small id="statusKeyV5" style="color: var(--text-sub); font-size: 10px; display: block; margin-top: 8px;">*Kosongkan Rute Katalog jika ingin sistem menebak otomatis.</small>
+                <small style="color: #ffb86c; font-size: 10px; display: block; margin-top: 8px;">*Cek web SMSCode Anda untuk mengetahui link Rute Katalog yang benar.</small>
             </div>
         </div>
 
@@ -94,7 +94,7 @@
             <div id="operatorAccordionContainer" style="margin-top: 10px;">
                 <div style="padding: 30px; text-align: center; color: #94a3b8;">
                     <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #3b82f6;"></i>
-                    <div style="margin-top: 10px; font-size: 13px;">Auto-Discovering Server...</div>
+                    <div style="margin-top: 10px; font-size: 13px;">Menghubungkan ke Server...</div>
                 </div>
             </div>
         </div>
@@ -109,8 +109,8 @@
             </div>
         </div>
 
-        <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
-            └> Sistem siap (Smart API Mode).
+        <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 120px; overflow-y: auto;">
+            └> Sistem siap. Koneksi token divalidasi.
         </div>
     </div>
     
@@ -120,20 +120,22 @@
         let daftarOrderan = []; 
         let dataKatalogLayanan = [];
 
+        // Data darurat agar UI tidak kosong saat 404
         const fallbackKatalog = [
             { id: "any", name: "Any", servers: [{ id: 87, name: "Server 1", stock: 886, price: 197 }, { id: 88, name: "Server 2", stock: 420, price: 276 }]},
             { id: "axis", name: "AXIS (XL Axiata)", servers: [{ id: 94, name: "Server 1", stock: 8190, price: 537 }] }
         ];
 
-        /* =======================================================================
-           FUNGSI API INTI (PENANGANAN 404 & CORS YANG LEBIH TANGGUH)
-           ======================================================================= */
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
 
-            let targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
-            if (method === "GET") { targetUrl += (endpoint.includes('?') ? '&' : '?') + `nocache=${Date.now()}`; }
+            // Deteksi cerdas: Jika input adalah link utuh "http...", gunakan langsung. Jika bukan, anggap itu rute "/v1/"
+            let targetUrl = endpoint.startsWith("http") ? endpoint : `https://api.smscode.gg/v1/${endpoint}`;
+            
+            if (method === "GET") { 
+                targetUrl += (targetUrl.includes('?') ? '&' : '?') + `nocache=${Date.now()}`; 
+            }
             
             let headers = { "Authorization": `Bearer ${token.trim()}`, "Content-Type": "application/json", "Accept": "application/json" };
             let options = { method: method, headers: headers };
@@ -141,7 +143,7 @@
 
             const proxies = [ 
                 { url: "", encode: false }, // Langsung API (Prioritas 1)
-                { url: "https://api.codetabs.com/v1/proxy?quest=", encode: false }, // Sangat stabil untuk GET
+                { url: "https://api.codetabs.com/v1/proxy?quest=", encode: false }, // Proxy Stabil
                 { url: "https://corsproxy.io/?", encode: true }
             ];
 
@@ -163,20 +165,16 @@
                     }
                     
                     if (!res.ok) {
-                        // Jika 404 Not Found dari peladen asli, langsung lemparkan galat (jangan paksa loop proksi)
-                        let msg = data.error?.message || data.message || `Endpoint salah / Ditolak`;
+                        let msg = data.error?.message || data.message || `Endpoint salah (404/405)`;
                         throw new Error(`[HTTP ${res.status}] ${msg}`);
                     }
-                    
                     return data; 
                 } catch (e) { 
-                    if (e.message.includes("[HTTP")) {
-                        throw e; // Lemparkan error HTTP murni ke atas
-                    }
+                    if (e.message.includes("[HTTP")) throw e; // Lemparkan error HTTP murni jika ada
                     networkError = e; 
                 }
             }
-            throw new Error(networkError ? networkError.message : "Gagal koneksi proxy.");
+            throw new Error(networkError ? networkError.message : "Gagal koneksi jaringan.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -185,10 +183,7 @@
             
             if(savedKey) {
                 document.getElementById("otpKeyV5").value = savedKey;
-                document.getElementById("statusKeyV5").innerText = "✅ Token Aktif.";
-                document.getElementById("statusKeyV5").style.color = "#50fa7b";
                 if(savedRoute) document.getElementById("customCatalogRoute").value = savedRoute;
-                
                 refreshSemuaDataLive();
             }
 
@@ -202,24 +197,22 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        /* =======================================================================
-           FUNGSI "AUTO-DISCOVER" (Kini jauh lebih lengkap + Opsi Rute Kustom)
-           ======================================================================= */
+        /* === FUNGSI TARIK KATALOG (DIPERKUAT DENGAN INPUT MANUAL) === */
         async function muatKatalogAsli() {
             try {
                 const customRoute = localStorage.getItem("otp_custom_route");
                 let ruteTebakan = [];
                 
                 if (customRoute && customRoute.trim() !== "") {
-                    // Jika pengguna memasukkan rute spesifik, prioritaskan rute tersebut
+                    // Jika ada rute manual dari pengguna, coba itu saja
                     ruteTebakan = [customRoute.trim()];
-                    printLog(`Mencoba rute kustom pengguna: /v1/${customRoute.trim()}`);
+                    printLog(`📡 Mengecek Rute Manual: ${customRoute.trim()}`);
                 } else {
-                    // Jika tidak, gunakan mode tebak pintar
+                    // Mode Auto-Discover yang diperluas
                     printLog("🔄 Memulai Auto-Discovery Katalog...");
                     ruteTebakan = [
-                        'catalog-products', 'catalog_products', 'inventory', 'stock', 
-                        'services', 'products', 'catalog', 'prices', 'numbers/available'
+                        'services/87', 'catalog/shopee', 'products?service=shopee', 
+                        'items', 'catalog', 'products', 'services'
                     ];
                 }
 
@@ -229,7 +222,6 @@
                 for (let rute of ruteTebakan) {
                     try {
                         const res = await apiSMSCode(rute, 'GET');
-                        // Cari array datanya dimana pun ia berada
                         let arrData = res.data || res.products || res.services || res.catalog || res.inventory || res;
                         
                         if (Array.isArray(arrData) && arrData.length > 0) {
@@ -238,15 +230,15 @@
                             break; 
                         }
                     } catch(err) {
-                        // Jangan log semua error 404 agar console tidak penuh
+                        // Bypass error 404 agar loop berlanjut
                     }
                 }
 
                 if (!itemDitemukan) {
-                    throw new Error("Semua kemungkinan rute gagal. Cek dokumentasi API dan isi kolom 'Rute Katalog'.");
+                    throw new Error("Rute 404. Mohon isi kolom Rute Katalog sesuai dokumentasi web aslinya.");
                 }
 
-                printLog(`✅ Sukses tarik katalog dari rute /v1/${ruteSukses}!`);
+                printLog(`✅ Data ditarik dari: /${ruteSukses}!`);
 
                 let groupedOps = {};
                 itemDitemukan.forEach(item => {
@@ -276,10 +268,18 @@
                 renderMenuLayananApp(dataKatalogLayanan);
 
             } catch (e) {
-                printLog(`⚠️ Sinkronisasi Gagal: ${e.message}`);
-                printLog(`💡 Menggunakan data fallback. Silakan masukkan rute manual di konfigurasi.`);
-                dataKatalogLayanan = fallbackKatalog;
-                renderMenuLayananApp(dataKatalogLayanan);
+                printLog(`⚠️ Error Katalog: ${e.message}`);
+                
+                const container = document.getElementById("operatorAccordionContainer");
+                container.innerHTML = `
+                <div style="padding: 20px; text-align: center; background: #fff1f2; border: 1px solid #fda4af; border-radius: 12px; margin-top:10px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; color: #e11d48; margin-bottom:8px;"></i>
+                    <div style="font-weight: 600; color: #be123c; font-size:14px;">Gagal Menemukan Rute Katalog</div>
+                    <div style="font-size: 12px; color: #881337; margin-top:5px; line-height:1.4;">
+                        Buka dokumentasi API SMSCode.gg Anda, cari rute untuk "Get Services", lalu masukkan nama rute tersebut ke menu pengaturan di atas.
+                    </div>
+                </div>
+                `;
             }
         }
         /* ======================================================================= */
@@ -400,10 +400,8 @@
             localStorage.setItem("otp_key_smscode", key);
             
             if (route !== "") localStorage.setItem("otp_custom_route", route);
-            else localStorage.removeItem("otp_custom_route"); // Hapus rute kustom untuk kembali ke mode auto
+            else localStorage.removeItem("otp_custom_route"); 
             
-            document.getElementById("statusKeyV5").innerText = "✅ Konfigurasi Disimpan!";
-            document.getElementById("statusKeyV5").style.color = "#50fa7b";
             refreshSemuaDataLive(); 
             toggleApiKeyDropdown();
         }
