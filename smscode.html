@@ -85,7 +85,6 @@
                         <div style="font-size: 12px; color: #64748b;">Shopee · Select an operator</div>
                     </div>
                 </div>
-                <!-- Tombol Refresh Katalog Khusus -->
                 <i class="fa-solid fa-rotate-right" onclick="muatKatalogAsli()" style="color: #3b82f6; font-size: 16px; cursor: pointer; padding: 5px;" title="Refresh Katalog"></i>
             </div>
             <div id="operatorAccordionContainer" style="margin-top: 10px;">
@@ -118,11 +117,9 @@
         let daftarOrderan = []; 
         let dataKatalogLayanan = [];
 
-        // Data cadangan jika API server error atau terblokir sementara
+        // Fallback jika kuota proxy habis atau server sedang down
         const fallbackKatalog = [
-            { id: "any", name: "Any", servers: [
-                { id: 87, name: "Server 1", stock: 886, price: 197 }, { id: 88, name: "Server 2", stock: 420, price: 276 }
-            ]},
+            { id: "any", name: "Any", servers: [{ id: 87, name: "Server 1", stock: 886, price: 197 }, { id: 88, name: "Server 2", stock: 420, price: 276 }]},
             { id: "axis", name: "AXIS (XL Axiata)", servers: [{ id: 94, name: "Server 1", stock: 8190, price: 537 }] }
         ];
 
@@ -137,15 +134,26 @@
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            const proxies = [ "", "https://corsproxy.io/?", "https://api.allorigins.win/raw?url=" ];
+            // PERBAIKAN: Menggunakan array proxy yang kuat untuk GET requests
+            const proxies = [ 
+                "", // Direct API
+                "https://api.codetabs.com/v1/proxy?quest=", // Sangat stabil, anti CORS
+                "https://corsproxy.io/?",
+                "https://thingproxy.freeboard.io/fetch/"
+            ];
             let lastError = null;
 
             for (let proxy of proxies) {
                 try {
                     let proxyUrl = targetUrl;
-                    if (proxy !== "") { proxyUrl = proxy.includes("corsproxy.io") ? proxy + targetUrl : proxy + encodeURIComponent(targetUrl); }
+                    if (proxy !== "") { 
+                        // PERBAIKAN: Hindari encodeURIComponent ganda agar parameter URL tetap utuh
+                        proxyUrl = proxy + targetUrl; 
+                    }
+                    
                     const res = await fetch(proxyUrl, options);
                     const textResponse = await res.text();
+                    
                     let data = {};
                     if (textResponse && textResponse.trim() !== "") {
                         try { data = JSON.parse(textResponse); } catch (err) { throw new Error("Bukan JSON."); }
@@ -154,7 +162,7 @@
                     return data; 
                 } catch (e) { lastError = e; }
             }
-            throw new Error(lastError ? lastError.message : "Gagal koneksi.");
+            throw new Error(lastError ? lastError.message : "Gagal koneksi proxy.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -169,7 +177,6 @@
             const orderanLokal = localStorage.getItem("daftar_orderan_srv2_shopee");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
-            // Trigger penarikan data katalog live saat halaman pertama kali dimuat
             if(savedKey) muatKatalogAsli();
             else renderMenuLayananApp(fallbackKatalog);
 
@@ -182,44 +189,43 @@
             try {
                 printLog("🔄 Mengambil data katalog live dari server...");
                 
-                // Endpoint SMSCode.gg untuk layanan. Bisa 'products', 'services', atau 'catalog'.
-                // Jika error, coba ganti 'products' ke 'services' sesuai dokumentasi SMSCode Anda.
-                const res = await apiSMSCode('products'); 
-                let items = res.data || res.products || res.catalog || res;
+                // PERBAIKAN: Banyak SMM/OTP Panel yang menggunakan /services bukan /products
+                let res;
+                try {
+                    res = await apiSMSCode('services');
+                } catch(err) {
+                    printLog("Mencoba rute alternatif...");
+                    res = await apiSMSCode('products'); 
+                }
+
+                let items = res.data || res.products || res.services || res.catalog || res;
 
                 if (Array.isArray(items) && items.length > 0) {
                     let groupedOps = {};
                     
                     items.forEach(item => {
-                        // Mem-filter jika layanan tersebut bukan untuk Shopee Indonesia (Optional)
-                        // if(item.service_name && !item.service_name.toLowerCase().includes('shopee')) return;
-
-                        // Mencoba mendeteksi nama operator dari response JSON
                         let opName = item.operator || item.network || item.carrier || "Any";
                         if (opName.toLowerCase() === "any") opName = "Any";
                         
                         if (!groupedOps[opName]) groupedOps[opName] = [];
                         
                         groupedOps[opName].push({
-                            id: item.id || item.catalog_product_id || item.product_id,
+                            id: item.id || item.catalog_product_id || item.product_id || item.service_id,
                             name: item.name || item.server_name || `Server ${groupedOps[opName].length + 1}`,
                             stock: item.stock || item.available || item.qty || 0,
                             price: item.price || item.cost || item.rate || 0
                         });
                     });
 
-                    // Konversi Object ke struktur Array Katalog
                     let newKatalog = [];
                     for (let op in groupedOps) {
                         newKatalog.push({
                             id: op.toLowerCase().replace(/[^a-z0-9]/g, ''),
                             name: op,
-                            // Urutkan harga server dari yang termurah ke termahal
                             servers: groupedOps[op].sort((a, b) => a.price - b.price) 
                         });
                     }
                     
-                    // Pastikan kategori "Any" (Semua Jaringan) berada paling atas
                     newKatalog.sort((a, b) => a.name === "Any" ? -1 : (b.name === "Any" ? 1 : 0));
                     
                     dataKatalogLayanan = newKatalog;
@@ -236,7 +242,6 @@
         }
         /* ==================================================== */
 
-        /* === FUNGSI RENDER ANTARMUKA APLIKASI === */
         function renderMenuLayananApp(katalogData) {
             const container = document.getElementById("operatorAccordionContainer");
             let html = "";
@@ -319,7 +324,7 @@
 
             try {
                 const payloadOrder = {
-                    catalog_product_id: catalogId, // Asumsi key ini valid sesuai API SMSCode
+                    catalog_product_id: catalogId, 
                     max_price: price, 
                     quantity: 1
                 };
@@ -352,7 +357,6 @@
                 btnElement.innerHTML = teksAsli; 
             }
         }
-        /* ================================================= */
 
         function toggleApiKeyDropdown() {
             const w = document.getElementById("wadahApiKeyDropdown");
@@ -366,7 +370,7 @@
             document.getElementById("statusKeyV5").innerText = "✅ Token Disimpan!";
             document.getElementById("statusKeyV5").style.color = "#50fa7b";
             refreshSemuaDataLive(); toggleApiKeyDropdown();
-            muatKatalogAsli(); // Tarik katalog pasca input token
+            muatKatalogAsli(); 
         }
 
         function refreshSemuaDataLive() { ambilSaldoLive(); muatKatalogAsli(); }
