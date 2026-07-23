@@ -187,7 +187,7 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        /* === TARIK KATALOG FLEKSIBEL (MENGUTAMAKAN INDONESIA, TANPA FILTER KETAT) === */
+        /* === TARIK KATALOG FLEKSIBEL (HANYA SHOPEE INDONESIA) === */
         async function muatKatalogFlexible() {
             try {
                 printLog("🔄 Menarik katalog produk Indonesia (ID 7)...");
@@ -199,18 +199,17 @@
                     throw new Error("Format data tidak valid.");
                 }
 
-                // Coba saring yang mengandung kata shopee
+                // Saring agar HANYA layanan yang mengandung kata "shopee" yang diambil
                 let hasilFilter = arrData.filter(item => {
                     let textCek = (item.name || "").toLowerCase();
                     return textCek.includes("shopee");
                 });
 
-                // Jika filter shopee kosong, ambil semua produk Indonesia agar aplikasi tidak kosong
+                // Jika filter shopee kosong, biarkan kosong tanpa fallback
                 if (hasilFilter.length === 0) {
-                    printLog("⚠️ Keyword 'shopee' tidak terdeteksi, menampilkan semua layanan Indonesia.");
-                    hasilFilter = arrData;
+                    printLog("⚠️ Layanan Shopee saat ini sedang tidak tersedia.");
                 } else {
-                    printLog(`✅ Ditemukan ${hasilFilter.length} layanan.`);
+                    printLog(`✅ Ditemukan ${hasilFilter.length} layanan Shopee.`);
                 }
 
                 let groupedOps = {};
@@ -253,7 +252,7 @@
         function renderMenuLayananApp(katalogData) {
             const container = document.getElementById("operatorAccordionContainer");
             if(katalogData.length === 0) {
-                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #64748b; font-size: 13px;">Tidak ada layanan ditemukan.</div>`;
+                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #64748b; font-size: 13px;">Layanan Shopee tidak tersedia saat ini.</div>`;
                 return;
             }
 
