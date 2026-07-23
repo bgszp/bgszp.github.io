@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMSCode.gg Panel</title>
+    <title>SMSCode.gg Shopee Panel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #6c5ce7; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -11,16 +11,8 @@
         body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
         .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
-        .pemicu-dropdown:hover { background: #1e2042; }
-        .wrapper-layanan { background: var(--bg-item); border: 1px solid #32356b; border-top: none; border-radius: 0 0 12px 12px; overflow: hidden; margin-top: -1px; display: none; position: relative; z-index: 10; }
-        .search-box-container { padding: 10px; background: #15102a; border-bottom: 1px solid #2c2e5c; position: sticky; top: 0; z-index: 11; }
         .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; }
         .search-input:focus { border-color: var(--accent-cyan); }
-        .scrollable-list { max-height: 220px; overflow-y: auto; }
-        .opsi-shopee { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #222448; }
-        .opsi-shopee:last-child { border-bottom: none; }
-        .opsi-shopee:hover { background: #20224a; }
-        .opsi-shopee.terpilih { background: #2a2c63; border-left: 4px solid var(--accent-purple); }
         .btn-pesan-premium { width: 100%; padding: 12px; background: #008060; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; text-transform: uppercase; margin-top: 12px; box-shadow: 0 4px 12px rgba(0, 128, 96, 0.4); }
         .btn-pesan-premium:hover:not(:disabled) { background: #00b386; }
         .btn-pesan-premium:disabled { background: #44475a !important; color: #888 !important; cursor: not-allowed !important; }
@@ -37,7 +29,7 @@
 <body>
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Server 2 (SMSCode.gg)</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Server 2 (SMSCode - Shopee ID)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
@@ -60,18 +52,9 @@
         </div>
 
         <div>
-            <label style="font-size: 12px; color: var(--text-sub); display: block; margin-bottom: 4px;">Pilih Layanan</label>
-            <div class="pemicu-dropdown" id="btnTriggerDropdown" onclick="toggleMekanismeDropdown()">
-                <span id="txtLayananTerpilihHeader" style="font-size: 12px;">Menghubungkan server...</span>
-                <span id="ikonPanahDropdown" style="font-size: 10px;">▼</span>
-            </div>
-            <div class="wrapper-layanan" id="boxLayananShopee">
-                <div class="search-box-container">
-                    <input type="text" id="cariLayanan" class="search-input" placeholder="Cari layanan..." onkeyup="renderDaftarLayanan()">
-                </div>
-                <div id="listLayananRender" class="scrollable-list">
-                    <div style="text-align: center; padding: 15px; color: #6272a4; font-size: 12px; font-style: italic;">Memuat data...</div>
-                </div>
+            <label style="font-size: 12px; color: var(--text-sub); display: block; margin-bottom: 4px;">Layanan Terpilih</label>
+            <div class="pemicu-dropdown" style="background: #1e2042; border-color: #008060; cursor: default;">
+                <span id="txtLayananTerpilihHeader" style="font-size: 12px; color: #00ffcc; font-weight: bold;">Shopee (Indonesia) — Memuat harga...</span>
             </div>
             
             <button onclick="prosesPesanSekarang()" class="btn-pesan-premium" id="btnPesanUtama">
@@ -90,7 +73,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
-            └> Server 2 Ready.
+            └> Server 2 (Shopee Mode) Ready.
         </div>
     </div>
     
@@ -99,12 +82,9 @@
     <script>
         let daftarOrderan = []; 
         let saldoSekarangGlobal = 0;
-        let globalListLayanan = []; 
-        let idLayananTerpilih = null;
-        let namaLayananTerpilih = "";
-        let hargaLayananTerpilih = 0;
+        let hargaShopeeLive = 0;
+        const KODE_LAYANAN_SHOPEE = "shopee"; // Kode standar layanan Shopee di SMSCode
 
-        // SISTEM SMART PROXY / FALLBACK UNTUK SMSCODE
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("API Key belum disetting.");
@@ -120,27 +100,19 @@
             };
             if (payload) options.body = JSON.stringify(payload);
 
-            // Coba 1: Koneksi Langsung
-            try {
-                const res = await fetch(targetUrl, options);
-                if (res.ok) return await res.json();
-            } catch (e) {}
+            const proxies = [
+                targetUrl,
+                "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
+                "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl)
+            ];
 
-            // Coba 2: Lewat Proxy corsproxy.io jika langsung diblokir
-            try {
-                const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
-                const res = await fetch(proxyUrl, options);
-                if (res.ok) return await res.json();
-            } catch (e) {}
-
-            // Coba 3: Lewat Proxy codetabs
-            try {
-                const proxyUrl2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);
-                const res = await fetch(proxyUrl2, options);
-                if (res.ok) return await res.json();
-            } catch (e) {}
-
-            throw new Error("Gagal terhubung ke server SMSCode (CORS / Network Error).");
+            for (let url of proxies) {
+                try {
+                    const res = await fetch(url, options);
+                    if (res.ok) return await res.json();
+                } catch (e) {}
+            }
+            throw new Error("Gagal terhubung ke server SMSCode.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -152,20 +124,16 @@
                 refreshSemuaDataLive();
             } else { toggleApiKeyDropdown(); }
 
-            const orderanLokal = localStorage.getItem("daftar_orderan_srv2");
+            const orderanLokal = localStorage.getItem("daftar_orderan_srv2_shopee");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 2000); 
-            setInterval(ambilLayananLive, 10000); 
+            setInterval(refreshSemuaDataLive, 15000); 
         });
 
         function toggleApiKeyDropdown() {
             const w = document.getElementById("wadahApiKeyDropdown");
-            w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none";
-        }
-        function toggleMekanismeDropdown() {
-            const w = document.getElementById("boxLayananShopee");
             w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none";
         }
 
@@ -178,7 +146,7 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); ambilLayananLive(); }
+        function refreshSemuaDataLive() { ambilSaldoLive(); ambilHargaShopee(); }
 
         async function ambilSaldoLive() {
             try {
@@ -188,58 +156,54 @@
             } catch(e) {}
         }
 
-        async function ambilLayananLive() {
+        async function ambilHargaShopee() {
             try {
                 const data = await apiSMSCode('services');
                 let listArray = Array.isArray(data) ? data : (data.services || data.data || []);
-                globalListLayanan = listArray; renderDaftarLayanan();
-            } catch (e) { printLog("Gagal memuat layanan."); }
-        }
-
-        function renderDaftarLayanan() {
-            const container = document.getElementById("listLayananRender");
-            const keyword = document.getElementById("cariLayanan").value.toLowerCase();
-            let filtered = globalListLayanan.filter(item => { return String(item.name || item.code).toLowerCase().includes(keyword); });
-
-            if (filtered.length > 0) {
-                let html = "";
-                filtered.forEach((item, index) => {
-                    let id = String(item.code || item.id);
-                    let name = item.name || item.code;
-                    let price = parseInt(item.price || item.cost || 0);
-                    let stock = parseInt(item.stock ?? 9999);
-
-                    let isSelected = (idLayananTerpilih === id);
-                    if (!idLayananTerpilih && index === 0) { idLayananTerpilih = id; namaLayananTerpilih = name; hargaLayananTerpilih = price; isSelected = true; }
-                    if (isSelected) { hargaLayananTerpilih = price; updateTeksHeaderTerpilih(name, stock, price); }
-                    html += `<div class="opsi-shopee ${isSelected ? "terpilih" : ""}" onclick="pilihOpsiShopee(this, '${id}', '${name}', ${price}, ${stock})"><div style="font-size: 12px; font-weight: 600; color: #fff;">${name} <span style="color: #8b8da9; font-size: 10px;">(${stock} stok)</span></div><div style="color: #b4b7ff; font-weight: bold; font-size: 12px;">Rp ${price.toLocaleString('id-ID')}</div></div>`;
+                
+                // Cari layanan Shopee untuk negara Indonesia (ID)
+                let itemShopee = listArray.find(item => {
+                    let code = String(item.code || item.id || "").toLowerCase();
+                    let country = String(item.country || item.country_code || "").toLowerCase();
+                    return code.includes("shopee") && (country === "id" || country === "indonesia" || !country);
                 });
-                container.innerHTML = html;
-            } else { container.innerHTML = `<div style="padding: 15px; text-align: center; color: #8b8da9; font-size: 11px; font-style: italic;">Layanan tidak ditemukan...</div>`; }
-        }
 
-        function updateTeksHeaderTerpilih(nama, stok, harga) {
-            document.getElementById("txtLayananTerpilihHeader").innerHTML = `${nama} — <span style="color:#00ffcc;">Rp ${harga.toLocaleString('id-ID')}</span>`;
-        }
-
-        function pilihOpsiShopee(elemen, id, nama, harga, stok) {
-            idLayananTerpilih = id; namaLayananTerpilih = nama; hargaLayananTerpilih = harga;
-            updateTeksHeaderTerpilih(nama, stok, harga); renderDaftarLayanan(); toggleMekanismeDropdown();
+                if (itemShopee) {
+                    hargaShopeeLive = parseInt(itemShopee.price || itemShopee.cost || 0);
+                    let stok = parseInt(itemShopee.stock ?? 999);
+                    document.getElementById("txtLayananTerpilihHeader").innerHTML = `Shopee (Indonesia) <span style="color:#8b8da9; font-size:10px;">(${stok} stok)</span> — <span style="color:#00ffcc;">Rp ${hargaShopeeLive.toLocaleString('id-ID')}</span>`;
+                } else {
+                    document.getElementById("txtLayananTerpilihHeader").innerHTML = `Shopee (Indonesia) — <span style="color:#00ffcc;>Tersedia</span>`;
+                }
+            } catch (e) {
+                printLog("Gagal memuat harga shopee.");
+            }
         }
 
         async function prosesPesanSekarang() {
-            if(!idLayananTerpilih) { alert("Periksa Layanan!"); return; }
             const btn = document.getElementById("btnPesanUtama");
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                const data = await apiSMSCode('order', 'POST', { service: idLayananTerpilih, country: "ID" });
+                // Mengirim request order khusus Shopee dengan negara Indonesia (ID)
+                const data = await apiSMSCode('order', 'POST', { service: KODE_LAYANAN_SHOPEE, country: "ID" });
                 if (data.id || data.phone || data.status === "success") {
-                    let orderBaru = { order_id: data.id || data.order_id, phone: data.phone || data.number, layanan: namaLayananTerpilih, harga: hargaLayananTerpilih, waktu_dibuat: Date.now(), status: "pending", otp: "" };
+                    let orderBaru = { 
+                        order_id: data.id || data.order_id, 
+                        phone: data.phone || data.number, 
+                        layanan: "Shopee (ID)", 
+                        harga: hargaShopeeLive, 
+                        waktu_dibuat: Date.now(), 
+                        status: "pending", 
+                        otp: "" 
+                    };
                     daftarOrderan.unshift(orderBaru); renderUILayout(); simpanDaftarOrderanKeLokal();
-                    printLog(`Nomor didapatkan!`); ambilSaldoLive();
-                } else { alert(`Gagal: ${data.message || data.error || 'Server menolak'}`); }
-            } catch (e) { alert("Gagal memproses: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
+                    printLog(`Nomor Shopee didapatkan!`); ambilSaldoLive();
+                } else { 
+                    alert(`Gagal: ${data.message || data.error || 'Stok habis / Server menolak'}`); 
+                }
+            } catch (e) { alert("Gagal memproses pesanan."); } 
+            finally { btn.disabled = false; btn.innerHTML = teksAsli; }
         }
 
         async function eksekusiBatalkanServer(index) {
@@ -286,7 +250,7 @@
             container.innerHTML = html; if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
 
-        function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv2", JSON.stringify(daftarOrderan)); }
+        function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv2_shopee", JSON.stringify(daftarOrderan)); }
         function hapusRiwayatSelesai() { daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Dibersihkan!"); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function printLog(t) { document.getElementById("miniConsoleLog").innerHTML += `<br>└> ${t}`; document.getElementById("miniConsoleLog").scrollTop = 9999; }
