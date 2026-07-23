@@ -6,84 +6,71 @@
     <title>SMSCode.gg Panel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
-        /* (SAMA SEPERTI v15) */
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #6c5ce7; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
         * { box-sizing: border-box; transition: all 0.2s ease; }
-        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 500px; background: var(--bg-card); border-radius: 18px; border: 1px solid var(--border-color); padding: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); margin-bottom: 20px; }
-        .badge-promo { background: #3c1e70; color: #b4b7ff; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: bold; }
-        .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 14px; color: #fff; user-select: none; }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
+        .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
         .pemicu-dropdown:hover { background: #1e2042; }
         .wrapper-layanan { background: var(--bg-item); border: 1px solid #32356b; border-top: none; border-radius: 0 0 12px 12px; overflow: hidden; margin-top: -1px; display: none; position: relative; z-index: 10; }
         .search-box-container { padding: 10px; background: #15102a; border-bottom: 1px solid #2c2e5c; position: sticky; top: 0; z-index: 11; }
         .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; }
         .search-input:focus { border-color: var(--accent-cyan); }
-        .scrollable-list { max-height: 250px; overflow-y: auto; }
-        .opsi-shopee { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #222448; }
+        .scrollable-list { max-height: 220px; overflow-y: auto; }
+        .opsi-shopee { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #222448; }
         .opsi-shopee:last-child { border-bottom: none; }
         .opsi-shopee:hover { background: #20224a; }
         .opsi-shopee.terpilih { background: #2a2c63; border-left: 4px solid var(--accent-purple); }
-        .btn-pesan-premium { width: 100%; padding: 14px; background: #008060; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 15px; cursor: pointer; text-transform: uppercase; margin-top: 15px; box-shadow: 0 4px 12px rgba(0, 128, 96, 0.4); }
+        .btn-pesan-premium { width: 100%; padding: 12px; background: #008060; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; text-transform: uppercase; margin-top: 12px; box-shadow: 0 4px 12px rgba(0, 128, 96, 0.4); }
         .btn-pesan-premium:hover:not(:disabled) { background: #00b386; }
-        .btn-pesan-premium:disabled { background: #44475a !important; color: #888 !important; cursor: not-allowed !important; box-shadow: none !important; }
-        .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-top: 15px; }
-        .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 10px 12px; border-radius: 8px; border: 1px solid #222448; margin: 8px 0; }
+        .btn-pesan-premium:disabled { background: #44475a !important; color: #888 !important; cursor: not-allowed !important; }
+        .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
+        .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
-        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-        .btn-copy-static:hover { background: #323568; transform: scale(1.03); }
+        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
-        .btn-batal { background: var(--accent-red); color: white; border: none; padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 12px; display: flex; justify-content: center; align-items: center; gap: 6px; }
-        .btn-batal:hover:not(:disabled) { background: #ff3333; }
-        .btn-batal:disabled { background: #2f3148; color: #727598; cursor: not-allowed; border: 1px solid #3d3f5e; }
-        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; opacity: 0; z-index: 99; }
+        .btn-batal { background: var(--accent-red); color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- TOMBOL KEMBALI KE MENU -->
-        <div onclick="window.location.href='index.html'" style="cursor: pointer; color: var(--accent-cyan); font-size: 13px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 5px;">
-            <i class="fa-solid fa-arrow-left"></i> Kembali ke Menu Utama
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <h3 style="color: #fff; margin: 0; font-size: 17px; font-weight: 600;">🔵 Server 2 (SMSCode.gg)</h3>
-            </div>
-            
-            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; color: var(--accent-green);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Server 2 (SMSCode.gg)</h3>
+            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
-                <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 12px; color: var(--accent-cyan); margin-left: 5px;">🔄</span>
+                <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
             </div>
         </div>
 
-        <div style="margin-bottom: 15px;">
-            <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()" style="padding: 12px 16px; border-radius: 10px; font-size: 13px; color: var(--accent-cyan);">
+        <div style="margin-bottom: 12px;">
+            <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()">
                 <span>🔑 Set Bearer Token</span>
-                <span id="panahApiKey" style="transition: transform 0.2s; font-size: 11px;">▼</span>
+                <span id="panahApiKey" style="font-size: 10px;">▼</span>
             </div>
-            <div id="wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
-                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold;">🔑 Masukkan API Key / Bearer Token:</label>
-                <div style="display: flex; margin-top: 5px; gap: 8px;">
-                    <input type="password" id="otpKeyV5" placeholder="Masukkan token API" class="search-input">
-                    <button onclick="simpanKeyV5()" style="padding: 10px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px;">Simpan</button>
+            <div id="wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 10px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold;">🔑 Masukkan Bearer Token:</label>
+                <div style="display: flex; margin-top: 4px; gap: 6px;">
+                    <input type="password" id="otpKeyV5" placeholder="Token API" class="search-input">
+                    <button onclick="simpanKeyV5()" style="padding: 8px 10px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
                 </div>
-                <small id="statusKeyV5" style="color: var(--accent-red); font-size: 11px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
+                <small id="statusKeyV5" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 4px;">⚠️ Token belum aktif.</small>
             </div>
         </div>
 
         <div>
-            <label style="font-size: 13px; color: var(--text-sub); display: block; margin-bottom: 5px;">Pilih Layanan</label>
+            <label style="font-size: 12px; color: var(--text-sub); display: block; margin-bottom: 4px;">Pilih Layanan</label>
             <div class="pemicu-dropdown" id="btnTriggerDropdown" onclick="toggleMekanismeDropdown()">
-                <span id="txtLayananTerpilihHeader">Menghubungkan server...</span>
-                <span id="ikonPanahDropdown" style="transition: transform 0.2s; font-size: 12px;">▼</span>
+                <span id="txtLayananTerpilihHeader" style="font-size: 12px;">Menghubungkan server...</span>
+                <span id="ikonPanahDropdown" style="font-size: 10px;">▼</span>
             </div>
             <div class="wrapper-layanan" id="boxLayananShopee">
                 <div class="search-box-container">
-                    <input type="text" id="cariLayanan" class="search-input" placeholder="Cari layanan (contoh: WhatsApp)" onkeyup="renderDaftarLayanan()">
+                    <input type="text" id="cariLayanan" class="search-input" placeholder="Cari layanan..." onkeyup="renderDaftarLayanan()">
                 </div>
                 <div id="listLayananRender" class="scrollable-list">
-                    <div style="text-align: center; padding: 20px; color: #6272a4; font-style: italic; font-size: 13px;">Memuat data live server...</div>
+                    <div style="text-align: center; padding: 15px; color: #6272a4; font-size: 12px; font-style: italic;">Memuat data...</div>
                 </div>
             </div>
             
@@ -92,25 +79,24 @@
             </button>
         </div>
 
-        <div style="margin-top: 25px; border-top: 2px dashed var(--border-color); padding-top: 15px;">
-            <div style="font-size: 14px; font-weight: bold; color: var(--accent-green); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
-                <span onclick="hapusRiwayatSelesai()" style="cursor: pointer; font-size: 11px; color: var(--accent-red); background: var(--bg-item); padding: 4px 10px; border-radius: 5px; border: 1px solid var(--border-color); font-weight: normal;">🧹 Bersihkan Layar</span>
+                <span onclick="hapusRiwayatSelesai()" style="cursor: pointer; font-size: 10px; color: var(--accent-red); background: var(--bg-item); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-color);">🧹 Bersihkan</span>
             </div>
             <div id="containerListOrder">
-                <div id="panelKosong" style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">Belum ada pesanan aktif. Klik pesan di atas.</div>
+                <div id="panelKosong" style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
             </div>
         </div>
 
-        <div id="miniConsoleLog" style="margin-top: 15px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 11px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 80px; overflow-y: auto;">
-            └> Server 2 (Direct API) Ready.
+        <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
+            └> Server 2 Ready.
         </div>
     </div>
     
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        // SCRIPT INI ADALAH KHUSUS UNTUK SMSCODE.GG (MENGGUNAKAN BEARER AUTH & DIRECT FETCH)
         let daftarOrderan = []; 
         let saldoSekarangGlobal = 0;
         let globalListLayanan = []; 
@@ -118,35 +104,25 @@
         let namaLayananTerpilih = "";
         let hargaLayananTerpilih = 0;
 
-        // FUNGSI API CORE (DIRECT FETCH)
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("API Key belum disetting.");
-
             let options = {
                 method: method,
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                }
+                headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json", "Accept": "application/json" }
             };
             if (payload) options.body = JSON.stringify(payload);
-
             try {
-                // Fetch Langsung Tanpa Proxy! Karena Cordova mendukung CORS.
                 const res = await fetch(`https://api.smscode.gg/v1/${endpoint}`, options);
                 return await res.json();
-            } catch (e) {
-                throw new Error(`Koneksi terputus: ${e.message}`);
-            }
+            } catch (e) { throw new Error(`Koneksi terputus: ${e.message}`); }
         }
 
         document.addEventListener("DOMContentLoaded", function() {
             const savedKey = localStorage.getItem("otp_key_smscode");
             if(savedKey) {
                 document.getElementById("otpKeyV5").value = savedKey;
-                document.getElementById("statusKeyV5").innerText = "✅ API Key Aktif.";
+                document.getElementById("statusKeyV5").innerText = "✅ Token Aktif.";
                 document.getElementById("statusKeyV5").style.color = "#50fa7b";
                 refreshSemuaDataLive();
             } else { toggleApiKeyDropdown(); }
@@ -170,9 +146,9 @@
 
         function simpanKeyV5() {
             const key = document.getElementById("otpKeyV5").value.trim();
-            if(!key) { alert("Masukkan API Key!"); return; }
+            if(!key) { alert("Masukkan Token!"); return; }
             localStorage.setItem("otp_key_smscode", key);
-            document.getElementById("statusKeyV5").innerText = "✅ API Key Disimpan!";
+            document.getElementById("statusKeyV5").innerText = "✅ Token Disimpan!";
             document.getElementById("statusKeyV5").style.color = "#50fa7b";
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
@@ -182,8 +158,6 @@
         async function ambilSaldoLive() {
             try {
                 const d = await apiSMSCode('balance');
-                if (d.error || d.message) printLog(`Info Saldo: ${d.message || d.error}`);
-                
                 saldoSekarangGlobal = parseInt(d.balance || d.amount || 0);
                 document.getElementById("txtSaldoLive").innerText = "Rp " + saldoSekarangGlobal.toLocaleString("id-ID");
             } catch(e) {}
@@ -213,10 +187,10 @@
                     let isSelected = (idLayananTerpilih === id);
                     if (!idLayananTerpilih && index === 0) { idLayananTerpilih = id; namaLayananTerpilih = name; hargaLayananTerpilih = price; isSelected = true; }
                     if (isSelected) { hargaLayananTerpilih = price; updateTeksHeaderTerpilih(name, stock, price); }
-                    html += `<div class="opsi-shopee ${isSelected ? "terpilih" : ""}" onclick="pilihOpsiShopee(this, '${id}', '${name}', ${price}, ${stock})"><div style="font-size: 13px; font-weight: 600; color: #fff;">${name} <span style="color: #8b8da9; font-size: 11px;">(${stock} stok)</span></div><div style="color: #b4b7ff; font-weight: bold; font-size: 13px;">Rp ${price.toLocaleString('id-ID')}</div></div>`;
+                    html += `<div class="opsi-shopee ${isSelected ? "terpilih" : ""}" onclick="pilihOpsiShopee(this, '${id}', '${name}', ${price}, ${stock})"><div style="font-size: 12px; font-weight: 600; color: #fff;">${name} <span style="color: #8b8da9; font-size: 10px;">(${stock} stok)</span></div><div style="color: #b4b7ff; font-weight: bold; font-size: 12px;">Rp ${price.toLocaleString('id-ID')}</div></div>`;
                 });
                 container.innerHTML = html;
-            } else { container.innerHTML = `<div style="padding: 20px; text-align: center; color: #8b8da9; font-size: 12px; font-style: italic;">Layanan tidak ditemukan...</div>`; }
+            } else { container.innerHTML = `<div style="padding: 15px; text-align: center; color: #8b8da9; font-size: 11px; font-style: italic;">Layanan tidak ditemukan...</div>`; }
         }
 
         function updateTeksHeaderTerpilih(nama, stok, harga) {
@@ -234,24 +208,19 @@
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                // Melakukan POST dengan JSON body untuk pemesanan SMSCode
                 const data = await apiSMSCode('order', 'POST', { service: idLayananTerpilih, country: "ID" });
-                
                 if (data.id || data.phone || data.status === "success") {
                     let orderBaru = { order_id: data.id || data.order_id, phone: data.phone || data.number, layanan: namaLayananTerpilih, harga: hargaLayananTerpilih, waktu_dibuat: Date.now(), status: "pending", otp: "" };
                     daftarOrderan.unshift(orderBaru); renderUILayout(); simpanDaftarOrderanKeLokal();
                     printLog(`Nomor didapatkan!`); ambilSaldoLive();
-                } else { 
-                    alert(`Gagal: ${data.message || data.error || 'Server menolak'}`); 
-                    printLog(`Gagal Order: ${data.message || data.error}`);
-                }
+                } else { alert(`Gagal: ${data.message || data.error || 'Server menolak'}`); }
             } catch (e) { alert("Gagal memproses: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
         }
 
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
             try {
-                const res = await apiSMSCode(`cancel/${item.order_id}`, 'POST');
+                await apiSMSCode(`cancel/${item.order_id}`, 'POST');
                 item.status = "cancelled"; showToast("Dibatalkan!"); renderUILayout(); simpanDaftarOrderanKeLokal(); await ambilSaldoLive();
             } catch (e) { alert("Gagal membatalkan pesanan."); }
         }
@@ -274,38 +243,37 @@
 
         function renderUILayout() {
             const container = document.getElementById("containerListOrder");
-            if (daftarOrderan.length === 0) { container.innerHTML = `<div style="text-align: center; padding: 30px 10px; color: #6272a4; font-style: italic; font-size: 13px;">Belum ada pesanan aktif.</div>`; return; }
+            if (daftarOrderan.length === 0) { container.innerHTML = `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`; return; }
             let html = ""; let flagSimpan = false;
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 if (item.status === "pending" && sec >= 1200) { item.status = "cancelled"; flagSimpan = true; }
                 let sisa = Math.max(0, 1200 - sec); let cool = Math.max(0, 120 - sec);
-                let textStat = `⚡ Cek OTP tiap 2s... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = "";
+                let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = "";
 
                 if (item.status === "received") { 
                     textStat = `🎉 SMS/OTP Diterima!`; colStat = "#50fa7b"; 
-                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:10px; color:#50fa7b; font-weight:bold;">Kode OTP Masuk:</div><div style="font-size:22px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
-                } else if (item.status === "cancelled") { textStat = "❌ Dibatalkan / Expired"; colStat = "#ff5555"; }
+                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
+                } else if (item.status === "cancelled") { textStat = "❌ Dibatalkan"; colStat = "#ff5555"; }
                 
-                html += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa; margin-bottom:6px;"><span>${item.layanan} (Rp ${(item.harga || 0).toLocaleString('id-ID')})</span><span>⏱️ Expired: ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:10px; color:#8b8da9;">Nomor Handphone:</div><div style="font-size:18px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:12px; font-weight:600; color:${colStat}; margin-top:8px;">${textStat}</div>${item.status === "pending" ? `<button class="btn-batal" ${cool>0?'disabled':''} onclick="eksekusiBatalkanServer(${index})">${cool>0?`Batalkan (Tunggu ${cool}s)`:'❌ Batalkan Pesanan'}</button>` : ''}</div>`;
+                html += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan} (Rp ${(item.harga || 0).toLocaleString('id-ID')})</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${item.status === "pending" ? `<button class="btn-batal" ${cool>0?'disabled':''} onclick="eksekusiBatalkanServer(${index})">${cool>0?`Batalkan (${cool}s)`:'❌ Batalkan Pesanan'}</button>` : ''}</div>`;
             });
             container.innerHTML = html; if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
 
         function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv2", JSON.stringify(daftarOrderan)); }
-        function hapusRiwayatSelesai() { daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Layar Dibersihkan!"); }
+        function hapusRiwayatSelesai() { daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Dibersihkan!"); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function printLog(t) { document.getElementById("miniConsoleLog").innerHTML += `<br>└> ${t}`; document.getElementById("miniConsoleLog").scrollTop = 9999; }
-        function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+        function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin!"); }
 
         function putarSuaraNotif() {
             try { const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const notes = [523.25, 659.25, 783.99, 1046.50]; let time = audioCtx.currentTime; for (let r = 0; r < 2; r++) { notes.forEach((freq) => { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = "sawtooth"; osc.frequency.setValueAtTime(freq, time); gain.gain.setValueAtTime(0.2, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(time); osc.stop(time + 0.2); time += 0.08; }); time += 0.15; } } catch (e) {}
         }
-
         function munculkanPopupNative(nomor, otp, layanan) {
             if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, lockscreen: true, wakeup: true });
+                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
             } 
         }
     </script>
