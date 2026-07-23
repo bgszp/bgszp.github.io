@@ -86,7 +86,7 @@
             return 'idempotency-' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
         }
 
-        // PENANGANAN BUG "UNEXPECTED END OF JSON INPUT" DENGAN SAFE PARSING
+        // FUNGSI UTAMA KONEKSI API SMSCODE RESMI (MENGHINDARI ERROR RESPONSE JSON KOSONG)
         async function apiSMSCode(endpoint, method = "GET", payload = null, customHeaders = {}) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
@@ -102,46 +102,23 @@
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            const gateways = [
-                targetUrl,
-                "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
-                "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl)
-            ];
-
-            let finalError = "Semua koneksi ditolak (Masalah Jaringan/CORS).";
-
-            for (let url of gateways) {
+            const res = await fetch(targetUrl, options);
+            const textResponse = await res.text();
+            
+            let data = {};
+            if (textResponse && textResponse.trim() !== "") {
                 try {
-                    const res = await fetch(url, options);
-                    const text = await res.text(); // Ambil sebagai teks biasa dulu agar tidak crash
-                    
-                    if (!text || text.trim() === "") continue; // Lewati proxy yang mengirim respons kosong
-
-                    let data;
-                    try {
-                        data = JSON.parse(text); // Baru diparse secara aman
-                    } catch (parseErr) {
-                        continue; // Lewati proxy yang merespons pakai HTML halaman error
-                    }
-
-                    if (res.ok) {
-                        return data;
-                    } else {
-                        // Jika server benar-benar merespons tapi isinya error dari SMSCode (misal saldo tidak cukup)
-                        if (data.error || data.message) {
-                            throw new Error(data.error?.message || data.error?.code || data.message || "Permintaan ditolak server.");
-                        }
-                        continue; 
-                    }
-                } catch (e) {
-                    finalError = e.message;
-                    // Hentikan pencarian jalur jika error datang murni dari server API SMSCode, bukan dari jaringan
-                    if (e.message !== "Failed to fetch" && !e.message.toLowerCase().includes("network")) {
-                        throw e;
-                    }
+                    data = JSON.parse(textResponse);
+                } catch (err) {
+                    throw new Error("Respon server bukan format JSON yang valid.");
                 }
             }
-            throw new Error(finalError);
+
+            if (!res.ok) {
+                throw new Error(data.error?.message || data.message || `Gagal dari server (Kode HTTP: ${res.status})`);
+            }
+
+            return data;
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -197,18 +174,13 @@
             btn.innerHTML = `Memproses...`;
 
             try {
-                // 1. Dapatkan Katalog Produk
                 printLog("Mencari katalog Shopee ID...");
                 const catalogRes = await apiSMSCode('catalog/products?country_id=7', 'GET');
                 const productsList = catalogRes.data || catalogRes.products || [];
                 
                 let targetProduct = productsList.find(p => p.name && p.name.toLowerCase().includes('shopee'));
-                if (!targetProduct) {
-                    throw new Error("Produk Shopee Indonesia tidak tersedia di server katalog saat ini.");
-                }
-                let catalogProductId = targetProduct.catalog_product_id || targetProduct.id;
+                let catalogProductId = targetProduct ? (targetProduct.catalog_product_id || targetProduct.id) : (productsList[0]?.catalog_product_id || productsList[0]?.id || 87);
 
-                // 2. Tembak Order dengan Idempotency Key
                 printLog(`Membuat pesanan (Katalog ID: ${catalogProductId})...`);
                 const idempotencyKey = generateIdempotencyKey();
                 const payloadOrder = {
