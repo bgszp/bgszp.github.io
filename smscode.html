@@ -104,18 +104,43 @@
         let namaLayananTerpilih = "";
         let hargaLayananTerpilih = 0;
 
+        // SISTEM SMART PROXY / FALLBACK UNTUK SMSCODE
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("API Key belum disetting.");
+
+            const targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
             let options = {
                 method: method,
-                headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json", "Accept": "application/json" }
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                }
             };
             if (payload) options.body = JSON.stringify(payload);
+
+            // Coba 1: Koneksi Langsung
             try {
-                const res = await fetch(`https://api.smscode.gg/v1/${endpoint}`, options);
-                return await res.json();
-            } catch (e) { throw new Error(`Koneksi terputus: ${e.message}`); }
+                const res = await fetch(targetUrl, options);
+                if (res.ok) return await res.json();
+            } catch (e) {}
+
+            // Coba 2: Lewat Proxy corsproxy.io jika langsung diblokir
+            try {
+                const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+                const res = await fetch(proxyUrl, options);
+                if (res.ok) return await res.json();
+            } catch (e) {}
+
+            // Coba 3: Lewat Proxy codetabs
+            try {
+                const proxyUrl2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);
+                const res = await fetch(proxyUrl2, options);
+                if (res.ok) return await res.json();
+            } catch (e) {}
+
+            throw new Error("Gagal terhubung ke server SMSCode (CORS / Network Error).");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
