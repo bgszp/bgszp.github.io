@@ -22,7 +22,7 @@
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-        /* === GAYA UI APLIKASI NATIVE (INDONESIA) === */
+        /* === GAYA UI APLIKASI NATIVE (Sesuai Video) === */
         .app-ui-container { background: #ffffff; border-radius: 16px; padding: 12px; margin-top: 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .app-header-nav { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px 15px 10px; border-bottom: 1px solid #f1f5f9; }
         .app-header-left { display: flex; align-items: center; gap: 15px; }
@@ -34,9 +34,9 @@
         .op-dot { width: 10px; height: 10px; background: #a3e635; border-radius: 50%; box-shadow: 0 0 4px rgba(163, 230, 53, 0.5); }
         .op-title { font-weight: 600; font-size: 14px; color: #1e293b; }
         .op-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
-        .server-list { display: none; background: #ffffff; padding: 0; border-top: 1px solid #f1f5f9; border-radius: 0 0 12px 12px; overflow-y: auto; max-height: 350px; }
+        .server-list { display: none; background: #ffffff; padding: 0; border-top: 1px solid #f1f5f9; border-radius: 0 0 12px 12px; overflow-y: auto; max-height: 400px; }
         .server-list.active { display: block; }
-        .server-row { padding: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f8fafc; }
+        .server-row { padding: 12px 12px 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f8fafc; }
         .server-row:last-child { border-bottom: none; }
         .srv-left { display: flex; align-items: center; gap: 12px; }
         .srv-title { font-weight: 600; font-size: 13.5px; color: #334155; }
@@ -47,6 +47,7 @@
         .btn-buy-app { background: #3b82f6; color: #ffffff; border: none; padding: 6px 18px; border-radius: 20px; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3); }
         .btn-buy-app:hover { background: #2563eb; transform: scale(0.98); }
         .btn-buy-app:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
+        .no-product-text { padding: 14px 14px 14px 24px; color: #94a3b8; font-size: 12.5px; }
     </style>
 </head>
 <body>
@@ -91,7 +92,7 @@
             <div id="operatorAccordionContainer" style="margin-top: 10px;">
                 <div style="padding: 30px; text-align: center; color: #94a3b8;">
                     <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #3b82f6;"></i>
-                    <div style="margin-top: 10px; font-size: 13px;">Memuat Operator Indonesia...</div>
+                    <div style="margin-top: 10px; font-size: 13px;">Memuat Server Spesifik...</div>
                 </div>
             </div>
         </div>
@@ -108,7 +109,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
-            └> Umbrella Catalog Ready.
+            └> Specific Server Catalog Ready.
         </div>
     </div>
     
@@ -187,60 +188,67 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        /* === TARIK KATALOG FLEKSIBEL (UMBRELLA ROUTING) === */
+        /* === TARIK KATALOG FLEKSIBEL (PECAHAN SERVER) === */
         async function muatKatalogFlexible() {
             try {
-                printLog("🔄 Mencari layanan Shopee ID...");
+                printLog("🔄 Menarik katalog Shopee (Tier Servers)...");
                 
-                // 1. Tarik produk untuk mencari catalog_product_id Shopee
+                // Ambil hingga 10.000 data agar tidak ada yang terlewat
                 const resProd = await apiSMSCode('catalog/products?country_id=7&limit=10000', 'GET');
                 let arrData = resProd.data;
                 
                 let shopeeItems = arrData.filter(item => (item.name || "").toLowerCase().includes("shopee"));
                 if (shopeeItems.length === 0) throw new Error("Layanan Shopee tidak tersedia saat ini.");
                 
-                // Ambil data payung (umbrella) dari item pertama
-                let shopeeBase = shopeeItems[0];
-                let catalogProdId = shopeeBase.catalog_product_id || shopeeBase.id;
-                let basePrice = shopeeBase.price;
+                // Urutan Operator Default Sesuai Video
+                const baseOperators = ["Any", "AXIS (XL Axiata)", "Indosat Ooredoo", "Telkomsel", "Three", "smartfren"];
+                let groupedOps = {};
+                baseOperators.forEach(op => groupedOps[op] = []); 
 
-                printLog(`✅ Shopee ditemukan (Cat ID: ${catalogProdId}). Mengambil operator...`);
+                // Kelompokkan setiap produk ke dalam nama operatornya
+                shopeeItems.forEach(item => {
+                    let opName = item.operator_name;
+                    if (!opName || opName.trim() === "") opName = "Any";
+                    
+                    if (!groupedOps[opName]) groupedOps[opName] = []; 
+                    
+                    groupedOps[opName].push({
+                        id: item.id, // Ini product_id untuk direct buy per tier
+                        stock: item.available || item.stock || 0, 
+                        price: item.price || 0 
+                    });
+                });
 
-                // 2. Tarik daftar nama operator spesifik dari SMSCode
-                let daftarOperator = [];
-                try {
-                    const resOp = await apiSMSCode('catalog/operators?country_id=7', 'GET');
-                    if (resOp.data && Array.isArray(resOp.data)) {
-                        daftarOperator = resOp.data;
-                    }
-                } catch(e) {
-                    printLog("⚠️ Gagal narik API operator, pakai list bawaan.");
-                    daftarOperator = [
-                        { id: 1, name: "AXIS (XL Axiata)" },
-                        { id: 2, name: "Indosat Ooredoo" },
-                        { id: 5, name: "Telkomsel" },
-                        { id: 3, name: "Three" },
-                        { id: 4, name: "smartfren" }
-                    ];
+                let newKatalog = [];
+                for (let opName in groupedOps) {
+                    // Urutkan tier dari yang termurah
+                    let servers = groupedOps[opName].sort((a, b) => a.price - b.price);
+                    
+                    // Labeli sebagai Server 1, Server 2, dst
+                    servers = servers.map((srv, index) => ({
+                        ...srv,
+                        name: `Server ${index + 1}`
+                    }));
+
+                    newKatalog.push({
+                        id: opName.toLowerCase().replace(/[^a-z0-9]/g, ''),
+                        name: opName,
+                        servers: servers
+                    });
                 }
+                
+                // Urutkan penempatan akordion sesuai aslinya
+                newKatalog.sort((a, b) => {
+                    let idxA = baseOperators.indexOf(a.name);
+                    let idxB = baseOperators.indexOf(b.name);
+                    if (idxA === -1) idxA = 999;
+                    if (idxB === -1) idxB = 999;
+                    return idxA - idxB;
+                });
 
-                // Tambahkan opsi "Any" di paling atas
-                daftarOperator.unshift({ id: null, name: "Any" });
-
-                // 3. Susun data untuk UI
-                dataKatalogLayanan = [{
-                    id: 'shopee-id',
-                    name: 'Shopee Indonesia',
-                    servers: daftarOperator.map(op => ({
-                        op_id: op.id,
-                        name: op.name,
-                        stock: "Available",
-                        price: basePrice,
-                        cat_id: catalogProdId
-                    }))
-                }];
-
+                dataKatalogLayanan = newKatalog;
                 renderMenuLayananApp(dataKatalogLayanan);
+                printLog(`✅ Ditemukan total ${shopeeItems.length} server.`);
 
             } catch (e) {
                 printLog(`⚠️ Error: ${e.message}`);
@@ -260,9 +268,8 @@
 
             let html = "";
             katalogData.forEach(op => {
-                let isAvailable = op.servers.length > 0;
-                let dotColor = isAvailable ? "#a3e635" : "#cbd5e1";
-                let shadowColor = isAvailable ? "rgba(163, 230, 53, 0.5)" : "transparent";
+                let dotColor = "#a3e635"; 
+                let shadowColor = "rgba(163, 230, 53, 0.5)";
                 
                 html += `
                 <div class="operator-item">
@@ -271,7 +278,7 @@
                             <div class="op-dot" style="background: ${dotColor}; box-shadow: 0 0 4px ${shadowColor};"></div>
                             <div>
                                 <div class="op-title">${op.name}</div>
-                                <div class="op-sub">${isAvailable ? 'Tersedia' : 'Kosong'}</div>
+                                <div class="op-sub">Available</div>
                             </div>
                         </div>
                         <i class="fa-solid fa-chevron-down" id="icon-op-${op.id}" style="color: #cbd5e1; font-size: 14px; transition: transform 0.3s ease;"></i>
@@ -296,14 +303,16 @@
                 listEl.classList.add('active');
                 iconEl.style.transform = "rotate(180deg)";
                 listEl.innerHTML = `<div style="text-align: center; padding: 25px;"><i class="fa-solid fa-spinner fa-spin" style="color: #3b82f6; font-size: 22px;"></i></div>`;
-                setTimeout(() => { renderIsiServerMenu(opId, listEl); }, 250); 
+                setTimeout(() => { renderIsiServerMenu(opId, listEl); }, 150); 
             }
         }
 
         function renderIsiServerMenu(opId, listEl) {
             const op = dataKatalogLayanan.find(o => o.id === opId);
+            
+            // Tampilan jika stok kosong (seperti di video pada bagian 'Three')
             if(!op || op.servers.length === 0) {
-                listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px; font-weight: 500;">No servers available.</div>`;
+                listEl.innerHTML = `<div class="no-product-text">No products available</div>`;
                 return;
             }
             
@@ -315,19 +324,19 @@
                         <div class="op-dot" style="background: #a3e635; box-shadow: 0 0 4px rgba(163, 230, 53, 0.5);"></div>
                         <div>
                             <div class="srv-title">${srv.name}</div>
-                            <div class="srv-stock">${srv.stock}</div>
+                            <div class="srv-stock">${parseInt(srv.stock).toLocaleString('id-ID')} available</div>
                         </div>
                     </div>
                     <div class="srv-right">
                         <div class="srv-price"><i class="fa-solid fa-circle-dollar-to-slot coin-icon"></i> ${parseInt(srv.price).toLocaleString('id-ID')}</div>
-                        <button class="btn-buy-app" onclick="eksekusiBeliUmbrella(this, ${srv.cat_id}, ${srv.op_id}, '${op.name} - ${srv.name}')">Buy</button>
+                        <button class="btn-buy-app" onclick="eksekusiBeliServer(this, ${srv.id}, '${op.name} - ${srv.name}')">Buy</button>
                     </div>
                 </div>`;
             });
             listEl.innerHTML = html;
         }
 
-        async function eksekusiBeliUmbrella(btnElement, catId, opId, fullServiceName) {
+        async function eksekusiBeliServer(btnElement, productId, fullServiceName) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) { alert("Sila atur Bearer Token Anda!"); toggleApiKeyDropdown(); return; }
 
@@ -337,10 +346,8 @@
             printLog(`Memesan ${fullServiceName}...`);
 
             try {
-                // Konfigurasi ID Payung & ID Operator Opsional
-                const payloadOrder = { catalog_product_id: catId, quantity: 1 };
-                if (opId !== null) { payloadOrder.operator_id = opId; }
-
+                // Tembak langsung ke ID Produk server bersangkutan (bukan catalog_product_id)
+                const payloadOrder = { product_id: productId, quantity: 1 };
                 const responseData = await apiSMSCode('orders/create', 'POST', payloadOrder);
                 const createdOrder = responseData.data?.orders?.[0];
 
