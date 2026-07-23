@@ -69,13 +69,13 @@
                 <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Bearer Token:</label>
                 <input type="password" id="otpKeyV5" placeholder="Token API" class="search-input">
                 
-                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; margin-top:6px; display:block;">📡 Rute Katalog API (Sesuai Dokumentasi):</label>
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; margin-top:6px; display:block;">📡 Rute Filter Katalog Khusus (Opsional):</label>
                 <div style="display: flex; gap: 6px;">
-                    <input type="text" id="customCatalogRoute" placeholder="cth: catalog?country=id" class="search-input" style="margin-bottom:0;" title="Kosongkan untuk Mode Auto">
+                    <input type="text" id="customCatalogRoute" placeholder="cth: catalog/products?country_id=7" class="search-input" style="margin-bottom:0;" title="Kosongkan untuk Mode Auto">
                     <button onclick="simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
                 </div>
                 
-                <small style="color: #ffb86c; font-size: 10px; display: block; margin-top: 8px;">*Cek web SMSCode Anda untuk mengetahui link Rute Katalog yang benar.</small>
+                <small style="color: #ffb86c; font-size: 10px; display: block; margin-top: 8px;">*Kosongkan saja filter untuk memuat semua secara otomatis.</small>
             </div>
         </div>
 
@@ -94,7 +94,7 @@
             <div id="operatorAccordionContainer" style="margin-top: 10px;">
                 <div style="padding: 30px; text-align: center; color: #94a3b8;">
                     <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #3b82f6;"></i>
-                    <div style="margin-top: 10px; font-size: 13px;">Menghubungkan ke Server...</div>
+                    <div style="margin-top: 10px; font-size: 13px;">Menghubungkan ke API SMSCode...</div>
                 </div>
             </div>
         </div>
@@ -110,7 +110,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 120px; overflow-y: auto;">
-            └> Sistem siap. Koneksi token divalidasi.
+            └> Sistem API V6. Dokumentasi resmi disinkronisasi.
         </div>
     </div>
     
@@ -120,17 +120,19 @@
         let daftarOrderan = []; 
         let dataKatalogLayanan = [];
 
-        // Data darurat agar UI tidak kosong saat 404
+        // Data darurat jika tidak ada internet
         const fallbackKatalog = [
             { id: "any", name: "Any", servers: [{ id: 87, name: "Server 1", stock: 886, price: 197 }, { id: 88, name: "Server 2", stock: 420, price: 276 }]},
             { id: "axis", name: "AXIS (XL Axiata)", servers: [{ id: 94, name: "Server 1", stock: 8190, price: 537 }] }
         ];
 
+        /* =======================================================================
+           FUNGSI JARINGAN API (Sesuai Dokumentasi SMSCode)
+           ======================================================================= */
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("Bearer Token belum disetting.");
 
-            // Deteksi cerdas: Jika input adalah link utuh "http...", gunakan langsung. Jika bukan, anggap itu rute "/v1/"
             let targetUrl = endpoint.startsWith("http") ? endpoint : `https://api.smscode.gg/v1/${endpoint}`;
             
             if (method === "GET") { 
@@ -142,8 +144,8 @@
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
             const proxies = [ 
-                { url: "", encode: false }, // Langsung API (Prioritas 1)
-                { url: "https://api.codetabs.com/v1/proxy?quest=", encode: false }, // Proxy Stabil
+                { url: "", encode: false }, // Langsung (Bypass CORS)
+                { url: "https://api.codetabs.com/v1/proxy?quest=", encode: false }, 
                 { url: "https://corsproxy.io/?", encode: true }
             ];
 
@@ -170,11 +172,11 @@
                     }
                     return data; 
                 } catch (e) { 
-                    if (e.message.includes("[HTTP")) throw e; // Lemparkan error HTTP murni jika ada
+                    if (e.message.includes("[HTTP")) throw e; 
                     networkError = e; 
                 }
             }
-            throw new Error(networkError ? networkError.message : "Gagal koneksi jaringan.");
+            throw new Error(networkError ? networkError.message : "Gagal koneksi proxy.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -197,60 +199,43 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        /* === FUNGSI TARIK KATALOG (DIPERKUAT DENGAN INPUT MANUAL) === */
+        /* =======================================================================
+           1. AMBIL KATALOG (MENGGUNAKAN RUTE /catalog/products)
+           ======================================================================= */
         async function muatKatalogAsli() {
             try {
                 const customRoute = localStorage.getItem("otp_custom_route");
-                let ruteTebakan = [];
-                
+                let ruteTarget = "catalog/products"; // Default resmi dari dokumentasi
+
                 if (customRoute && customRoute.trim() !== "") {
-                    // Jika ada rute manual dari pengguna, coba itu saja
-                    ruteTebakan = [customRoute.trim()];
-                    printLog(`📡 Mengecek Rute Manual: ${customRoute.trim()}`);
-                } else {
-                    // Mode Auto-Discover yang diperluas
-                    printLog("🔄 Memulai Auto-Discovery Katalog...");
-                    ruteTebakan = [
-                        'services/87', 'catalog/shopee', 'products?service=shopee', 
-                        'items', 'catalog', 'products', 'services'
-                    ];
+                    ruteTarget = customRoute.trim();
                 }
 
-                let itemDitemukan = null;
-                let ruteSukses = "";
-
-                for (let rute of ruteTebakan) {
-                    try {
-                        const res = await apiSMSCode(rute, 'GET');
-                        let arrData = res.data || res.products || res.services || res.catalog || res.inventory || res;
-                        
-                        if (Array.isArray(arrData) && arrData.length > 0) {
-                            itemDitemukan = arrData;
-                            ruteSukses = rute;
-                            break; 
-                        }
-                    } catch(err) {
-                        // Bypass error 404 agar loop berlanjut
-                    }
+                printLog(`🔄 Menarik data katalog dari: /${ruteTarget}...`);
+                const res = await apiSMSCode(ruteTarget, 'GET');
+                
+                // Berdasarkan dokumentasi, respon berada di dalam array "data"
+                let arrData = res.data;
+                
+                if (!Array.isArray(arrData) || arrData.length === 0) {
+                    throw new Error("Katalog kosong atau format tidak sesuai. Coba isi parameter negara/platform.");
                 }
 
-                if (!itemDitemukan) {
-                    throw new Error("Rute 404. Mohon isi kolom Rute Katalog sesuai dokumentasi web aslinya.");
-                }
-
-                printLog(`✅ Data ditarik dari: /${ruteSukses}!`);
+                printLog(`✅ Berhasil menarik ${arrData.length} layanan!`);
 
                 let groupedOps = {};
-                itemDitemukan.forEach(item => {
-                    let opName = item.operator || item.network || item.carrier || "Any";
-                    if (opName.toLowerCase() === "any") opName = "Any";
+                arrData.forEach(item => {
+                    // Penyesuaian nama key berdasarkan dokumentasi resmi
+                    let opName = item.operator_name;
+                    if (!opName || opName.toLowerCase() === "any") opName = "Any";
+                    
                     if (!groupedOps[opName]) groupedOps[opName] = [];
                     
                     groupedOps[opName].push({
-                        id: item.id || item.catalog_product_id || item.product_id || item.service_id,
-                        name: item.name || item.server_name || `Server ${groupedOps[opName].length + 1}`,
-                        stock: item.stock || item.available || item.qty || 0,
-                        price: item.price || item.cost || item.rate || 0
+                        id: item.id || item.product_id, // ID Produk utama untuk POST Create
+                        name: item.name || `Server ID ${item.id}`,
+                        stock: item.available || item.stock || 0, // Ketersediaan stok
+                        price: item.price || 0 // Harga produk
                     });
                 });
 
@@ -274,16 +259,106 @@
                 container.innerHTML = `
                 <div style="padding: 20px; text-align: center; background: #fff1f2; border: 1px solid #fda4af; border-radius: 12px; margin-top:10px;">
                     <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; color: #e11d48; margin-bottom:8px;"></i>
-                    <div style="font-weight: 600; color: #be123c; font-size:14px;">Gagal Menemukan Rute Katalog</div>
+                    <div style="font-weight: 600; color: #be123c; font-size:14px;">Gagal Tarik Katalog</div>
                     <div style="font-size: 12px; color: #881337; margin-top:5px; line-height:1.4;">
-                        Buka dokumentasi API SMSCode.gg Anda, cari rute untuk "Get Services", lalu masukkan nama rute tersebut ke menu pengaturan di atas.
+                        ${e.message}
                     </div>
                 </div>
                 `;
             }
         }
-        /* ======================================================================= */
 
+        /* =======================================================================
+           2. BELI NOMOR (MENGGUNAKAN RUTE /orders/create)
+           ======================================================================= */
+        async function eksekusiBeliServer(btnElement, productId, price, fullServiceName) {
+            const token = localStorage.getItem("otp_key_smscode");
+            if (!token) { alert("Sila atur Bearer Token Anda!"); toggleApiKeyDropdown(); return; }
+
+            const teksAsli = btnElement.innerHTML; 
+            btnElement.disabled = true; 
+            btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+            printLog(`Memesan dari ${fullServiceName} (Prod ID: ${productId})...`);
+
+            try {
+                // Sesuai dokumentasi, payload hanya butuh product_id dan quantity
+                const payloadOrder = { product_id: productId, quantity: 1 };
+                const responseData = await apiSMSCode('orders/create', 'POST', payloadOrder);
+                
+                // Sesuai dokumentasi, respon data ada di "data.orders" array
+                const createdOrder = responseData.data?.orders?.[0];
+
+                if (createdOrder && (createdOrder.id || createdOrder.phone_number)) {
+                    let orderBaru = { 
+                        order_id: createdOrder.id, 
+                        phone: createdOrder.phone_number, 
+                        layanan: fullServiceName,
+                        waktu_dibuat: Date.now(), status: "pending", otp: "" 
+                    };
+                    daftarOrderan.unshift(orderBaru); 
+                    renderUILayout(); simpanDaftarOrderanKeLokal();
+                    printLog(`🎉 Nomor didapatkan: ${createdOrder.phone_number}`); 
+                    ambilSaldoLive();
+                } else { throw new Error("Format respons API tidak sesuai dokumentasi."); }
+            } catch (e) { 
+                alert("Gagal order:\n" + e.message); printLog(`Error: ${e.message}`);
+            } finally { 
+                btnElement.disabled = false; btnElement.innerHTML = teksAsli; 
+            }
+        }
+
+        /* =======================================================================
+           3. BATALKAN NOMOR (MENGGUNAKAN RUTE /orders/cancel)
+           ======================================================================= */
+        async function eksekusiBatalkanServer(index) {
+            const item = daftarOrderan[index];
+            try {
+                // Sesuai dokumentasi: POST ke /orders/cancel dengan body { id: ID_PESANAN }
+                await apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id });
+                item.status = "cancelled"; 
+                showToast("Dibatalkan!"); 
+                renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
+            } catch (e) { alert("Gagal membatalkan."); printLog(`Error Batal: ${e.message}`); }
+        }
+
+        /* =======================================================================
+           4. CEK SMS/OTP (MENGGUNAKAN RUTE /orders/{id})
+           ======================================================================= */
+        async function mesinCekSmsTerpusat() {
+            daftarOrderan.forEach(async (i) => {
+                if (i.status !== "pending") return; 
+                try {
+                    const d = await apiSMSCode(`orders/${i.order_id}`, 'GET');
+                    let orderData = d.data; // Response di dalam data{}
+                    if(!orderData) return;
+                    
+                    let stat = orderData.status;
+                    let otpCode = orderData.otp_code; // Sesuai dokumen bernama otp_code
+
+                    if (stat === "OTP_RECEIVED" || otpCode) {
+                        i.status = "received"; i.otp = otpCode; 
+                        putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
+                        renderUILayout(); simpanDaftarOrderanKeLokal(); printLog(`🎉 OTP MASUK (${i.otp})!`);
+                    } else if (stat === "CANCELED" || stat === "CANCELLED" || stat === "EXPIRED" || stat === "REFUNDED") {
+                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
+                    }
+                } catch (e) {}
+            });
+        }
+
+        /* =======================================================================
+           5. AMBIL SALDO (MENGGUNAKAN RUTE /balance)
+           ======================================================================= */
+        async function ambilSaldoLive() {
+            try {
+                const d = await apiSMSCode('balance', 'GET'); 
+                // Sesuai dokumen, formatnya: data.balance
+                let saldoVal = d.data?.balance || 0;
+                document.getElementById("txtSaldoLive").innerText = "Rp " + parseInt(saldoVal).toLocaleString("id-ID");
+            } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; }
+        }
+
+        /* --- FUNGSI UI BAWAAN --- */
         function renderMenuLayananApp(katalogData) {
             const container = document.getElementById("operatorAccordionContainer");
             let html = "";
@@ -355,38 +430,6 @@
             listEl.innerHTML = html;
         }
 
-        async function eksekusiBeliServer(btnElement, catalogId, price, fullServiceName) {
-            const token = localStorage.getItem("otp_key_smscode");
-            if (!token) { alert("Sila atur Bearer Token Anda!"); toggleApiKeyDropdown(); return; }
-
-            const teksAsli = btnElement.innerHTML; 
-            btnElement.disabled = true; 
-            btnElement.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
-            printLog(`Memesan dari ${fullServiceName} (ID: ${catalogId})...`);
-
-            try {
-                const payloadOrder = { catalog_product_id: catalogId, max_price: price, quantity: 1 };
-                const responseData = await apiSMSCode('orders', 'POST', payloadOrder);
-                const createdOrder = responseData.data?.orders?.[0] || responseData.orders?.[0] || responseData.data;
-
-                if (createdOrder && (createdOrder.id || createdOrder.order_id || createdOrder.phone_number || createdOrder.phone)) {
-                    let orderBaru = { 
-                        order_id: createdOrder.id || createdOrder.order_id, 
-                        phone: createdOrder.phone_number || createdOrder.phone || createdOrder.number, 
-                        layanan: fullServiceName,
-                        waktu_dibuat: Date.now(), status: "pending", otp: "" 
-                    };
-                    daftarOrderan.unshift(orderBaru); 
-                    renderUILayout(); simpanDaftarOrderanKeLokal();
-                    printLog(`🎉 Nomor didapatkan dari ${fullServiceName}!`); ambilSaldoLive();
-                } else { throw new Error("Respon pesanan ditolak sistem."); }
-            } catch (e) { 
-                alert("Gagal order:\n" + e.message); printLog(`Error: ${e.message}`);
-            } finally { 
-                btnElement.disabled = false; btnElement.innerHTML = teksAsli; 
-            }
-        }
-
         function toggleApiKeyDropdown() {
             const w = document.getElementById("wadahApiKeyDropdown");
             w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none";
@@ -396,61 +439,14 @@
             const key = document.getElementById("otpKeyV5").value.trim();
             const route = document.getElementById("customCatalogRoute").value.trim();
             if(!key) return;
-            
             localStorage.setItem("otp_key_smscode", key);
-            
             if (route !== "") localStorage.setItem("otp_custom_route", route);
             else localStorage.removeItem("otp_custom_route"); 
-            
             refreshSemuaDataLive(); 
             toggleApiKeyDropdown();
         }
 
         function refreshSemuaDataLive() { ambilSaldoLive(); muatKatalogAsli(); }
-
-        async function ambilSaldoLive() {
-            try {
-                const d = await apiSMSCode('balance', 'GET'); 
-                let saldoVal = 0;
-                if (d.balance !== undefined) saldoVal = d.balance;
-                else if (d.amount !== undefined) saldoVal = d.amount;
-                else if (d.data && d.data.balance !== undefined) saldoVal = d.data.balance;
-                else if (d.data && d.data.amount !== undefined) saldoVal = d.data.amount;
-                else if (d.user && d.user.balance !== undefined) saldoVal = d.user.balance;
-
-                document.getElementById("txtSaldoLive").innerText = "Rp " + parseInt(saldoVal).toLocaleString("id-ID");
-            } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; }
-        }
-
-        async function eksekusiBatalkanServer(index) {
-            const item = daftarOrderan[index];
-            try {
-                await apiSMSCode(`orders/${item.order_id}/cancel`, 'POST');
-                item.status = "cancelled"; 
-                showToast("Dibatalkan!"); 
-                renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
-            } catch (e) { alert("Gagal membatalkan."); }
-        }
-
-        async function mesinCekSmsTerpusat() {
-            daftarOrderan.forEach(async (i) => {
-                if (i.status !== "pending") return; 
-                try {
-                    const d = await apiSMSCode(`orders/${i.order_id}`, 'GET');
-                    let orderData = d.data || d;
-                    let stat = orderData.status;
-                    let otpCode = orderData.otp_code || orderData.code || orderData.sms;
-
-                    if (stat === "OTP_RECEIVED" || stat === "RECEIVED" || otpCode) {
-                        i.status = "received"; i.otp = otpCode; 
-                        putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
-                        renderUILayout(); simpanDaftarOrderanKeLokal(); printLog(`🎉 OTP MASUK (${i.otp})!`);
-                    } else if (stat === "CANCELLED" || stat === "EXPIRED" || stat === "REFUNDED") {
-                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
-                    }
-                } catch (e) {}
-            });
-        }
 
         function renderUILayout() {
             const container = document.getElementById("containerListOrder");
