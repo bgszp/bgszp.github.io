@@ -458,11 +458,19 @@
         function simpanRiwayatLokal() { localStorage.setItem("riwayat_all_srv1", JSON.stringify(riwayatLengkap)); }
         
         function hapusRiwayatSelesai() { 
-            // Membersihkan sisa sampah data lama jika ada
+            // 1. Membersihkan sisa data lama dari memori panel aktif
             daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); 
             renderUILayout(); 
             simpanDaftarOrderanKeLokal(); 
-            showToast("Panel aktif dibersihkan!"); 
+
+            // 2. Memaksa sistem menarik data saldo dan stok paling baru dari server (Clear Cache)
+            ambilSaldoLive();
+            ambilLayananLive();
+
+            // 3. Membersihkan teks log console di bawah agar kembali bersih
+            document.getElementById("miniConsoleLog").innerHTML = "└> Cache dibersihkan. Sistem disegarkan.";
+
+            showToast("Sistem Disegarkan!"); 
         }
 
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
