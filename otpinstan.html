@@ -285,15 +285,28 @@
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                const payload = { product_id: parseInt(idLayananTerpilih), country_id: 7 };
+                // Menggunakan kombinasi payload agar support sistem rekomendasi (platform_id) 
+                // maupun sistem spesifik (product_id) sesuai aturan Server 1
+                const payload = { 
+                    platform_id: parseInt(idLayananTerpilih), 
+                    product_id: parseInt(idLayananTerpilih), 
+                    country_id: 7 
+                };
+                
                 const data = await hitApiOTP(`/s1/order.php`, true, payload);
                 
                 if (data.success === true || data.order_id) {
+                    
+                    // 🔥 KUNCI SINKRONISASI: 
+                    // Ambil harga asli dari respons server (struk), BUKAN dari tampilan awal.
+                    // Jika server tidak mengirim detail harga di struk, baru pakai harga tampilan sebagai cadangan.
+                    let hargaAsliServer = parseInt(data.price || data.harga || data.cost || hargaLayananTerpilih);
+
                     let orderBaru = { 
                         order_id: data.order_id, 
                         phone: data.phone || data.number, 
                         layanan: namaLayananTerpilih, 
-                        harga: hargaLayananTerpilih, 
+                        harga: hargaAsliServer, // <-- Sekarang riwayat akan mencatat harga yang benar-benar dipotong
                         waktu_dibuat: Date.now(), 
                         status: "pending", 
                         otp: "" 
@@ -302,10 +315,14 @@
                     daftarOrderan.unshift(orderBaru); 
                     riwayatLengkap.unshift(JSON.parse(JSON.stringify(orderBaru)));
                     
-                    renderUILayout(); simpanDaftarOrderanKeLokal(); simpanRiwayatLokal();
+                    renderUILayout(); 
+                    simpanDaftarOrderanKeLokal(); 
+                    simpanRiwayatLokal();
                     if(document.getElementById("wadahRiwayatDropdown").style.display === "block") renderRiwayatLengkap();
 
-                    printLog(`Nomor ${orderBaru.phone} didapatkan!`); 
+                    printLog(`Nomor ${orderBaru.phone} didapatkan! (Biaya: Rp ${hargaAsliServer})`); 
+                    
+                    // Otomatis merefresh sisa saldo agar langsung sinkron di pojok kanan atas
                     ambilSaldoLive();
                 } else { 
                     alert(`Pesanan Gagal:\n${data.message || 'Error tidak diketahui dari server'}`); 
@@ -315,7 +332,7 @@
             } finally { 
                 btn.disabled = false; btn.innerHTML = teksAsli; 
             }
-        }
+                }
 
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
