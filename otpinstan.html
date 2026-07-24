@@ -152,9 +152,9 @@
             const riwayatLokal = localStorage.getItem("riwayat_all_srv1");
             if (riwayatLokal) { riwayatLengkap = JSON.parse(riwayatLokal); renderRiwayatLengkap(); }
 
-            setInterval(mesinWaktuTerpusat, 1000);
-            setInterval(mesinCekSmsTerpusat, 10000); 
-            setInterval(ambilLayananLive, 20000); 
+            setInterval(mesinWaktuTerpusat, 7000);
+            setInterval(mesinCekSmsTerpusat, 7000); 
+            setInterval(ambilLayananLive, 7000); 
         });
 
         function toggleApiKeyDropdown() {
