@@ -110,7 +110,7 @@
 
         <!-- Console Log -->
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
-            └> Server 1 Ready. (Auto-Archive Applied)
+            └> Server 1 Ready. (Auto Batal 5M & Dinamis UI)
         </div>
     </div>
     
@@ -310,7 +310,7 @@
                     renderUILayout(); simpanDaftarOrderanKeLokal(); simpanRiwayatLokal();
                     if(document.getElementById("wadahRiwayatDropdown").style.display === "block") renderRiwayatLengkap();
 
-                    printLog(`Nomor ${orderBaru.phone} didapatkan! (Biaya: Rp ${hargaTagihanServer})`); 
+                    printLog(`Nomor ${orderBaru.phone} didapatkan!`); 
                     ambilSaldoLive();
                 } else { 
                     alert(`Pesanan Gagal:\n${data.message || 'Stok habis / Error Server'}`); 
@@ -322,18 +322,24 @@
             }
         }
 
-        async function eksekusiBatalkanServer(index) {
+        // 🔥 FUNGSI EKSEKUSI BATAL DI-UPGRADE MENDUKUNG "ORDER ID" AGAR AMAN SAAT AUTO-LOOP
+        async function eksekusiBatalkanServer(orderId, isAutoBatal = false) {
+            let index = daftarOrderan.findIndex(x => x.order_id === orderId);
+            if(index === -1) return;
             const item = daftarOrderan[index];
+            
             try {
                 const data = await hitApiOTP(`/s1/cancel.php`, true, { order_id: item.order_id });
                 
                 if (data.success === true) {
                     item.status = "cancelled"; 
-                    showToast("Dibatalkan & Masuk Riwayat!"); 
+                    showToast(isAutoBatal ? "Batal Otomatis (5 Menit)!" : "Dibatalkan & Masuk Riwayat!"); 
                     
-                    // 🔥 FITUR BARU: Otomatis pindah ke arsip riwayat & hapus dari panel aktif begitu sukses dibatalkan
                     syncKeRiwayat(item.order_id, "cancelled", "");
-                    daftarOrderan.splice(index, 1);
+                    
+                    // Cari ulang index dan hapus otomatis dari layar depan
+                    let idxBaru = daftarOrderan.findIndex(x => x.order_id === orderId);
+                    if(idxBaru !== -1) daftarOrderan.splice(idxBaru, 1);
                     
                     renderUILayout(); 
                     simpanDaftarOrderanKeLokal(); 
@@ -341,9 +347,19 @@
 
                     await ambilSaldoLive();
                 } else { 
-                    alert(`Gagal Dibatalkan:\n${data.message || data.error || 'Server menolak (mungkin kurang dari 2 menit)'}`); 
+                    if (!isAutoBatal) {
+                        alert(`Gagal Dibatalkan:\n${data.message || data.error || 'Server menolak'}`); 
+                    } else {
+                        // Jika gagal auto-batal (misal saldo sudah hangus di server), tetap paksa hapus dari layar
+                        let idxBaru = daftarOrderan.findIndex(x => x.order_id === orderId);
+                        if(idxBaru !== -1) daftarOrderan.splice(idxBaru, 1);
+                        syncKeRiwayat(item.order_id, "cancelled", "");
+                        renderUILayout(); simpanDaftarOrderanKeLokal();
+                    }
                 }
-            } catch (e) { alert("Sistem Error saat membatalkan."); }
+            } catch (e) { 
+                if (!isAutoBatal) alert("Sistem Error saat membatalkan."); 
+            }
         }
 
         async function mesinCekSmsTerpusat() {
@@ -356,7 +372,6 @@
                         i.status = "received"; i.otp = data.otp; 
                         putarSuaraNotif(); 
                         
-                        // 🔥 Jika OTP sukses masuk, langsung sinkronkan ke riwayat
                         syncKeRiwayat(i.order_id, "received", i.otp);
                         renderUILayout(); 
                         simpanDaftarOrderanKeLokal(); 
@@ -366,7 +381,6 @@
                         i.status = "cancelled"; 
                         syncKeRiwayat(i.order_id, "cancelled", "");
                         
-                        // Hapus dari panel aktif jika expired/cancel dari server
                         daftarOrderan = daftarOrderan.filter(o => o.order_id !== i.order_id);
                         
                         renderUILayout(); 
@@ -385,43 +399,74 @@
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
-                if (item.status === "pending" && sec >= 1200) { 
-                    item.status = "cancelled"; 
+                // 🔥 Fitur Auto Batal setiap 5 menit (300 detik)
+                if (item.status === "pending" && sec >= 300) { 
+                    item.status = "auto_cancelling"; 
                     flagSimpan = true; 
-                    syncKeRiwayat(item.order_id, "cancelled", ""); 
+                    eksekusiBatalkanServer(item.order_id, true); // True = Mode diam-diam (tanpa popup gagal)
                 }
                 
-                let sisa = Math.max(0, 1200 - sec); 
-                let cool = Math.max(0, 120 - sec); // Aturan server: 2 menit (120 detik)
+                let sisa = Math.max(0, 300 - sec); 
+                let cool = Math.max(0, 120 - sec); 
                 
-                let textStat = `⚡ Menunggu OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = "";
+                let textStat = ""; let colStat = "#ffb86c"; let kotakOtp = "";
 
-                if (item.status === "received") { 
-                    textStat = `🎉 SMS/OTP Diterima!`; colStat = "#50fa7b"; 
-                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
-                } else if (item.status === "cancelled") { textStat = "❌ Dibatalkan"; colStat = "#ff5555"; }
-                
-                let tombolBatalHtml = "";
                 if (item.status === "pending") {
-                    if (cool > 0) {
-                        tombolBatalHtml = `<button class="btn-batal" disabled>⏳ Tunggu (${cool}s)</button>`;
-                    } else {
-                        tombolBatalHtml = `<button class="btn-batal" onclick="eksekusiBatalkanServer(${index})">❌ Batalkan Pesanan</button>`;
-                    }
+                    textStat = `⚡ Menunggu OTP... (${sec}s)`;
+                } else if (item.status === "auto_cancelling") {
+                    textStat = `⚡ Memproses Batal Otomatis...`; colStat = "#ff5555";
+                } else if (item.status === "received") { 
+                    textStat = `🎉 SMS/OTP Diterima!`; colStat = "#50fa7b"; 
+                } else if (item.status === "cancelled") { 
+                    textStat = "❌ Dibatalkan"; colStat = "#ff5555"; 
                 }
-
-                // 🔥 FITUR BARU: Warna dinamis berdasarkan urutan
-                // Jika index 0 (Urutan ke-1) warnanya terang/asli. 
-                // Jika urutan ke-2 dan seterusnya, warnanya lebih gelap.
+                
+                // 🔥 Logika Tampilan & Tombol Dinamis berdasarkan urutan
                 let bgWarnaTampilan = index === 0 
                     ? "background: #1a1b35; border-color: var(--border-color);" 
                     : "background: #0d0f1b; border-color: #222448;";
 
-                html += `<div class="card-order" style="${bgWarnaTampilan}"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan} (Rp ${(item.harga || 0).toLocaleString('id-ID')})</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${tombolBatalHtml}</div>`;
+                let btnSalinWarna = index === 0 
+                    ? "background: #25274d; border-color: #3d3f7a; color: var(--accent-cyan);" 
+                    : "background: #111222; border-color: #2c2e5c; color: #8b8da9;";
+
+                if (item.status === "received") {
+                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static" style="${btnSalinWarna}"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
+                }
+
+                let tombolBatalHtml = "";
+                if (item.status === "pending" || item.status === "auto_cancelling") {
+                    if (item.status === "auto_cancelling") {
+                        tombolBatalHtml = `<button class="btn-batal" disabled>⏳ Membatalkan Otomatis...</button>`;
+                    } else if (cool > 0) {
+                        tombolBatalHtml = `<button class="btn-batal" disabled>⏳ Tunggu (${cool}s)</button>`;
+                    } else {
+                        tombolBatalHtml = `<button class="btn-batal" onclick="eksekusiBatalkanServer('${item.order_id}', false)">❌ Batalkan Pesanan</button>`;
+                    }
+                }
+
+                html += `<div class="card-order" style="${bgWarnaTampilan}">
+                    <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;">
+                        <span>${item.layanan} (Rp ${(item.harga || 0).toLocaleString('id-ID')})</span>
+                        <span>⏱️ Maks: 5m</span>
+                    </div>
+                    <div class="box-copy-statik" style="background:transparent; border: 1px solid #222448;">
+                        <div>
+                            <div style="font-size:9px; color:#8b8da9;">Nomor HP:</div>
+                            <div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div>
+                        </div>
+                        <button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static" style="${btnSalinWarna}">
+                            <i class="fa-regular fa-copy"></i> Salin
+                        </button>
+                    </div>
+                    ${kotakOtp}
+                    <div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px; margin-bottom:8px;">${textStat}</div>
+                    ${tombolBatalHtml}
+                </div>`;
             });
+            
             container.innerHTML = html; 
             if (flagSimpan) {
-                daftarOrderan = daftarOrderan.filter(o => o.status === "pending");
                 simpanDaftarOrderanKeLokal();
             }
         }
@@ -450,9 +495,6 @@
             if (item) {
                 item.status = status; 
                 if (otp !== "") item.otp = otp;
-            } else {
-                // Jika belum ada di riwayat, masukkan sebagai data baru
-                // (Berjaga-jaga jika terhapus dari memori lokal)
             }
             simpanRiwayatLokal();
             if (document.getElementById("wadahRiwayatDropdown").style.display === "block") renderRiwayatLengkap();
@@ -461,19 +503,16 @@
         function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv1", JSON.stringify(daftarOrderan)); }
         function simpanRiwayatLokal() { localStorage.setItem("riwayat_all_srv1", JSON.stringify(riwayatLengkap)); }
         
+        // 🔥 FITUR MEMBERSIHKAN CACHE & MENYEGARKAN DATA SAAT TOMBOL BERSIHKAN DITEKAN
         function hapusRiwayatSelesai() { 
-            // 1. Membersihkan sisa data lama dari memori panel aktif
             daftarOrderan = daftarOrderan.filter(i => i.status === "pending"); 
             renderUILayout(); 
             simpanDaftarOrderanKeLokal(); 
 
-            // 2. Memaksa sistem menarik data saldo dan stok paling baru dari server (Clear Cache)
             ambilSaldoLive();
             ambilLayananLive();
 
-            // 3. Membersihkan teks log console di bawah agar kembali bersih
             document.getElementById("miniConsoleLog").innerHTML = "└> Cache dibersihkan. Sistem disegarkan.";
-
             showToast("Sistem Disegarkan!"); 
         }
 
