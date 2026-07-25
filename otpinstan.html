@@ -392,7 +392,7 @@
                 }
                 
                 let sisa = Math.max(0, 1200 - sec); 
-                let cool = Math.max(0, 120 - sec); // Aturan server: 2 menit (120 detik) sebelum bisa dibatalkan
+                let cool = Math.max(0, 120 - sec); // Aturan server: 2 menit (120 detik)
                 
                 let textStat = `⚡ Menunggu OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = "";
 
@@ -401,8 +401,6 @@
                     kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
                 } else if (item.status === "cancelled") { textStat = "❌ Dibatalkan"; colStat = "#ff5555"; }
                 
-                // 🔥 PERMINTAAN 1: Tombol bertuliskan "Tunggu (Xs)" dengan warna abu-abu (disabled) selama belum 2 menit. 
-                // Ketika waktu tunggu habis, tombol berubah menjadi warna merah terang (aktif) bertuliskan "❌ Batalkan Pesanan".
                 let tombolBatalHtml = "";
                 if (item.status === "pending") {
                     if (cool > 0) {
@@ -412,11 +410,17 @@
                     }
                 }
 
-                html += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan} (Rp ${(item.harga || 0).toLocaleString('id-ID')})</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${tombolBatalHtml}</div>`;
+                // 🔥 FITUR BARU: Warna dinamis berdasarkan urutan
+                // Jika index 0 (Urutan ke-1) warnanya terang/asli. 
+                // Jika urutan ke-2 dan seterusnya, warnanya lebih gelap.
+                let bgWarnaTampilan = index === 0 
+                    ? "background: #1a1b35; border-color: var(--border-color);" 
+                    : "background: #0d0f1b; border-color: #222448;";
+
+                html += `<div class="card-order" style="${bgWarnaTampilan}"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan} (Rp ${(item.harga || 0).toLocaleString('id-ID')})</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${tombolBatalHtml}</div>`;
             });
             container.innerHTML = html; 
             if (flagSimpan) {
-                // Bersihkan pesanan yang expired otomatis dari daftar aktif
                 daftarOrderan = daftarOrderan.filter(o => o.status === "pending");
                 simpanDaftarOrderanKeLokal();
             }
