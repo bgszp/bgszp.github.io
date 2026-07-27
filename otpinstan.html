@@ -289,8 +289,11 @@
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
+                // Mengembalikan Mode Smart (Sama seperti web asli)
+                // Jika product spesifik kosong, server akan menggunakan platform_id agar pesanan tidak error
                 const payload = { 
-                    product_id: idLayananTerpilih, 
+                    platform_id: parseInt(idLayananTerpilih),
+                    product_id: parseInt(idLayananTerpilih), 
                     country_id: 7 
                 };
 
