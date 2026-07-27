@@ -289,33 +289,31 @@
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                // 1. Cari data asli (lengkap) dari layanan yang diklik user
+                // 1. Ambil seluruh data mentah dari layanan yang kamu klik
                 let itemTerpilih = globalListLayanan.find(i => String(i.product_id || i.id) === String(idLayananTerpilih));
                 
-                // 2. Format payload utama (Fokus tembak harga spesifik terlebih dahulu)
-                let payload = { 
-                    product_id: itemTerpilih.product_id || itemTerpilih.id, 
-                    country_id: 7 
-                };
-
-                // Sisipkan ID Platform/Service jika server membutuhkannya untuk fitur cadangan
-                if (itemTerpilih.platform_id) payload.platform_id = itemTerpilih.platform_id;
+                // 2. 🔥 KUNCI RAHASIA WEB ASLI: 
+                // Jangan hanya kirim product_id! Kita borong semua parameter bawaan 
+                // (seperti operator, service_id, server) agar server tahu persis stok spesifik mana yang kita tuju.
+                let payload = { country_id: 7 };
+                
+                if (itemTerpilih.product_id) payload.product_id = itemTerpilih.product_id;
+                else if (itemTerpilih.id) payload.product_id = itemTerpilih.id;
+                
+                if (itemTerpilih.id) payload.id = itemTerpilih.id;
                 if (itemTerpilih.service_id) payload.service_id = itemTerpilih.service_id;
+                if (itemTerpilih.operator_id) payload.operator_id = itemTerpilih.operator_id;
+                if (itemTerpilih.operator) payload.operator = itemTerpilih.operator;
+                if (itemTerpilih.service) payload.service = itemTerpilih.service;
+                if (itemTerpilih.server) payload.server = itemTerpilih.server;
 
-                let data = await hitApiOTP(`/s1/order.php`, true, payload);
+                // 3. Tembak API Server dengan spesifikasi ketat
+                const data = await hitApiOTP(`/s1/order.php`, true, payload);
                 
-                // 3. FITUR AUTO-FALLBACK (Sama seperti Web Asli)
-                // Jika stok harga spesifik habis/dihapus (Error: tidak ditemukan),
-                // kita buang ID spesifiknya dan tembak ulang secara otomatis agar server mencarikan stok alternatif.
-                if (data.success === false && data.message && data.message.toLowerCase().includes("tidak ditemukan")) {
-                    if (payload.platform_id || payload.service_id) {
-                        delete payload.product_id; 
-                        data = await hitApiOTP(`/s1/order.php`, true, payload); 
-                    }
-                }
-                
+                // (SISTEM FALLBACK DIHAPUS. JIKA GAGAL, MAKA MURNI GAGAL, TIDAK AKAN GANTI HARGA!)
+
                 if (data.success === true || data.order_id) {
-                    // Ambil harga dari tagihan asli server (Struk)
+                    // Harga ini dijamin 100% sama dengan yang kamu klik di tampilan awal
                     let hargaTagihanServer = parseInt(data.price || data.cost || data.harga || hargaLayananTerpilih);
 
                     let orderBaru = { 
@@ -337,7 +335,7 @@
                     printLog(`Nomor ${orderBaru.phone} didapatkan! (Biaya: Rp ${hargaTagihanServer})`); 
                     ambilSaldoLive();
                 } else { 
-                    alert(`Pesanan Gagal:\n${data.message || 'Stok habis / Error Server'}`); 
+                    alert(`Pesanan Gagal:\n${data.message || 'Stok spesifik ini sedang habis / Error Server'}`); 
                 }
             } catch (e) { 
                 alert("Sistem Error: " + e.message); 
