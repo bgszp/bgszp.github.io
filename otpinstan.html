@@ -145,18 +145,23 @@
                 options.body = JSON.stringify(postData);
             }
 
-            let targetUrl = `https://otpinstan.com/api/reseller${endpointAntiCache}`;
-            const proxies = ["", "https://corsproxy.io/?"];
+            // 🔥 GANTI URL INI DENGAN URL WORKER CLOUDFLARE MILIKMU
+            // Contoh: const workerUrl = "https://my-otp-proxy.tiktiksatu001.workers.dev/";
+            const workerUrl = "https://my-otp-proxy.tiktiksatu001.workers.dev/"; 
+
+            let targetUrl = `${workerUrl}${endpointAntiCache}`;
             
-            for (let proxy of proxies) {
-                try {
-                    let url = proxy !== "" ? proxy + encodeURIComponent(targetUrl) : targetUrl;
-                    const res = await fetch(url, options);
+            try {
+                const res = await fetch(targetUrl, options);
+                if (res.ok) {
                     const jsonRes = await res.json();
                     return jsonRes; 
-                } catch (e) { }
+                } else {
+                    throw new Error(`Server membalas dengan status: ${res.status}`);
+                }
+            } catch (e) {
+                throw new Error("Koneksi ke Cloudflare Worker gagal. Pastikan URL sudah benar.");
             }
-            throw new Error("Koneksi internet / CORS gagal memproses request.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
