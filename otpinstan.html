@@ -289,17 +289,33 @@
             const teksAsli = btn.innerHTML; btn.disabled = true; btn.innerHTML = `Memproses...`;
 
             try {
-                // Mengembalikan Mode Smart (Sama seperti web asli)
-                // Jika product spesifik kosong, server akan menggunakan platform_id agar pesanan tidak error
-                const payload = { 
-                    platform_id: parseInt(idLayananTerpilih),
-                    product_id: parseInt(idLayananTerpilih), 
+                // 1. Cari data asli (lengkap) dari layanan yang diklik user
+                let itemTerpilih = globalListLayanan.find(i => String(i.product_id || i.id) === String(idLayananTerpilih));
+                
+                // 2. Format payload utama (Fokus tembak harga spesifik terlebih dahulu)
+                let payload = { 
+                    product_id: itemTerpilih.product_id || itemTerpilih.id, 
                     country_id: 7 
                 };
 
-                const data = await hitApiOTP(`/s1/order.php`, true, payload);
+                // Sisipkan ID Platform/Service jika server membutuhkannya untuk fitur cadangan
+                if (itemTerpilih.platform_id) payload.platform_id = itemTerpilih.platform_id;
+                if (itemTerpilih.service_id) payload.service_id = itemTerpilih.service_id;
+
+                let data = await hitApiOTP(`/s1/order.php`, true, payload);
+                
+                // 3. FITUR AUTO-FALLBACK (Sama seperti Web Asli)
+                // Jika stok harga spesifik habis/dihapus (Error: tidak ditemukan),
+                // kita buang ID spesifiknya dan tembak ulang secara otomatis agar server mencarikan stok alternatif.
+                if (data.success === false && data.message && data.message.toLowerCase().includes("tidak ditemukan")) {
+                    if (payload.platform_id || payload.service_id) {
+                        delete payload.product_id; 
+                        data = await hitApiOTP(`/s1/order.php`, true, payload); 
+                    }
+                }
                 
                 if (data.success === true || data.order_id) {
+                    // Ambil harga dari tagihan asli server (Struk)
                     let hargaTagihanServer = parseInt(data.price || data.cost || data.harga || hargaLayananTerpilih);
 
                     let orderBaru = { 
@@ -318,7 +334,7 @@
                     renderUILayout(); simpanDaftarOrderanKeLokal(); simpanRiwayatLokal();
                     if(document.getElementById("wadahRiwayatDropdown").style.display === "block") renderRiwayatLengkap();
 
-                    printLog(`Nomor ${orderBaru.phone} didapatkan!`); 
+                    printLog(`Nomor ${orderBaru.phone} didapatkan! (Biaya: Rp ${hargaTagihanServer})`); 
                     ambilSaldoLive();
                 } else { 
                     alert(`Pesanan Gagal:\n${data.message || 'Stok habis / Error Server'}`); 
@@ -329,7 +345,6 @@
                 btn.disabled = false; btn.innerHTML = teksAsli; 
             }
         }
-
         // 🔥 FUNGSI EKSEKUSI BATAL DI-UPGRADE MENDUKUNG "ORDER ID" AGAR AMAN SAAT AUTO-LOOP
         async function eksekusiBatalkanServer(orderId, isAutoBatal = false) {
             let index = daftarOrderan.findIndex(x => x.order_id === orderId);
