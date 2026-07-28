@@ -21,8 +21,6 @@
         .btn-batal { background: var(--accent-red); color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-        /* === GAYA DROPDOWN PILIHAN SERVER SEPERTI GAMBAR === */
         .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
         .dropdown-selected-bar { background: #121324; border: 1px solid #4a3c8c; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
         .dropdown-list-options { display: none; margin-top: 8px; background: #121324; border: 1px solid #3d3463; border-radius: 10px; max-height: 250px; overflow-y: auto; }
@@ -33,13 +31,14 @@
         .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-pesan-sekarang:hover { opacity: 0.9; }
         .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; box-shadow: none; }
+        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; display: block; }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- HEADER SALDO -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Server 2 (Shopee ID)</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis Shopee ID</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
@@ -62,13 +61,18 @@
             </div>
         </div>
 
-        <!-- UI DROPDOWN PILIHAN LAYANAN SERVER -->
+        <!-- AREA PEMESANAN (OPERATOR & PRODUK) -->
         <div class="dropdown-box-wrapper">
-            <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600;">Pilih Layanan</div>
-            
-            <!-- Bar Utama yang Diklik untuk Membuka Dropdown -->
+            <!-- Filter Operator -->
+            <label class="form-label">1. Pilih Operator</label>
+            <select id="dropdownOperator" class="search-input" style="margin-bottom: 15px; cursor: pointer;" onchange="muatProdukShopee()">
+                <option value="">Memuat Operator...</option>
+            </select>
+
+            <!-- Filter Layanan / Produk -->
+            <label class="form-label">2. Pilih Tier Harga</label>
             <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
-                <span id="labelServerTerpilih">Memuat Server...</span>
+                <span id="labelServerTerpilih">Menunggu Pilihan Operator...</span>
                 <span style="font-size: 10px;">▼</span>
             </div>
 
@@ -95,7 +99,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
-            └> Any Server Selector Ready.
+            └> Sistem Panel Diinisialisasi.
         </div>
     </div>
     
@@ -106,6 +110,7 @@
         let daftarServerTersedia = [];
         let produkTerpilihId = null;
         let namaProdukTerpilih = "";
+        let shopeePlatformId = null; // Menyimpan ID platform Shopee secara dinamis
 
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
@@ -120,40 +125,25 @@
             let options = { method: method, headers: headers };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-            const proxies = [ 
-                { url: "", encode: false }, 
-                { url: "https://api.codetabs.com/v1/proxy?quest=", encode: false }, 
-                { url: "https://corsproxy.io/?", encode: true }
-            ];
-
-            let networkError = null;
-
-            for (let proxy of proxies) {
-                try {
-                    let proxyUrl = targetUrl;
-                    if (proxy.url !== "") { 
-                        proxyUrl = proxy.encode ? proxy.url + encodeURIComponent(targetUrl) : proxy.url + targetUrl; 
-                    }
-                    
-                    const res = await fetch(proxyUrl, options);
-                    const textResponse = await res.text();
-                    
-                    let data = {};
-                    if (textResponse && textResponse.trim() !== "") {
-                        try { data = JSON.parse(textResponse); } catch (err) {}
-                    }
-                    
-                    if (!res.ok) {
-                        let msg = data.error?.message || data.message || `HTTP ${res.status}`;
-                        throw new Error(`[HTTP ${res.status}] ${msg}`);
-                    }
-                    return data; 
-                } catch (e) { 
-                    if (e.message.includes("[HTTP")) throw e; 
-                    networkError = e; 
+            // Menghapus Proxy Pihak Ketiga untuk keamanan token API Anda.
+            // Gunakan Browser Extention CORS atau konfigurasi server jika terblokir CORS.
+            try {
+                const res = await fetch(targetUrl, options);
+                const textResponse = await res.text();
+                
+                let data = {};
+                if (textResponse && textResponse.trim() !== "") {
+                    try { data = JSON.parse(textResponse); } catch (err) {}
                 }
+                
+                if (!res.ok) {
+                    let msg = data.error?.message || data.message || `HTTP ${res.status}`;
+                    throw new Error(`[HTTP ${res.status}] ${msg}`);
+                }
+                return data; 
+            } catch (e) { 
+                throw new Error(e.message || "Gagal koneksi jaringan.");
             }
-            throw new Error(networkError ? networkError.message : "Gagal koneksi jaringan.");
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -170,32 +160,73 @@
             const orderanLokal = localStorage.getItem("daftar_orderan_srv2_shopee");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
-            if(savedKey) muatKatalogAnyOnly();
-
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        /* === TARIK KHUSUS KATEGORI ANY (SEMUA SERVER SHOPEE) === */
-        async function muatKatalogAnyOnly() {
+        async function inisialisasiLayananShopee() {
             try {
-                printLog("🔄 Menarik data server Shopee (Any)...");
+                printLog("🔄 Mengambil ID Layanan Shopee...");
+                // 1. Dapatkan Platform ID untuk Shopee ID
+                const resSrv = await apiSMSCode('catalog/services?country_id=7', 'GET');
+                const shopeeSrv = resSrv.data.find(s => s.name.toLowerCase().includes("shopee"));
+                if (!shopeeSrv) throw new Error("Layanan Shopee tidak ditemukan di API.");
                 
-                const resProd = await apiSMSCode('catalog/products?country_id=7&limit=10000', 'GET');
+                shopeePlatformId = shopeeSrv.id;
+
+                // 2. Dapatkan Operator khusus platform Shopee
+                printLog("🔄 Mengambil daftar Operator...");
+                const resOp = await apiSMSCode(`catalog/operators?country_id=7&platform_id=${shopeePlatformId}`, 'GET');
+                
+                let dropdownOp = document.getElementById("dropdownOperator");
+                dropdownOp.innerHTML = "";
+                
+                if(resOp.data.length === 0) {
+                    dropdownOp.innerHTML = `<option value="">Tidak ada operator tersedia</option>`;
+                } else {
+                    resOp.data.forEach(op => {
+                        let opt = document.createElement("option");
+                        opt.value = op.operator_id === null ? "null" : op.operator_id;
+                        opt.text = op.name + (op.code === "any" ? " (Otomatis Termurah)" : "");
+                        dropdownOp.appendChild(opt);
+                    });
+                }
+
+                // 3. Muat produk otomatis setelah operator terisi
+                await muatProdukShopee();
+
+            } catch (e) {
+                printLog(`⚠️ Error Inisialisasi: ${e.message}`);
+                document.getElementById("dropdownOperator").innerHTML = `<option value="">Gagal Memuat</option>`;
+            }
+        }
+
+        async function muatProdukShopee() {
+            if (!shopeePlatformId) return;
+
+            try {
+                printLog("🔄 Menarik tier harga...");
+                let opIdRaw = document.getElementById("dropdownOperator").value;
+                
+                // Bangun Query Endpoint
+                let queryUrl = `catalog/products?country_id=7&platform_id=${shopeePlatformId}&limit=100`;
+                if (opIdRaw && opIdRaw !== "null") {
+                    queryUrl += `&operator_id=${opIdRaw}`;
+                }
+
+                const resProd = await apiSMSCode(queryUrl, 'GET');
                 let arrData = resProd.data;
                 
-                // Ambil semua yang mengandung kata shopee
-                let shopeeItems = arrData.filter(item => (item.name || "").toLowerCase().includes("shopee"));
-                if (shopeeItems.length === 0) throw new Error("Layanan Shopee tidak tersedia.");
+                if (!arrData || arrData.length === 0) throw new Error("Stok tier harga kosong untuk operator ini.");
 
                 // Urutkan dari harga termurah
-                shopeeItems.sort((a, b) => (a.price || 0) - (b.price || 0));
+                arrData.sort((a, b) => (a.price || 0) - (b.price || 0));
 
-                daftarServerTersedia = shopeeItems.map((item, index) => ({
+                daftarServerTersedia = arrData.map(item => ({
                     id: item.id,
-                    stock: item.available || item.stock || 0,
+                    stock: item.available || 0,
                     price: item.price || 0,
-                    name: `Shopee (${item.available || 0} stok) — Rp ${(item.price || 0).toLocaleString('id-ID')}`
+                    name: `Tier (${item.available || 0} stok) — Rp ${(item.price || 0).toLocaleString('id-ID')}`
                 }));
 
                 renderDropdownOptions();
@@ -203,14 +234,17 @@
                 if (daftarServerTersedia.length > 0) {
                     pilihServerDropdown(0); // Pilih default tier termurah pertama
                 } else {
-                    document.getElementById("labelServerTerpilih").innerText = "Tidak ada stok tersedia";
+                    document.getElementById("labelServerTerpilih").innerText = "Tidak ada tier tersedia";
+                    document.getElementById("btnPesanAksi").disabled = true;
                 }
 
-                printLog(`✅ Ditemukan ${daftarServerTersedia.length} pilihan server.`);
+                printLog(`✅ Ditemukan ${daftarServerTersedia.length} tier harga.`);
 
             } catch (e) {
-                printLog(`⚠️ Error: ${e.message}`);
-                document.getElementById("labelServerTerpilih").innerText = "Gagal memuat server";
+                printLog(`⚠️ Error Tier: ${e.message}`);
+                document.getElementById("labelServerTerpilih").innerText = "Stok Kosong / Error";
+                document.getElementById("btnPesanAksi").disabled = true;
+                document.getElementById("containerListDropdown").innerHTML = "";
             }
         }
 
@@ -226,7 +260,7 @@
                 let isSelectedClass = (produkTerpilihId === srv.id) ? "selected" : "";
                 html += `
                 <div class="dropdown-item-row ${isSelectedClass}" onclick="pilihServerDropdown(${index})">
-                    <span>Shopee <span style="color:var(--text-sub); font-size:11px;">(${srv.stock} stok)</span></span>
+                    <span>Stok: <span style="color:var(--text-sub); font-size:11px;">(${srv.stock})</span></span>
                     <span style="font-weight:bold; color:var(--accent-cyan);">Rp ${srv.price.toLocaleString('id-ID')}</span>
                 </div>`;
             });
@@ -242,10 +276,11 @@
             const srv = daftarServerTersedia[index];
             if(!srv) return;
 
+            let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
             produkTerpilihId = srv.id;
-            namaProdukTerpilih = `Shopee (Rp ${srv.price.toLocaleString('id-ID')})`;
+            namaProdukTerpilih = `Shopee ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`;
             
-            document.getElementById("labelServerTerpilih").innerHTML = `Shopee <span style="color:var(--text-sub); font-size:11px;">(${srv.stock} stok)</span> — <span style="color:var(--accent-cyan);">Rp ${srv.price.toLocaleString('id-ID')}</span>`;
+            document.getElementById("labelServerTerpilih").innerHTML = `Rp ${srv.price.toLocaleString('id-ID')} <span style="color:var(--text-sub); font-size:11px;">(${srv.stock} stok)</span>`;
             
             document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false;
@@ -253,7 +288,7 @@
         }
 
         async function eksekusiBeliTerpilih() {
-            if (!produkTerpilihId) { alert("Pilih server terlebih dahulu!"); return; }
+            if (!produkTerpilihId) { alert("Pilih tier harga terlebih dahulu!"); return; }
 
             const btn = document.getElementById("btnPesanAksi");
             const teksAsli = btn.innerHTML;
@@ -302,7 +337,14 @@
             toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); muatKatalogAnyOnly(); }
+        function refreshSemuaDataLive() { 
+            ambilSaldoLive(); 
+            if (!shopeePlatformId) {
+                inisialisasiLayananShopee();
+            } else {
+                muatProdukShopee();
+            }
+        }
 
         async function ambilSaldoLive() {
             try {
@@ -335,6 +377,10 @@
 
                     if (stat === "OTP_RECEIVED" || otpCode) {
                         i.status = "received"; i.otp = otpCode; 
+                        
+                        // Melepaskan pesanan setelah OTP diterima sesuai panduan API
+                        try { await apiSMSCode(`orders/finish`, 'POST', { id: i.order_id }); printLog("✅ Nomor sukses dilepaskan."); } catch(err) { printLog("⚠️ Gagal memanggil /finish"); }
+
                         putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
                         renderUILayout(); simpanDaftarOrderanKeLokal(); printLog(`🎉 OTP MASUK (${i.otp})!`);
                     } else if (stat === "CANCELED" || stat === "CANCELLED" || stat === "EXPIRED" || stat === "REFUNDED") {
