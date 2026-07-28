@@ -18,17 +18,15 @@
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
-        .btn-batal { background: var(--accent-red); color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         
-        /* GAYA UNTUK TOMBOL RESEND & SELESAI */
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
         .btn-resend:hover { background: #5c4eb5; }
         .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
         .btn-selesai:hover { background: #24523b; }
 
-        /* GAYA UNTUK KARTU RIWAYAT */
-        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; flex-direction: column; align-items: stretch; }
         .history-card .srv-name { font-size: 10px; color: #8b8da9; }
         .history-card .srv-phone { font-size: 13px; font-weight: bold; color: #fff; }
         .history-card .srv-otp { font-size: 14px; font-weight: bold; color: var(--accent-green); background: #152923; padding: 4px 8px; border-radius: 6px; border: 1px solid #24523b; letter-spacing: 1px;}
@@ -99,6 +97,7 @@
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
+                <button onclick="bersihkanAktif()" style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(255,85,85,0.4);">🧹 Bersihkan</button>
             </div>
             <div id="containerListOrder">
                 <div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
@@ -108,8 +107,8 @@
         <!-- RIWAYAT SUKSES -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div style="font-size: 13px; font-weight: bold; color: var(--text-sub); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span>📜 Riwayat Sukses (Selesai):</span>
-                <span onclick="hapusRiwayatHistory()" style="cursor: pointer; font-size: 10px; color: var(--text-sub); background: var(--bg-item); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-color);">🧹 Bersihkan</span>
+                <span>📜 Riwayat Sukses:</span>
+                <span onclick="hapusSemuaRiwayatBawah()" style="cursor: pointer; font-size: 10px; color: var(--text-sub); background: var(--bg-item); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-color);">Tutup Semua</span>
             </div>
             <div id="containerRiwayat">
                 <div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>
@@ -182,6 +181,27 @@
             setInterval(mesinWaktuTerpusat, 1000);
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
+
+        // FUNGSI BERSIHKAN AKTIF (PINDAH KE RIWAYAT & REFRESH TIER)
+        function bersihkanAktif() {
+            let pindah = false;
+            daftarOrderan.forEach(item => {
+                // Pindahkan yang sudah nerima OTP ke bagian Riwayat
+                if (item.status === "received") {
+                    item.status = "history_received";
+                    pindah = true;
+                }
+            });
+            
+            if (pindah) {
+                renderUILayout();
+                simpanDaftarOrderanKeLokal();
+            }
+            // Hapus cache UI dan tarik ulang data katalog & operator
+            refreshSemuaDataLive();
+            showToast("Dibersihkan & Katalog Diperbarui!");
+            printLog("🧹 Cache UI dibersihkan, me-refresh tier harga...");
+        }
 
         async function inisialisasiLayananShopee() {
             try {
@@ -313,10 +333,9 @@
             try {
                 await apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id });
                 item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Dibatalkan!"); 
-            } catch (e) { alert("Gagal membatalkan."); }
+            } catch (e) { alert("Gagal membatalkan. Mungkin pesanan masih terlalu baru (tunggu 2 menit)."); }
         }
 
-        // FUNGSI RESEND / KIRIM ULANG
         async function eksekusiResend(index) {
             const item = daftarOrderan[index];
             try {
@@ -331,21 +350,20 @@
             } catch (e) { alert("Gagal Resend: " + e.message); }
         }
 
-        // FUNGSI SELESAIKAN ORDER (MASUK KE RIWAYAT)
         async function eksekusiSelesai(index) {
             const item = daftarOrderan[index];
             try {
                 await apiSMSCode(`orders/finish`, 'POST', { id: item.order_id });
                 item.status = "completed"; 
                 renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); 
-                showToast("Selesai & Masuk Riwayat!"); 
-                printLog(`✅ Pesanan ${item.phone} diselesaikan.`);
+                showToast("Berhasil Diselesaikan!"); 
+                printLog(`✅ Pesanan ${item.phone} diselesaikan sepenuhnya.`);
             } catch(err) { alert("Gagal menyelesaikan: " + err.message); }
         }
 
         async function mesinCekSmsTerpusat() {
             daftarOrderan.forEach(async (i) => {
-                if (i.status !== "pending" && i.status !== "received") return; 
+                if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") return; 
                 try {
                     const d = await apiSMSCode(`orders/${i.order_id}`, 'GET');
                     let orderData = d.data; 
@@ -362,7 +380,6 @@
                     } else if (stat === "OTP_RECEIVED" || otpCode) {
                         if (i.status === "pending" || i.otp !== otpCode) {
                             i.status = "received"; i.otp = otpCode; 
-                            // Tidak lagi dipaksa auto-finish agar bisa di-resend
                             putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
                             renderUILayout(); simpanDaftarOrderanKeLokal(); printLog(`🎉 OTP MASUK (${i.otp})!`);
                         }
@@ -382,26 +399,48 @@
 
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                if (item.status === "pending" && sec >= 1200) { item.status = "cancelled"; flagSimpan = true; }
                 
-                if (item.status === "cancelled") return; // Sembunyikan yg dibatalkan sepenuhnya agar UI rapi
+                // AUTO CANCEL SETELAH 7 MENIT (420 DETIK)
+                if (item.status === "pending" && sec >= 420) { 
+                    item.status = "cancelled"; 
+                    flagSimpan = true; 
+                    apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
+                    printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (7 Menit).`);
+                }
+                
+                if (item.status === "cancelled") return; 
 
-                // RENDER UNTUK RIWAYAT SUKSES
-                if (item.status === "completed") {
+                // RENDER UNTUK RIWAYAT SUKSES (Bisa state 'history_received' atau 'completed')
+                if (item.status === "completed" || item.status === "history_received") {
+                    let btnKirimUlang = "";
+                    // Tampilkan tombol kirim ulang & selesai HANYA JIKA belum di-finish
+                    if (item.status === "history_received") {
+                        btnKirimUlang = `
+                        <div style="margin-top: 10px; display: flex; gap: 6px;">
+                            <button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend" style="font-size: 10px;"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button>
+                            <button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai" style="font-size: 10px;"><i class="fa-solid fa-check-double"></i> Selesai (Tutup)</button>
+                        </div>`;
+                    }
+
                     htmlRiwayat += `
                     <div class="history-card">
-                        <div>
-                            <div class="srv-name">${item.layanan}</div>
-                            <div class="srv-phone">${item.phone}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div class="srv-name">${item.layanan}</div>
+                                <div class="srv-phone">${item.phone}</div>
+                            </div>
+                            <div class="srv-otp">${item.otp || '-'}</div>
                         </div>
-                        <div class="srv-otp">${item.otp || '-'}</div>
+                        ${btnKirimUlang}
                     </div>`;
                     countRiwayat++; return;
                 }
 
-                // RENDER UNTUK NOMOR AKTIF
+                // RENDER UNTUK NOMOR AKTIF (pending & received)
                 countAktif++;
-                let sisa = Math.max(0, 1200 - sec); let cool = Math.max(0, 120 - sec);
+                let sisa = Math.max(0, 420 - sec); // Hitung mundur dari 7 menit
+                let cool = Math.max(0, 120 - sec); // Tombol kunci selama 2 menit
+                
                 let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = ""; let btnAksi = "";
 
                 if (item.status === "received") { 
@@ -413,7 +452,8 @@
                         <button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button>
                     </div>`;
                 } else if (item.status === "pending") {
-                    btnAksi = `<button class="btn-batal" ${cool>0?'disabled':''} onclick="eksekusiBatalkanServer(${index})">${cool>0?`Batalkan (${cool}s)`:'❌ Batalkan Pesanan'}</button>`;
+                    // Tombol merah jika waktu > 2 menit, abu-abu jika masih dilarang batal
+                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
                 htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
@@ -426,7 +466,7 @@
         }
 
         function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv2_shopee", JSON.stringify(daftarOrderan)); }
-        function hapusRiwayatHistory() { daftarOrderan = daftarOrderan.filter(i => i.status !== "completed"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Riwayat Dibersihkan!"); }
+        function hapusSemuaRiwayatBawah() { daftarOrderan = daftarOrderan.filter(i => i.status !== "completed"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Riwayat Selesai Dibersihkan!"); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function printLog(t) { const consoleBox = document.getElementById("miniConsoleLog"); consoleBox.innerHTML += `<br>└> ${t}`; consoleBox.scrollTop = consoleBox.scrollHeight; }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
