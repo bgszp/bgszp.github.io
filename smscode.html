@@ -6,7 +6,7 @@
     <title>SMSCode.gg Shopee Panel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #6c5ce7; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
+        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
         * { box-sizing: border-box; transition: all 0.2s ease; }
         body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
@@ -16,10 +16,13 @@
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
         .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
-        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
-        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         
+        /* GAYA TOMBOL SALIN (UTAMA VS ANTRIAN) */
+        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } /* Warna berbeda untuk antrian > 1 */
+        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
+        
+        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
         .btn-resend:hover { background: #5c4eb5; }
@@ -34,7 +37,6 @@
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         
-        /* GAYA MENU ORDER TERPADU */
         .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
         .unified-order-box { display: flex; flex-direction: column; gap: 6px; background: #0b0c16; border: 1px solid #4a3c8c; border-radius: 10px; padding: 8px; }
         .unified-select-op { border: none; background: #121324; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 10px; border-radius: 6px; outline: none; cursor: pointer; width: 100%; }
@@ -83,12 +85,10 @@
             <label class="form-label">🛒 Setup Layanan</label>
             
             <div class="unified-order-box">
-                <!-- Dropdown Operator (Trigger Auto-Open Tier) -->
                 <select id="dropdownOperator" class="unified-select-op" onchange="muatProdukShopee(true)">
                     <option value="">Memuat Operator...</option>
                 </select>
 
-                <!-- Tombol/Display Tier Harga -->
                 <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
                     <span id="labelServerTerpilih" style="color: #fff;">Pilih Operator Terlebih Dahulu...</span>
                     <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Tier</span>
@@ -113,14 +113,19 @@
             </div>
         </div>
 
-        <!-- RIWAYAT SUKSES -->
+        <!-- RIWAYAT SUKSES (DROPDOWN) -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
-            <div style="font-size: 13px; font-weight: bold; color: var(--text-sub); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span>📜 Riwayat Sukses:</span>
-                <span onclick="hapusSemuaRiwayatBawah()" style="cursor: pointer; font-size: 10px; color: var(--text-sub); background: var(--bg-item); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-color);">Tutup Semua</span>
+            <div class="pemicu-dropdown" onclick="toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
+                <span>📜 Riwayat Sukses (<span id="countRiwayatBadge">0</span>)</span>
+                <span id="panahRiwayat" style="font-size: 10px;">▼</span>
             </div>
-            <div id="containerRiwayat">
-                <div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>
+            <div id="wadahRiwayatDropdown" style="display: none; background: #0b0c16; padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <div style="text-align: right; margin-bottom: 10px;">
+                    <span onclick="hapusSemuaRiwayatBawah()" style="cursor: pointer; font-size: 10px; color: var(--accent-red); background: var(--bg-item); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border-color); font-weight: bold;">🗑️ Hapus Semua Riwayat</span>
+                </div>
+                <div id="containerRiwayat">
+                    <div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>
+                </div>
             </div>
         </div>
 
@@ -191,6 +196,19 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
+        // FUNGSI TOGGLE DROPDOWN RIWAYAT
+        function toggleRiwayatDropdown() {
+            const w = document.getElementById("wadahRiwayatDropdown");
+            const p = document.getElementById("panahRiwayat");
+            if (w.style.display === "none" || w.style.display === "") {
+                w.style.display = "block";
+                p.innerText = "▲";
+            } else {
+                w.style.display = "none";
+                p.innerText = "▼";
+            }
+        }
+
         function bersihkanAktif() {
             let pindah = false;
             daftarOrderan.forEach(item => {
@@ -232,7 +250,6 @@
                     });
                 }
                 
-                // Jangan otomatis buka dropdown saat baru pertama kali load aplikasi
                 await muatProdukShopee(false);
             } catch (e) {
                 printLog(`⚠️ Error Inisialisasi: ${e.message}`);
@@ -240,7 +257,6 @@
             }
         }
 
-        // FUNGSI INI AKAN OTOMATIS MEMBUKA DROPDOWN HARGA JIKA DIPICU DARI PILIH OPERATOR
         async function muatProdukShopee(autoOpen = false) {
             if (!shopeePlatformId) return;
             try {
@@ -264,7 +280,6 @@
                 renderDropdownOptions();
                 
                 if (daftarServerTersedia.length > 0) { 
-                    // Tetapkan default tanpa menutup dropdown
                     let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
                     const srv = daftarServerTersedia[0];
                     produkTerpilihId = srv.id;
@@ -272,10 +287,8 @@
                     document.getElementById("labelServerTerpilih").innerHTML = `Rp ${srv.price.toLocaleString('id-ID')} <span style="color:var(--text-sub); font-size:11px;">(${srv.stock} stok)</span>`;
                     document.getElementById("btnPesanAksi").disabled = false;
                     
-                    // Buka list otomatis!
                     if(autoOpen) {
                         document.getElementById("containerListDropdown").classList.add("active");
-                        printLog("✅ Katalog tier berhasil dimuat & dibuka otomatis.");
                     } else {
                         document.getElementById("containerListDropdown").classList.remove("active");
                     }
@@ -362,7 +375,7 @@
             try {
                 await apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id });
                 item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Dibatalkan!"); 
-            } catch (e) { alert("Gagal membatalkan. Mungkin pesanan masih terlalu baru (tunggu 2 menit)."); }
+            } catch (e) { alert("Gagal membatalkan. Tunggu 2 menit."); }
         }
 
         async function eksekusiResend(index) {
@@ -409,7 +422,7 @@
                     } else if (stat === "OTP_RECEIVED" || otpCode) {
                         if (i.status === "pending" || i.otp !== otpCode) {
                             i.status = "received"; i.otp = otpCode; 
-                            putarSuaraNotif(); munculkanPopupNative(i.phone, i.otp, i.layanan);
+                            putarSuaraNotifKeras(); munculkanPopupNative(i.phone, i.otp, i.layanan);
                             renderUILayout(); simpanDaftarOrderanKeLokal(); printLog(`🎉 OTP MASUK (${i.otp})!`);
                         }
                     } else if (stat === "CANCELED" || stat === "CANCELLED" || stat === "EXPIRED" || stat === "REFUNDED") {
@@ -422,6 +435,7 @@
         function renderUILayout() {
             const containerAktif = document.getElementById("containerListOrder");
             const containerRiwayat = document.getElementById("containerRiwayat");
+            const badgeRiwayat = document.getElementById("countRiwayatBadge");
             
             let htmlAktif = ""; let htmlRiwayat = "";
             let flagSimpan = false; let countAktif = 0; let countRiwayat = 0;
@@ -462,11 +476,16 @@
                     countRiwayat++; return;
                 }
 
+                // Hitung untuk penomoran tombol salin "Antrian ke-X"
                 countAktif++;
                 let sisa = Math.max(0, 420 - sec); 
                 let cool = Math.max(0, 120 - sec); 
                 
                 let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = ""; let btnAksi = "";
+
+                // DINAMIKA TOMBOL SALIN
+                let labelSalin = countAktif === 1 ? "Salin Utama" : `Salin (Antrian ${countAktif})`;
+                let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
 
                 if (item.status === "received") { 
                     textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
@@ -480,11 +499,12 @@
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
-                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
+                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
             });
 
             containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
             containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
+            badgeRiwayat.innerText = countRiwayat;
             
             if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
@@ -496,9 +516,31 @@
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin!"); }
 
-        function putarSuaraNotif() {
-            try { const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const notes = [523.25, 659.25, 783.99, 1046.50]; let time = audioCtx.currentTime; for (let r = 0; r < 2; r++) { notes.forEach((freq) => { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = "sawtooth"; osc.frequency.setValueAtTime(freq, time); gain.gain.setValueAtTime(0.2, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(time); osc.stop(time + 0.2); time += 0.08; }); time += 0.15; } } catch (e) {}
+        // FUNGSI ALARM / SUARA KERAS UNIK
+        function putarSuaraNotifKeras() {
+            try { 
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+                let time = audioCtx.currentTime; 
+                const freqs = [987.77, 1318.51, 1567.98, 1975.53]; // Nada tinggi beruntun
+                for (let r = 0; r < 3; r++) { // Diulang 3 kali agar keras dan mencolok
+                    freqs.forEach((freq) => { 
+                        const osc = audioCtx.createOscillator(); 
+                        const gain = audioCtx.createGain(); 
+                        osc.type = "square"; // Gelombang square jauh lebih nyaring dari sawtooth
+                        osc.frequency.setValueAtTime(freq, time); 
+                        gain.gain.setValueAtTime(0.8, time); // Gain maksimal
+                        gain.gain.setTargetAtTime(0.0, time + 0.1, 0.05); // Turun tajam
+                        osc.connect(gain); 
+                        gain.connect(audioCtx.destination); 
+                        osc.start(time); 
+                        osc.stop(time + 0.15); 
+                        time += 0.1; 
+                    }); 
+                    time += 0.2; // Jeda antar tembakan alarm
+                } 
+            } catch (e) {}
         }
+
         function munculkanPopupNative(nomor, otp, layanan) {
             if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
                 cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
