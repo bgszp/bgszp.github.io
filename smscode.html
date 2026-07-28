@@ -117,7 +117,7 @@
     if (!token) throw new Error("Bearer Token belum disetting.");
 
     // GANTI BARI INI dengan URL Cloudflare Worker Anda!
-    const WORKER_URL = "smscode-proxy.tiktiksatu001.workers.dev";
+    const WORKER_URL = "https://smscode-proxy.tiktiksatu001.workers.dev";
     
     let targetUrl = `${WORKER_URL}/v1/${endpoint}`;
     if (method === "GET") { 
