@@ -67,13 +67,13 @@
         .wrapper-menu-server {
             width: 100%; 
             max-width: 900px;
-            margin-bottom: 20px; 
+            margin-bottom: 10px; 
             display: flex; 
-            flex-direction: row;
+            flex-direction: row; /* Berjejer horizontal */
             gap: 15px; 
         }
         .server-col {
-            flex: 1; 
+            flex: 1; /* Bagi rata lebar 50-50 */
             display: flex; 
             flex-direction: column; 
         }
@@ -85,20 +85,23 @@
         .pemicu-menu-utama:hover { background: #251e4a; border-color: #00ffcc; box-shadow: 0 0 8px rgba(0, 255, 204, 0.3); }
         .wadah-iframe-server {
             display: none; width: 100%; border-radius: 8px; border: 1px solid #3d3463; background: #121324; overflow: hidden;
-            margin-bottom: 15px; 
+            margin-bottom: 15px; /* Jarak bawah jika dibuka */
         }
     </style>
 </head>
 <body>
 
-<!-- === PANEL MENU SERVER 1 & SERVER 2 === -->
+<!-- === PANEL MENU SERVER 1 & SERVER 2 (TATA LETAK DIPERBAIKI) === -->
 <div class="wrapper-menu-server">
+    <!-- Baris khusus Tombol Server 1 -->
     <div class="server-col">
         <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP1', 'panahSrv1')">
             <span>🛠️ Server 1 (OTP Instan)</span>
             <span id="panahSrv1">▼</span>
         </div>
     </div>
+
+    <!-- Baris khusus Tombol Server 2 -->
     <div class="server-col">
         <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP2', 'panahSrv2')" style="border-color: #00e5ff;"> 
             <span>🔵 Server 2 (SMSCode.gg)</span>
@@ -107,6 +110,7 @@
     </div>
 </div>
 
+<!-- Wadah Iframe (Di luar kolom agar bisa mekar 100% penuh) -->
 <div style="width: 100%; max-width: 900px;">
     <div id="wadahOTP1" class="wadah-iframe-server">
         <iframe src="otpinstan.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
@@ -121,38 +125,25 @@
         const wadah = document.getElementById(wadahId);
         const panah = document.getElementById(panahId);
         
+        // Cek apakah panel yang diklik sedang tertutup
         if (wadah.style.display === "none" || wadah.style.display === "") {
+            // Sembunyikan SEMUA panel iframe & reset panah (Mode Tab)
             document.getElementById('wadahOTP1').style.display = "none";
             document.getElementById('wadahOTP2').style.display = "none";
             document.getElementById('panahSrv1').style.transform = "rotate(0deg)";
             document.getElementById('panahSrv2').style.transform = "rotate(0deg)";
             
+            // Buka panel yang diklik saja
             wadah.style.display = "block";
             panah.style.transform = "rotate(180deg)";
         } else {
+            // Tutup jika panel yang sama diklik lagi
             wadah.style.display = "none";
             panah.style.transform = "rotate(0deg)";
         }
     }
 </script>
 <!-- === SELESAI PANEL SERVER === -->
-
-    <!-- === PANEL CEK NOMOR SHOPEE BARU === -->
-    <div class="container-card">
-        <div class="title"><i class="fa-solid fa-magnifying-glass" style="color: #ee4d2d;"></i> Cek Status Shopee</div>
-        <input class="form-input" id="inputCekShopee" placeholder="Masukkan Nomor (Cth: 0812...)" type="number" />
-        
-        <div class="btn-group">
-            <button class="btn-primary" id="btnCekShopee" onclick="cekNomorShopee()" style="background: linear-gradient(45deg, #ee4d2d, #ff7337); box-shadow: 0 4px 15px rgba(238, 77, 45, 0.4);">
-                <i class="fa-solid fa-satellite-dish"></i> Mulai Pengecekan
-            </button>
-        </div>
-        
-        <div id="hasilCekShopee" style="margin-top: 15px; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; display: none; border: 1px solid #3d3463;">
-            Hasil akan muncul di sini...
-        </div>
-    </div>
-    <!-- === SELESAI PANEL CEK NOMOR === -->
 
     <div class="container-card">
         <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator</div>
@@ -220,74 +211,6 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        // ==========================================
-        // FUNGSI CEK SHOPEE VIA RENDER BACKEND
-        // ==========================================
-        const RENDER_BACKEND_URL = "https://bgszp-github-io.onrender.com/cek"; // <-- UBAH URL INI JIKA SERVER RENDER SUDAH JALAN
-
-        async function cekNomorShopee() {
-            const inputElement = document.getElementById("inputCekShopee");
-            const btnElement = document.getElementById("btnCekShopee");
-            const hasilElement = document.getElementById("hasilCekShopee");
-            const nomor = inputElement.value.trim();
-
-            if (!nomor) {
-                showToast("Masukkan nomor terlebih dahulu! ⚠️");
-                return;
-            }
-
-            const teksAsliTombol = btnElement.innerHTML;
-            btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
-            btnElement.disabled = true;
-            btnElement.style.opacity = "0.7";
-            
-            hasilElement.style.display = "block";
-            hasilElement.style.background = "#1a1535";
-            hasilElement.style.color = "#aaa";
-            hasilElement.innerText = "Menghubungi server Render... (Mungkin butuh 30 detik jika server tertidur)";
-
-            try {
-                const response = await fetch(RENDER_BACKEND_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ nomor: nomor })
-                });
-
-                const data = await response.json();
-
-                if (data.status === "TERDAFTAR") {
-                    hasilElement.style.background = "rgba(255, 0, 127, 0.15)";
-                    hasilElement.style.borderColor = "#ff007f";
-                    hasilElement.style.color = "#ff007f";
-                    hasilElement.innerHTML = `❌ Nomor <b>${nomor}</b> SUDAH TERDAFTAR`;
-                    showToast("Pengecekan Selesai! ✨");
-                } 
-                else if (data.status === "BELUM_TERDAFTAR") {
-                    hasilElement.style.background = "rgba(0, 255, 204, 0.1)";
-                    hasilElement.style.borderColor = "#00ffcc";
-                    hasilElement.style.color = "#00ffcc";
-                    hasilElement.innerHTML = `✅ Nomor <b>${nomor}</b> BELUM TERDAFTAR`;
-                    showToast("Pengecekan Selesai! ✨");
-                } 
-                else {
-                    hasilElement.innerText = "Status tidak diketahui / Terblokir CAPTCHA.";
-                    hasilElement.style.color = "#ff4a4a";
-                }
-
-            } catch (error) {
-                console.error("Error API:", error);
-                hasilElement.innerText = "Gagal terhubung ke server Render. Pastikan URL sudah benar.";
-                hasilElement.style.color = "#ff4a4a";
-            } finally {
-                btnElement.innerHTML = teksAsliTombol;
-                btnElement.disabled = false;
-                btnElement.style.opacity = "1";
-            }
-        }
-
-        // ==========================================
-        // FUNGSI BAWAAN INDEX KAMU
-        // ==========================================
         let DATA_DUMMY_DATABASE = [];
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
