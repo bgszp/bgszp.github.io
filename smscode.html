@@ -19,7 +19,7 @@
         
         /* GAYA TOMBOL SALIN (UTAMA VS ANTRIAN) */
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } /* Warna berbeda untuk antrian > 1 */
+        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
         
         .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
@@ -483,8 +483,8 @@
                 
                 let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = ""; let btnAksi = "";
 
-                // DINAMIKA TOMBOL SALIN
-                let labelSalin = countAktif === 1 ? "Salin Utama" : `Salin (Antrian ${countAktif})`;
+                // DINAMIKA TOMBOL SALIN (Pembaruan: "Salin Utama" -> "Salin")
+                let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`;
                 let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
 
                 if (item.status === "received") { 
@@ -516,27 +516,26 @@
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin!"); }
 
-        // FUNGSI ALARM / SUARA KERAS UNIK
         function putarSuaraNotifKeras() {
             try { 
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
                 let time = audioCtx.currentTime; 
-                const freqs = [987.77, 1318.51, 1567.98, 1975.53]; // Nada tinggi beruntun
-                for (let r = 0; r < 3; r++) { // Diulang 3 kali agar keras dan mencolok
+                const freqs = [987.77, 1318.51, 1567.98, 1975.53]; 
+                for (let r = 0; r < 3; r++) { 
                     freqs.forEach((freq) => { 
                         const osc = audioCtx.createOscillator(); 
                         const gain = audioCtx.createGain(); 
-                        osc.type = "square"; // Gelombang square jauh lebih nyaring dari sawtooth
+                        osc.type = "square"; 
                         osc.frequency.setValueAtTime(freq, time); 
-                        gain.gain.setValueAtTime(0.8, time); // Gain maksimal
-                        gain.gain.setTargetAtTime(0.0, time + 0.1, 0.05); // Turun tajam
+                        gain.gain.setValueAtTime(0.8, time); 
+                        gain.gain.setTargetAtTime(0.0, time + 0.1, 0.05); 
                         osc.connect(gain); 
                         gain.connect(audioCtx.destination); 
                         osc.start(time); 
                         osc.stop(time + 0.15); 
                         time += 0.1; 
                     }); 
-                    time += 0.2; // Jeda antar tembakan alarm
+                    time += 0.2; 
                 } 
             } catch (e) {}
         }
