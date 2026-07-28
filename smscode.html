@@ -6,40 +6,35 @@
     <title>SMSCode.gg Shopee Panel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --accent-yellow: #ffb86c; --text-main: #f8f8f2; --text-sub: #8b8da9; }
+        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
         * { box-sizing: border-box; transition: all 0.2s ease; }
         body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
-        
         .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
         .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
         .search-input:focus { border-color: var(--accent-cyan); }
+        .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
+        .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
+        .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
         
-        /* GAYA KARTU ORDER (DIPERBAIKI) */
-        .card-order { background: #1a1b35; border: 1px solid #2c2e5c; border-radius: 14px; padding: 16px; margin-top: 12px; }
-        .btn-outline-cyan { background: rgba(0, 255, 204, 0.05); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-        .btn-outline-cyan:hover { background: rgba(0, 255, 204, 0.15); }
-        .btn-outline-red { background: rgba(255, 85, 85, 0.05); border: 1px solid var(--accent-red); color: var(--accent-red); padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-        .btn-outline-red:hover { background: rgba(255, 85, 85, 0.15); }
+        /* GAYA TOMBOL SALIN (UTAMA VS ANTRIAN) */
+        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
+        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
         
-        .otp-box-success { background: #0f291e; border: 1px solid #24523b; border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
-        
-        .btn-batal-disabled { background: #282a45; color: #6272a4; border: none; padding: 12px; border-radius: 10px; width: 100%; font-size: 14px; font-weight: bold; cursor: not-allowed; display: flex; justify-content: center; align-items: center; gap: 6px; }
-        .btn-batal-active { background: rgba(255, 85, 85, 0.05); border: 1px solid var(--accent-red); color: var(--accent-red); padding: 12px; border-radius: 10px; width: 100%; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; transition: 0.2s; }
-        .btn-batal-active:hover { background: rgba(255,85,85,0.15); }
-
-        .btn-action-half { flex: 1; border: none; padding: 10px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; }
+        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
         .btn-resend:hover { background: #5c4eb5; }
         .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
         .btn-selesai:hover { background: #24523b; }
 
         .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; flex-direction: column; align-items: stretch; }
-        .history-card .srv-name { font-size: 10px; color: var(--text-sub); }
+        .history-card .srv-name { font-size: 10px; color: #8b8da9; }
         .history-card .srv-phone { font-size: 13px; font-weight: bold; color: #fff; }
         .history-card .srv-otp { font-size: 14px; font-weight: bold; color: var(--accent-green); background: #152923; padding: 4px 8px; border-radius: 6px; border: 1px solid #24523b; letter-spacing: 1px;}
 
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent-cyan); color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; transition: all 0.3s ease;}
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         
         .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
@@ -108,14 +103,11 @@
         </div>
 
         <!-- NOMOR AKTIF -->
-        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-size: 15px; font-weight: bold; color: var(--accent-green); display: flex; align-items: center; gap: 8px;">
-                    📱 Nomor & OTP Aktif:
-                </div>
-                <button onclick="bersihkanAktif()" class="btn-outline-red"><i class="fa-solid fa-broom"></i> Bersihkan</button>
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📱 Nomor & OTP Aktif:</span>
+                <button onclick="bersihkanAktif()" style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(255,85,85,0.4);">🧹 Bersihkan</button>
             </div>
-            
             <div id="containerListOrder">
                 <div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
             </div>
@@ -204,13 +196,16 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
+        // FUNGSI TOGGLE DROPDOWN RIWAYAT
         function toggleRiwayatDropdown() {
             const w = document.getElementById("wadahRiwayatDropdown");
             const p = document.getElementById("panahRiwayat");
             if (w.style.display === "none" || w.style.display === "") {
-                w.style.display = "block"; p.innerText = "▲";
+                w.style.display = "block";
+                p.innerText = "▲";
             } else {
-                w.style.display = "none"; p.innerText = "▼";
+                w.style.display = "none";
+                p.innerText = "▼";
             }
         }
 
@@ -218,11 +213,14 @@
             let pindah = false;
             daftarOrderan.forEach(item => {
                 if (item.status === "received") {
-                    item.status = "history_received"; pindah = true;
+                    item.status = "history_received";
+                    pindah = true;
                 }
             });
+            
             if (pindah) { renderUILayout(); simpanDaftarOrderanKeLokal(); }
-            refreshSemuaDataLive(); showToast("Dibersihkan & Katalog Diperbarui!");
+            refreshSemuaDataLive();
+            showToast("Dibersihkan & Katalog Diperbarui!");
             printLog("🧹 Cache UI dibersihkan, me-refresh harga otomatis...");
         }
 
@@ -232,6 +230,7 @@
                 const resSrv = await apiSMSCode('catalog/services?country_id=7', 'GET');
                 const shopeeSrv = resSrv.data.find(s => s.name.toLowerCase().includes("shopee"));
                 if (!shopeeSrv) throw new Error("Layanan Shopee tidak ditemukan.");
+                
                 shopeePlatformId = shopeeSrv.id;
 
                 printLog("🔄 Mengambil daftar Operator...");
@@ -250,8 +249,12 @@
                         dropdownOp.appendChild(opt);
                     });
                 }
+                
                 await muatProdukShopee(false);
-            } catch (e) { printLog(`⚠️ Error Inisialisasi: ${e.message}`); document.getElementById("dropdownOperator").innerHTML = `<option value="">Gagal Memuat</option>`; }
+            } catch (e) {
+                printLog(`⚠️ Error Inisialisasi: ${e.message}`);
+                document.getElementById("dropdownOperator").innerHTML = `<option value="">Gagal Memuat</option>`;
+            }
         }
 
         async function muatProdukShopee(autoOpen = false) {
@@ -284,8 +287,11 @@
                     document.getElementById("labelServerTerpilih").innerHTML = `Rp ${srv.price.toLocaleString('id-ID')} <span style="color:var(--text-sub); font-size:11px;">(${srv.stock} stok)</span>`;
                     document.getElementById("btnPesanAksi").disabled = false;
                     
-                    if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
-                    else document.getElementById("containerListDropdown").classList.remove("active");
+                    if(autoOpen) {
+                        document.getElementById("containerListDropdown").classList.add("active");
+                    } else {
+                        document.getElementById("containerListDropdown").classList.remove("active");
+                    }
                 } 
                 else { 
                     document.getElementById("labelServerTerpilih").innerText = "Tidak ada tier tersedia"; 
@@ -378,8 +384,11 @@
                 showToast("Meminta Resend...");
                 const res = await apiSMSCode('orders/resend', 'POST', { id: item.order_id });
                 if(res.data && res.data.resent) {
-                    showToast("Resend Berhasil Diminta!"); printLog(`🔁 Permintaan Resend untuk ${item.phone} terkirim.`);
-                } else { showToast("Platform tidak mendukung resend."); }
+                    showToast("Resend Berhasil Diminta!");
+                    printLog(`🔁 Permintaan Resend untuk ${item.phone} terkirim.`);
+                } else {
+                    showToast("Platform tidak mendukung resend.");
+                }
             } catch (e) { alert("Gagal Resend: " + e.message); }
         }
 
@@ -387,7 +396,10 @@
             const item = daftarOrderan[index];
             try {
                 await apiSMSCode(`orders/finish`, 'POST', { id: item.order_id });
-                item.status = "completed"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Berhasil Diselesaikan!"); printLog(`✅ Pesanan ${item.phone} diselesaikan sepenuhnya.`);
+                item.status = "completed"; 
+                renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); 
+                showToast("Berhasil Diselesaikan!"); 
+                printLog(`✅ Pesanan ${item.phone} diselesaikan sepenuhnya.`);
             } catch(err) { alert("Gagal menyelesaikan: " + err.message); }
         }
 
@@ -432,7 +444,8 @@
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
                 if (item.status === "pending" && sec >= 420) { 
-                    item.status = "cancelled"; flagSimpan = true; 
+                    item.status = "cancelled"; 
+                    flagSimpan = true; 
                     apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
                     printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (7 Menit).`);
                 }
@@ -463,60 +476,33 @@
                     countRiwayat++; return;
                 }
 
-                // LAYOUT CARD AKTIF DIPERBAIKI MENCEGAH TEKS MENGGENCET TOMBOL
+                // Hitung untuk penomoran tombol salin "Antrian ke-X"
                 countAktif++;
                 let sisa = Math.max(0, 420 - sec); 
                 let cool = Math.max(0, 120 - sec); 
                 
+                let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = ""; let btnAksi = "";
+
+                // DINAMIKA TOMBOL SALIN (Pembaruan: "Salin Utama" -> "Salin")
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`;
-                let borderStyleSalin = countAktif === 1 ? "border-color: var(--accent-cyan); color: var(--accent-cyan);" : "border-color: var(--accent-purple); color: var(--accent-purple);";
-                
-                let innerHtml = `
-                <div class="card-order">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; color:var(--text-sub); font-size:13px; margin-bottom:16px; gap: 10px;">
-                        <div style="line-height: 1.4; word-break: break-word;">${item.layanan}</div>
-                        <div style="white-space: nowrap; flex-shrink: 0;"><i class="fa-regular fa-clock"></i> Maks: 7m</div>
-                    </div>
-                    
-                    <div style="font-size:11px; color:var(--text-sub); margin-bottom: 4px;">Nomor HP:</div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px;">
-                        <div style="font-size:22px; font-weight:bold; color:#fff; letter-spacing: 1px; word-break: break-all;">${item.phone}</div>
-                        <button onclick="salinTeksToast('${item.phone}')" class="btn-outline-cyan" style="${borderStyleSalin} flex-shrink: 0;"><i class="fa-regular fa-copy"></i> ${labelSalin}</button>
-                    </div>`;
+                let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
 
                 if (item.status === "received") { 
-                    innerHtml += `
-                    <div class="otp-box-success">
-                        <div>
-                            <div style="font-size:11px; color:var(--accent-green); font-weight:bold; margin-bottom: 4px;">Kode OTP:</div>
-                            <div style="font-size:26px; font-weight:bold; color:var(--accent-green); letter-spacing: 1.5px;">${item.otp}</div>
-                        </div>
-                        <button onclick="salinTeksToast('${item.otp}')" class="btn-outline-cyan" style="border-color:var(--accent-green); color:var(--accent-green); flex-shrink: 0;"><i class="fa-regular fa-copy"></i> Salin OTP</button>
-                    </div>
-                    <div style="font-size:14px; font-weight:bold; color:var(--accent-green); margin-top: 16px; display:flex; align-items:center; gap:6px;">
-                        🎉 SMS/OTP Diterima!
-                    </div>
-                    <div style="display:flex; gap: 8px; margin-top: 15px;">
+                    textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
+                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
+                    btnAksi = `
+                    <div style="display:flex; gap: 8px; margin-top: 10px;">
                         <button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button>
                         <button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button>
                     </div>`;
                 } else if (item.status === "pending") {
-                    innerHtml += `
-                    <div style="font-size:14px; font-weight:bold; color:var(--accent-yellow); margin-top: 16px; margin-bottom: 16px; display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-bolt"></i> Menunggu OTP... (${sec}s)
-                    </div>`;
-                    if(cool > 0) {
-                        innerHtml += `<button class="btn-batal-disabled" disabled><i class="fa-solid fa-hourglass-half"></i> Tunggu (${cool}s)</button>`;
-                    } else {
-                        innerHtml += `<button class="btn-batal-active" onclick="eksekusiBatalkanServer(${index})"><i class="fa-solid fa-xmark"></i> Batalkan Pesanan</button>`;
-                    }
+                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
-                innerHtml += `</div>`;
-                htmlAktif += innerHtml;
+                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
             });
 
-            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>`;
+            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
             containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
             badgeRiwayat.innerText = countRiwayat;
             
@@ -562,3 +548,4 @@
     </script>
 </body>
 </html>
+ 
