@@ -15,7 +15,7 @@
         .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
         .search-input:focus { border-color: var(--accent-cyan); }
         
-        /* GAYA KARTU ORDER BARU (SESUAI GAMBAR) */
+        /* GAYA KARTU ORDER (DIPERBAIKI) */
         .card-order { background: #1a1b35; border: 1px solid #2c2e5c; border-radius: 14px; padding: 16px; margin-top: 12px; }
         .btn-outline-cyan { background: rgba(0, 255, 204, 0.05); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
         .btn-outline-cyan:hover { background: rgba(0, 255, 204, 0.15); }
@@ -463,7 +463,7 @@
                     countRiwayat++; return;
                 }
 
-                // LAYOUT CARD AKTIF BARU (SESUAI GAMBAR)
+                // LAYOUT CARD AKTIF DIPERBAIKI MENCEGAH TEKS MENGGENCET TOMBOL
                 countAktif++;
                 let sisa = Math.max(0, 420 - sec); 
                 let cool = Math.max(0, 120 - sec); 
@@ -473,27 +473,25 @@
                 
                 let innerHtml = `
                 <div class="card-order">
-                    <div style="display:flex; justify-content:space-between; color:var(--text-sub); font-size:13px; margin-bottom:16px;">
-                        <span>${item.layanan}</span>
-                        <span>⏱ Maks: 7m</span>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; color:var(--text-sub); font-size:13px; margin-bottom:16px; gap: 10px;">
+                        <div style="line-height: 1.4; word-break: break-word;">${item.layanan}</div>
+                        <div style="white-space: nowrap; flex-shrink: 0;"><i class="fa-regular fa-clock"></i> Maks: 7m</div>
                     </div>
                     
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-size:11px; color:var(--text-sub); margin-bottom: 6px;">Nomor HP:</div>
-                            <div style="font-size:22px; font-weight:bold; color:#fff; letter-spacing: 1px;">${item.phone}</div>
-                        </div>
-                        <button onclick="salinTeksToast('${item.phone}')" class="btn-outline-cyan" style="${borderStyleSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button>
+                    <div style="font-size:11px; color:var(--text-sub); margin-bottom: 4px;">Nomor HP:</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px;">
+                        <div style="font-size:22px; font-weight:bold; color:#fff; letter-spacing: 1px; word-break: break-all;">${item.phone}</div>
+                        <button onclick="salinTeksToast('${item.phone}')" class="btn-outline-cyan" style="${borderStyleSalin} flex-shrink: 0;"><i class="fa-regular fa-copy"></i> ${labelSalin}</button>
                     </div>`;
 
                 if (item.status === "received") { 
                     innerHtml += `
                     <div class="otp-box-success">
                         <div>
-                            <div style="font-size:11px; color:var(--accent-green); font-weight:bold; margin-bottom: 6px;">Kode OTP:</div>
+                            <div style="font-size:11px; color:var(--accent-green); font-weight:bold; margin-bottom: 4px;">Kode OTP:</div>
                             <div style="font-size:26px; font-weight:bold; color:var(--accent-green); letter-spacing: 1.5px;">${item.otp}</div>
                         </div>
-                        <button onclick="salinTeksToast('${item.otp}')" class="btn-outline-cyan" style="border-color:var(--accent-green); color:var(--accent-green);"><i class="fa-regular fa-copy"></i> Salin OTP</button>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-outline-cyan" style="border-color:var(--accent-green); color:var(--accent-green); flex-shrink: 0;"><i class="fa-regular fa-copy"></i> Salin OTP</button>
                     </div>
                     <div style="font-size:14px; font-weight:bold; color:var(--accent-green); margin-top: 16px; display:flex; align-items:center; gap:6px;">
                         🎉 SMS/OTP Diterima!
@@ -505,7 +503,7 @@
                 } else if (item.status === "pending") {
                     innerHtml += `
                     <div style="font-size:14px; font-weight:bold; color:var(--accent-yellow); margin-top: 16px; margin-bottom: 16px; display:flex; align-items:center; gap:6px;">
-                        ⚡ Menunggu OTP... (${sec}s)
+                        <i class="fa-solid fa-bolt"></i> Menunggu OTP... (${sec}s)
                     </div>`;
                     if(cool > 0) {
                         innerHtml += `<button class="btn-batal-disabled" disabled><i class="fa-solid fa-hourglass-half"></i> Tunggu (${cool}s)</button>`;
