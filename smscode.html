@@ -489,7 +489,7 @@
 
                 if (item.status === "received") { 
                     textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
-                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
+                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
                     btnAksi = `
                     <div style="display:flex; gap: 8px; margin-top: 10px;">
                         <button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button>
