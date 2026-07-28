@@ -33,8 +33,13 @@
 
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        
+        /* GAYA MENU ORDER TERPADU */
         .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
-        .dropdown-selected-bar { background: #121324; border: 1px solid #4a3c8c; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
+        .unified-order-box { display: flex; flex-direction: column; gap: 6px; background: #0b0c16; border: 1px solid #4a3c8c; border-radius: 10px; padding: 8px; }
+        .unified-select-op { border: none; background: #121324; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 10px; border-radius: 6px; outline: none; cursor: pointer; width: 100%; }
+        .dropdown-selected-bar { background: #121324; border: none; border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
+        
         .dropdown-list-options { display: none; margin-top: 8px; background: #121324; border: 1px solid #3d3463; border-radius: 10px; max-height: 250px; overflow-y: auto; }
         .dropdown-list-options.active { display: block; }
         .dropdown-item-row { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1b35; cursor: pointer; font-size: 13px; }
@@ -73,17 +78,21 @@
             </div>
         </div>
 
-        <!-- AREA PEMESANAN (OPERATOR & PRODUK) -->
+        <!-- AREA PEMESANAN TERPADU -->
         <div class="dropdown-box-wrapper">
-            <label class="form-label">1. Pilih Operator</label>
-            <select id="dropdownOperator" class="search-input" style="margin-bottom: 15px; cursor: pointer;" onchange="muatProdukShopee()">
-                <option value="">Memuat Operator...</option>
-            </select>
+            <label class="form-label">🛒 Setup Layanan</label>
+            
+            <div class="unified-order-box">
+                <!-- Dropdown Operator (Trigger Auto-Open Tier) -->
+                <select id="dropdownOperator" class="unified-select-op" onchange="muatProdukShopee(true)">
+                    <option value="">Memuat Operator...</option>
+                </select>
 
-            <label class="form-label">2. Pilih Tier Harga</label>
-            <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
-                <span id="labelServerTerpilih">Menunggu Pilihan Operator...</span>
-                <span style="font-size: 10px;">▼</span>
+                <!-- Tombol/Display Tier Harga -->
+                <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
+                    <span id="labelServerTerpilih" style="color: #fff;">Pilih Operator Terlebih Dahulu...</span>
+                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Tier</span>
+                </div>
             </div>
 
             <div id="containerListDropdown" class="dropdown-list-options"></div>
@@ -182,25 +191,19 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        // FUNGSI BERSIHKAN AKTIF (PINDAH KE RIWAYAT & REFRESH TIER)
         function bersihkanAktif() {
             let pindah = false;
             daftarOrderan.forEach(item => {
-                // Pindahkan yang sudah nerima OTP ke bagian Riwayat
                 if (item.status === "received") {
                     item.status = "history_received";
                     pindah = true;
                 }
             });
             
-            if (pindah) {
-                renderUILayout();
-                simpanDaftarOrderanKeLokal();
-            }
-            // Hapus cache UI dan tarik ulang data katalog & operator
+            if (pindah) { renderUILayout(); simpanDaftarOrderanKeLokal(); }
             refreshSemuaDataLive();
             showToast("Dibersihkan & Katalog Diperbarui!");
-            printLog("🧹 Cache UI dibersihkan, me-refresh tier harga...");
+            printLog("🧹 Cache UI dibersihkan, me-refresh harga otomatis...");
         }
 
         async function inisialisasiLayananShopee() {
@@ -224,21 +227,25 @@
                     resOp.data.forEach(op => {
                         let opt = document.createElement("option");
                         opt.value = op.operator_id === null ? "null" : op.operator_id;
-                        opt.text = op.name + (op.code === "any" ? " (Otomatis Termurah)" : "");
+                        opt.text = op.name + (op.code === "any" ? " (Paling Murah)" : "");
                         dropdownOp.appendChild(opt);
                     });
                 }
-                await muatProdukShopee();
+                
+                // Jangan otomatis buka dropdown saat baru pertama kali load aplikasi
+                await muatProdukShopee(false);
             } catch (e) {
                 printLog(`⚠️ Error Inisialisasi: ${e.message}`);
                 document.getElementById("dropdownOperator").innerHTML = `<option value="">Gagal Memuat</option>`;
             }
         }
 
-        async function muatProdukShopee() {
+        // FUNGSI INI AKAN OTOMATIS MEMBUKA DROPDOWN HARGA JIKA DIPICU DARI PILIH OPERATOR
+        async function muatProdukShopee(autoOpen = false) {
             if (!shopeePlatformId) return;
             try {
-                printLog("🔄 Menarik tier harga...");
+                if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Mencari harga...`;
+                
                 let opIdRaw = document.getElementById("dropdownOperator").value;
                 let queryUrl = `catalog/products?country_id=7&platform_id=${shopeePlatformId}&limit=100`;
                 if (opIdRaw && opIdRaw !== "null") queryUrl += `&operator_id=${opIdRaw}`;
@@ -255,12 +262,34 @@
                 }));
 
                 renderDropdownOptions();
-                if (daftarServerTersedia.length > 0) { pilihServerDropdown(0); } 
-                else { document.getElementById("labelServerTerpilih").innerText = "Tidak ada tier tersedia"; document.getElementById("btnPesanAksi").disabled = true; }
+                
+                if (daftarServerTersedia.length > 0) { 
+                    // Tetapkan default tanpa menutup dropdown
+                    let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
+                    const srv = daftarServerTersedia[0];
+                    produkTerpilihId = srv.id;
+                    namaProdukTerpilih = `Shopee ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`;
+                    document.getElementById("labelServerTerpilih").innerHTML = `Rp ${srv.price.toLocaleString('id-ID')} <span style="color:var(--text-sub); font-size:11px;">(${srv.stock} stok)</span>`;
+                    document.getElementById("btnPesanAksi").disabled = false;
+                    
+                    // Buka list otomatis!
+                    if(autoOpen) {
+                        document.getElementById("containerListDropdown").classList.add("active");
+                        printLog("✅ Katalog tier berhasil dimuat & dibuka otomatis.");
+                    } else {
+                        document.getElementById("containerListDropdown").classList.remove("active");
+                    }
+                } 
+                else { 
+                    document.getElementById("labelServerTerpilih").innerText = "Tidak ada tier tersedia"; 
+                    document.getElementById("btnPesanAksi").disabled = true; 
+                    document.getElementById("containerListDropdown").classList.remove("active");
+                }
             } catch (e) {
                 document.getElementById("labelServerTerpilih").innerText = "Stok Kosong / Error";
                 document.getElementById("btnPesanAksi").disabled = true;
                 document.getElementById("containerListDropdown").innerHTML = "";
+                document.getElementById("containerListDropdown").classList.remove("active");
             }
         }
 
@@ -319,7 +348,7 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); if (!shopeePlatformId) { inisialisasiLayananShopee(); } else { muatProdukShopee(); } }
+        function refreshSemuaDataLive() { ambilSaldoLive(); if (!shopeePlatformId) { inisialisasiLayananShopee(); } else { muatProdukShopee(false); } }
 
         async function ambilSaldoLive() {
             try {
@@ -400,7 +429,6 @@
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
-                // AUTO CANCEL SETELAH 7 MENIT (420 DETIK)
                 if (item.status === "pending" && sec >= 420) { 
                     item.status = "cancelled"; 
                     flagSimpan = true; 
@@ -410,10 +438,8 @@
                 
                 if (item.status === "cancelled") return; 
 
-                // RENDER UNTUK RIWAYAT SUKSES (Bisa state 'history_received' atau 'completed')
                 if (item.status === "completed" || item.status === "history_received") {
                     let btnKirimUlang = "";
-                    // Tampilkan tombol kirim ulang & selesai HANYA JIKA belum di-finish
                     if (item.status === "history_received") {
                         btnKirimUlang = `
                         <div style="margin-top: 10px; display: flex; gap: 6px;">
@@ -436,10 +462,9 @@
                     countRiwayat++; return;
                 }
 
-                // RENDER UNTUK NOMOR AKTIF (pending & received)
                 countAktif++;
-                let sisa = Math.max(0, 420 - sec); // Hitung mundur dari 7 menit
-                let cool = Math.max(0, 120 - sec); // Tombol kunci selama 2 menit
+                let sisa = Math.max(0, 420 - sec); 
+                let cool = Math.max(0, 120 - sec); 
                 
                 let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = ""; let btnAksi = "";
 
@@ -452,7 +477,6 @@
                         <button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button>
                     </div>`;
                 } else if (item.status === "pending") {
-                    // Tombol merah jika waktu > 2 menit, abu-abu jika masih dilarang batal
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
@@ -466,7 +490,7 @@
         }
 
         function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv2_shopee", JSON.stringify(daftarOrderan)); }
-        function hapusSemuaRiwayatBawah() { daftarOrderan = daftarOrderan.filter(i => i.status !== "completed"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Riwayat Selesai Dibersihkan!"); }
+        function hapusSemuaRiwayatBawah() { daftarOrderan = daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Riwayat Selesai Dibersihkan!"); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function printLog(t) { const consoleBox = document.getElementById("miniConsoleLog"); consoleBox.innerHTML += `<br>└> ${t}`; consoleBox.scrollTop = consoleBox.scrollHeight; }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
