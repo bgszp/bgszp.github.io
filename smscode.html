@@ -113,37 +113,55 @@
         let shopeePlatformId = null; // Menyimpan ID platform Shopee secara dinamis
 
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
-            const token = localStorage.getItem("otp_key_smscode");
-            if (!token) throw new Error("Bearer Token belum disetting.");
+    const token = localStorage.getItem("otp_key_smscode");
+    if (!token) throw new Error("Bearer Token belum disetting.");
 
-            let targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
-            if (method === "GET") { 
-                targetUrl += (targetUrl.includes('?') ? '&' : '?') + `nocache=${Date.now()}`; 
+    let targetUrl = `https://api.smscode.gg/v1/${endpoint}`;
+    if (method === "GET") { 
+        targetUrl += (targetUrl.includes('?') ? '&' : '?') + `nocache=${Date.now()}`; 
+    }
+    
+    let headers = { 
+        "Authorization": `Bearer ${token.trim()}`, 
+        "Content-Type": "application/json", 
+        "Accept": "application/json" 
+    };
+    
+    let options = { method: method, headers: headers };
+    if (payload && method !== "GET") options.body = JSON.stringify(payload);
+
+    // Mengaktifkan kembali rute Proxy untuk menembus CORS di WebView Android
+    const proxies = [ 
+        { url: "https://api.codetabs.com/v1/proxy?quest=", encode: false }, 
+        { url: "https://corsproxy.io/?", encode: true }
+    ];
+
+    let networkError = null;
+
+    for (let proxy of proxies) {
+        try {
+            let proxyUrl = proxy.encode ? proxy.url + encodeURIComponent(targetUrl) : proxy.url + targetUrl; 
+            
+            const res = await fetch(proxyUrl, options);
+            const textResponse = await res.text();
+            
+            let data = {};
+            if (textResponse && textResponse.trim() !== "") {
+                try { data = JSON.parse(textResponse); } catch (err) {}
             }
             
-            let headers = { "Authorization": `Bearer ${token.trim()}`, "Content-Type": "application/json", "Accept": "application/json" };
-            let options = { method: method, headers: headers };
-            if (payload && method !== "GET") options.body = JSON.stringify(payload);
-
-            // Menghapus Proxy Pihak Ketiga untuk keamanan token API Anda.
-            // Gunakan Browser Extention CORS atau konfigurasi server jika terblokir CORS.
-            try {
-                const res = await fetch(targetUrl, options);
-                const textResponse = await res.text();
-                
-                let data = {};
-                if (textResponse && textResponse.trim() !== "") {
-                    try { data = JSON.parse(textResponse); } catch (err) {}
-                }
-                
-                if (!res.ok) {
-                    let msg = data.error?.message || data.message || `HTTP ${res.status}`;
-                    throw new Error(`[HTTP ${res.status}] ${msg}`);
-                }
-                return data; 
-            } catch (e) { 
-                throw new Error(e.message || "Gagal koneksi jaringan.");
+            if (!res.ok) {
+                let msg = data.error?.message || data.message || `HTTP ${res.status}`;
+                throw new Error(`[HTTP ${res.status}] ${msg}`);
             }
+            return data; 
+        } catch (e) { 
+            if (e.message.includes("[HTTP")) throw e; 
+            networkError = e; 
+        }
+    }
+    throw new Error(networkError ? networkError.message : "Gagal koneksi jaringan.");
+}
         }
 
         document.addEventListener("DOMContentLoaded", function() {
