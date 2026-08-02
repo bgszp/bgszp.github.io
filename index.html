@@ -469,7 +469,7 @@
         window.generateUsername = function() {
             const val = document.getElementById('genNameOutput').value;
             if (!val) return;
-            const res = val.split(',')[0].trim().replace(/\s+/g, '.').toLowerCase();
+            const res = val.split(',')[0].trim().replace(/\s+/g, '_').toLowerCase();
             document.getElementById('genNameOutput').value = res;
             eksekusiSalinTeks(res).then(() => showToast("Berhasil Disalin! ✨"));
             tambahKeRiwayat(res);
