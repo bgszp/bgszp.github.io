@@ -353,21 +353,50 @@
         async function autoFetchForEveryone() {
             const statusLabel = document.getElementById("syncStatus");
             statusLabel.innerText = "(Memantau Live...)";
+            
+            const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
+            const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
+            const token = document.getElementById("gitToken").value.trim();
+            
             try {
-                const res = await fetch(`./catatan_utama.txt?t=${Date.now()}`);
+                // 1. Coba baca INSTAN langsung dari API GitHub
+                const headers = {};
+                if(token) headers["Authorization"] = `token ${token}`;
+                
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
+                    headers: headers,
+                    cache: "no-store"
+                });
+                
                 if(res.ok) {
-                    const textData = await res.text();
+                    const data = await res.json();
+                    currentFileSha = data.sha; // Otomatis update ID versi terbaru
+                    // Terjemahkan kode base64 dari GitHub menjadi teks biasa
+                    const textData = decodeURIComponent(escape(atob(data.content))); 
                     renderNotesList(textData);
-                    statusLabel.innerText = "(Mode Pantau Aktif)";
+                    statusLabel.innerText = "(Mode Pantau Aktif - Instan)";
                     statusLabel.style.color = "#00ffcc";
-                    fetchShaQuietly();
-                } else {
-                    renderNotesList("");
-                    statusLabel.innerText = "(Catatan Kosong)";
+                    return; // Berhenti di sini jika berhasil
                 }
+                throw new Error("Gagal akses API");
             } catch(e) {
-                statusLabel.innerText = "(Gagal Memuat)";
-                statusLabel.style.color = "#ff4a4a";
+                // 2. Jalur Alternatif (Membaca dari file lokal jika API gagal)
+                try {
+                    const resLocal = await fetch(`./catatan_utama.txt?t=${Date.now()}`);
+                    if(resLocal.ok) {
+                        const textData = await resLocal.text();
+                        renderNotesList(textData);
+                        statusLabel.innerText = "(Mode Pantau Aktif - Delay)";
+                        statusLabel.style.color = "#00ffcc";
+                        fetchShaQuietly();
+                    } else {
+                        renderNotesList("");
+                        statusLabel.innerText = "(Catatan Kosong)";
+                    }
+                } catch(err) {
+                    statusLabel.innerText = "(Gagal Memuat)";
+                    statusLabel.style.color = "#ff4a4a";
+                }
             }
         }
 
