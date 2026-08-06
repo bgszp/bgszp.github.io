@@ -143,7 +143,6 @@
         let namaProdukTerpilih = "";
         let shopeePlatformId = null; 
         
-        // TAMBAHAN: Variabel untuk melacak siklus pengecekan
         let siklusCek = 0;
 
         // GANTI DENGAN URL CLOUDFLARE WORKER ANDA
@@ -406,7 +405,6 @@
             } catch(err) { alert("Gagal menyelesaikan: " + err.message); }
         }
 
-        // FUNGSI CEK OTP YANG DIPERBARUI DENGAN SMART POLLING
         async function mesinCekSmsTerpusat() {
             siklusCek++;
             let sudahCekTerbaru = false;
@@ -414,17 +412,14 @@
             for (let index = 0; index < daftarOrderan.length; index++) {
                 let i = daftarOrderan[index];
                 
-                // Abaikan pesanan yang sudah tidak aktif
                 if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
                 
                 let izinkanCek = false;
 
-                // 1. Cek pesanan TERBARU (paling atas) yang berstatus "pending" SETIAP 2 DETIK
                 if (i.status === "pending" && !sudahCekTerbaru) {
                     izinkanCek = true;
-                    sudahCekTerbaru = true; // Tandai agar antrian berikutnya tidak ikut dicek cepat
+                    sudahCekTerbaru = true; 
                 } 
-                // 2. Cek pesanan lainnya (antrian ke-2 dst) HANYA SETIAP 20 DETIK (saat siklus kelipatan 10)
                 else if (siklusCek % 10 === 0) {
                     izinkanCek = true;
                 }
@@ -468,11 +463,11 @@
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
-                if (item.status === "pending" && sec >= 420) { 
+                if (item.status === "pending" && sec >= 300) { 
                     item.status = "cancelled"; 
                     flagSimpan = true; 
                     apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
-                    printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (7 Menit).`);
+                    printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (5 Menit).`);
                 }
                 
                 if (item.status === "cancelled") return; 
@@ -501,14 +496,13 @@
                     countRiwayat++; return;
                 }
 
-                // Hitung untuk penomoran tombol salin "Antrian ke-X"
                 countAktif++;
-                let sisa = Math.max(0, 420 - sec); 
+                
+                let sisa = Math.max(0, 300 - sec); 
                 let cool = Math.max(0, 120 - sec); 
                 
                 let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = ""; let btnAksi = "";
 
-                // DINAMIKA TOMBOL SALIN (Pembaruan: "Salin Utama" -> "Salin")
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`;
                 let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
 
@@ -541,28 +535,67 @@
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin!"); }
 
+        // PEMBARUAN SUARA NOTIFIKASI LEBIH STEREO DAN UNIK
         function putarSuaraNotifKeras() {
             try { 
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const audioCtx = new AudioContext(); 
                 let time = audioCtx.currentTime; 
-                const freqs = [987.77, 1318.51, 1567.98, 1975.53]; 
-                for (let r = 0; r < 3; r++) { 
-                    freqs.forEach((freq) => { 
-                        const osc = audioCtx.createOscillator(); 
-                        const gain = audioCtx.createGain(); 
-                        osc.type = "square"; 
-                        osc.frequency.setValueAtTime(freq, time); 
-                        gain.gain.setValueAtTime(0.8, time); 
-                        gain.gain.setTargetAtTime(0.0, time + 0.1, 0.05); 
-                        osc.connect(gain); 
-                        gain.connect(audioCtx.destination); 
-                        osc.start(time); 
-                        osc.stop(time + 0.15); 
-                        time += 0.1; 
-                    }); 
-                    time += 0.2; 
+                
+                for (let r = 0; r < 2; r++) { 
+                    // Nada Dasar (Pemisahan Stereo Kiri & Kanan Ekstrem)
+                    const oscL = audioCtx.createOscillator();
+                    const gainL = audioCtx.createGain();
+                    oscL.type = "square";
+                    oscL.frequency.setValueAtTime(987.77, time); // B5 (kiri)
+                    gainL.gain.setValueAtTime(0.3, time);
+                    gainL.gain.setTargetAtTime(0, time + 0.1, 0.1);
+
+                    const oscR = audioCtx.createOscillator();
+                    const gainR = audioCtx.createGain();
+                    oscR.type = "square";
+                    oscR.frequency.setValueAtTime(991.00, time); // B5 Sedikit dinaikkan (kanan)
+                    gainR.gain.setValueAtTime(0.3, time);
+                    gainR.gain.setTargetAtTime(0, time + 0.1, 0.1);
+
+                    // Terapkan Efek Stereo (Jika Peramban Mendukung)
+                    if (audioCtx.createStereoPanner) {
+                        const panL = audioCtx.createStereoPanner(); panL.pan.value = -1; // Full Kiri
+                        const panR = audioCtx.createStereoPanner(); panR.pan.value = 1;  // Full Kanan
+                        oscL.connect(gainL).connect(panL).connect(audioCtx.destination);
+                        oscR.connect(gainR).connect(panR).connect(audioCtx.destination);
+                    } else {
+                        oscL.connect(gainL).connect(audioCtx.destination);
+                        oscR.connect(gainR).connect(audioCtx.destination);
+                    }
+                    
+                    oscL.start(time); oscL.stop(time + 0.3);
+                    oscR.start(time); oscR.stop(time + 0.3);
+
+                    // Melodi Arpeggio Cepat (Di Tengah)
+                    const arpFreq = [1318.51, 1567.98, 1975.53]; // E6, G6, B6
+                    arpFreq.forEach((f, idx) => {
+                        const oscM = audioCtx.createOscillator();
+                        const gainM = audioCtx.createGain();
+                        oscM.type = "triangle";
+                        
+                        let tOffset = time + (idx * 0.08);
+                        oscM.frequency.setValueAtTime(f, tOffset);
+                        
+                        gainM.gain.setValueAtTime(0.6, tOffset);
+                        gainM.gain.setTargetAtTime(0, tOffset + 0.05, 0.05);
+                        
+                        oscM.connect(gainM).connect(audioCtx.destination);
+                        oscM.start(tOffset);
+                        oscM.stop(tOffset + 0.2);
+                    });
+
+                    time += 0.45; // Jeda sebelum mengulang lagi
                 } 
-            } catch (e) {}
+            } catch (e) { 
+                console.log(e); 
+            }
         }
 
         function munculkanPopupNative(nomor, otp, layanan) {
