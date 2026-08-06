@@ -142,6 +142,9 @@
         let produkTerpilihId = null;
         let namaProdukTerpilih = "";
         let shopeePlatformId = null; 
+        
+        // TAMBAHAN: Variabel untuk melacak siklus pengecekan
+        let siklusCek = 0;
 
         // GANTI DENGAN URL CLOUDFLARE WORKER ANDA
         const WORKER_URL = "https://smscode-proxy.tiktiksatu001.workers.dev";
@@ -403,13 +406,35 @@
             } catch(err) { alert("Gagal menyelesaikan: " + err.message); }
         }
 
+        // FUNGSI CEK OTP YANG DIPERBARUI DENGAN SMART POLLING
         async function mesinCekSmsTerpusat() {
-            daftarOrderan.forEach(async (i) => {
-                if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") return; 
+            siklusCek++;
+            let sudahCekTerbaru = false;
+
+            for (let index = 0; index < daftarOrderan.length; index++) {
+                let i = daftarOrderan[index];
+                
+                // Abaikan pesanan yang sudah tidak aktif
+                if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
+                
+                let izinkanCek = false;
+
+                // 1. Cek pesanan TERBARU (paling atas) yang berstatus "pending" SETIAP 2 DETIK
+                if (i.status === "pending" && !sudahCekTerbaru) {
+                    izinkanCek = true;
+                    sudahCekTerbaru = true; // Tandai agar antrian berikutnya tidak ikut dicek cepat
+                } 
+                // 2. Cek pesanan lainnya (antrian ke-2 dst) HANYA SETIAP 20 DETIK (saat siklus kelipatan 10)
+                else if (siklusCek % 10 === 0) {
+                    izinkanCek = true;
+                }
+
+                if (!izinkanCek) continue;
+
                 try {
                     const d = await apiSMSCode(`orders/${i.order_id}`, 'GET');
                     let orderData = d.data; 
-                    if(!orderData) return;
+                    if(!orderData) continue;
                     
                     let stat = orderData.status;
                     let otpCode = orderData.otp_code; 
@@ -429,7 +454,7 @@
                         i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
                     }
                 } catch (e) {}
-            });
+            }
         }
 
         function renderUILayout() {
@@ -504,7 +529,7 @@
 
             containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
             containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
-            badgeRiwayat.innerText = countRiwayat;
+            if(badgeRiwayat) badgeRiwayat.innerText = countRiwayat;
             
             if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
