@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generator Data Futuristik v3.6</title>
-    <!-- CDN FontAwesome & Tesseract JS (Untuk Scanner) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
@@ -55,14 +54,14 @@
         .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
         .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
 
-        /* === STYLING MENU TOMBOL SERVER GANDA === */
+        /* === STYLING MENU TOMBOL SERVER === */
         .wrapper-menu-server { width: 100%; max-width: 900px; margin-bottom: 10px; display: flex; flex-direction: row; gap: 15px; }
         .server-col { flex: 1; display: flex; flex-direction: column; }
         .pemicu-menu-utama { background: #1a1535; border: 1px solid #5f27cd; border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; transition: all 0.2s ease; user-select: none; }
         .pemicu-menu-utama:hover { background: #251e4a; border-color: #00ffcc; box-shadow: 0 0 8px rgba(0, 255, 204, 0.3); }
         .wadah-iframe-server { display: none; width: 100%; border-radius: 8px; border: 1px solid #3d3463; background: #121324; overflow: hidden; margin-bottom: 15px; }
         
-        /* === STYLING MENU SCANNER (TEMA DARK MODE) === */
+        /* === STYLING MENU SCANNER === */
         .kamera-container { position: relative; width: 100%; max-width: 350px; height: 120px; margin: 15px auto; border: 4px solid #00ff00; border-radius: 12px; overflow: hidden; background-color: #000; box-shadow: 0 5px 15px rgba(0,255,0,0.15); }
         .kamera-container video { width: 100%; height: 100%; object-fit: cover; }
         .btn-scanner { padding: 12px 15px; font-size: 15px; margin: 5px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
@@ -77,7 +76,6 @@
 </head>
 <body>
 
-<!-- === PANEL MENU SERVER 1 & SERVER 2 === -->
 <div class="wrapper-menu-server">
     <div class="server-col">
         <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP1', 'panahSrv1')">
@@ -93,7 +91,6 @@
     </div>
 </div>
 
-<!-- Wadah Iframe Server -->
 <div style="width: 100%; max-width: 900px;">
     <div id="wadahOTP1" class="wadah-iframe-server">
         <iframe src="otpinstan.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
@@ -172,10 +169,9 @@
         </div>
     </div>
 
-    <!-- Wadah Scanner -->
     <div style="width: 100%; max-width: 900px;">
         <div id="wadahScanner" class="wadah-iframe-server" style="padding: 20px; text-align: center;">
-            <p style="color: #aaa; font-size: 13px; margin-top: 0;">Paskan nomor penuh di dalam kotak hijau, lalu Scan!</p>
+            <p style="color: #aaa; font-size: 13px; margin-top: 0;">Posisikan nomor di tengah kotak hijau. Hindari garis tepi atau kursor.</p>
             <div class="kamera-container">
                 <video id="kamera" autoplay playsinline></video>
             </div>
@@ -200,14 +196,11 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        // === LOGIK MENU DROPDOWN (DIPERBARUI UNTUK 3 MENU) ===
         function toggleServerPanel(wadahId, panahId) {
             const wadah = document.getElementById(wadahId);
             const panah = document.getElementById(panahId);
             
-            // Cek apakah panel yang diklik sedang tertutup
             if (wadah.style.display === "none" || wadah.style.display === "") {
-                // Sembunyikan SEMUA panel
                 document.getElementById('wadahOTP1').style.display = "none";
                 document.getElementById('wadahOTP2').style.display = "none";
                 document.getElementById('wadahScanner').style.display = "none";
@@ -215,16 +208,13 @@
                 document.getElementById('panahSrv2').style.transform = "rotate(0deg)";
                 document.getElementById('panahScanner').style.transform = "rotate(0deg)";
                 
-                // Buka panel yang diklik saja
                 wadah.style.display = "block";
                 panah.style.transform = "rotate(180deg)";
 
-                // Kontrol Kamera Scanner (Nyala saat dibuka)
                 if(wadahId === 'wadahScanner') startScannerCamera();
                 else stopScannerCamera();
                 
             } else {
-                // Tutup jika panel yang sama diklik lagi
                 wadah.style.display = "none";
                 panah.style.transform = "rotate(0deg)";
                 
@@ -232,7 +222,7 @@
             }
         }
 
-        // === LOGIK FITUR SCANNER ===
+        // === LOGIK FITUR SCANNER DIPERBARUI ===
         const video = document.getElementById('kamera');
         const canvasScanner = document.getElementById('canvasScanner');
         const ctxScanner = canvasScanner.getContext('2d');
@@ -276,7 +266,7 @@
             btnUlangi.style.display = "inline-block";
             btnCopyScanner.disabled = true;
             hasilScanInput.value = "";
-            statusScanner.innerText = "Menganalisa angka... Mohon tunggu.";
+            statusScanner.innerText = "Menajamkan gambar & memindai...";
             statusScanner.style.color = "#f0ad4e";
 
             const vWidth = video.videoWidth;
@@ -292,12 +282,19 @@
                 cropW = vWidth;
                 cropH = vWidth / targetRatio;
             }
-            const cropX = (vWidth - cropW) / 2;
-            const cropY = (vHeight - cropH) / 2;
+            
+            // FITUR BARU: Margin Aman (Safe Zone) 
+            const safeW = cropW * 0.8;
+            const safeH = cropH * 0.8;
+            const cropX = ((vWidth - cropW) / 2) + (cropW * 0.1);
+            const cropY = ((vHeight - cropH) / 2) + (cropH * 0.1);
 
-            canvasScanner.width = cropW;
-            canvasScanner.height = cropH;
-            ctxScanner.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+            canvasScanner.width = safeW;
+            canvasScanner.height = safeH;
+            
+            // FITUR BARU: Efek Filter Gambar
+            ctxScanner.filter = 'grayscale(100%) contrast(300%) brightness(120%)';
+            ctxScanner.drawImage(video, cropX, cropY, safeW, safeH, 0, 0, safeW, safeH);
             
             const imageData = canvasScanner.toDataURL('image/jpeg', 0.9);
 
@@ -307,7 +304,7 @@
 
                 if (hanyaAngka) {
                     hasilScanInput.value = hanyaAngka;
-                    statusScanner.innerText = "Nomor berhasil didapatkan!";
+                    statusScanner.innerText = "Selesai! Akurasi telah ditingkatkan.";
                     statusScanner.style.color = "#00ffcc";
                     btnCopyScanner.disabled = false;
                 } else {
@@ -331,13 +328,12 @@
         });
 
         btnCopyScanner.addEventListener('click', () => {
-            // Gunakan fungsi salin universal dari aplikasi utama
             eksekusiSalinTeks(hasilScanInput.value).then(() => {
                 showToast("Nomor Hasil Scan Disalin! ✨");
             });
         });
 
-        // === LOGIK BAWAAN APLIKASI UTAMA (GENERATOR & SINKRON) ===
+        // === LOGIK BAWAAN APLIKASI UTAMA ===
         let DATA_DUMMY_DATABASE = [];
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
@@ -486,7 +482,6 @@
             const token = document.getElementById("gitToken").value.trim();
             
             try {
-                // 1. Coba baca INSTAN langsung dari API GitHub
                 const headers = {};
                 if(token) headers["Authorization"] = `token ${token}`;
                 
@@ -506,7 +501,6 @@
                 }
                 throw new Error("Gagal akses API");
             } catch(e) {
-                // 2. Jalur Alternatif
                 try {
                     const resLocal = await fetch(`./catatan_utama.txt?t=${Date.now()}`);
                     if(resLocal.ok) {
