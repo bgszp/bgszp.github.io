@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generator Data Futuristik v3.6</title>
+    <!-- CDN FontAwesome & Tesseract JS (Untuk Scanner) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         * { box-sizing: border-box; transition: all 0.3s ease; }
         body { 
@@ -39,23 +41,13 @@
         .btn-refresh-note:hover { background: #3d3463; box-shadow: 0 0 8px rgba(0, 255, 204, 0.4); }
         .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
         
-        .note-row { 
-            display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
-            background: #1a1535; border: 1px solid #3d3463; border-radius: 8px;
-            padding: 10px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden;
-        }
+        .note-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #1a1535; border: 1px solid #3d3463; border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; }
         .note-row:hover { background: #251e4a; border-color: #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.25); transform: translateY(-1px); }
         .note-row:active { transform: scale(0.98); }
         .note-row.admin-mode { cursor: default; background: #1e1233; border-color: #ff007f; }
-        .note-num-badge { 
-            background: rgba(0, 255, 204, 0.1); color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.3);
-            padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; flex-shrink: 0; user-select: none;
-        }
+        .note-num-badge { background: rgba(0, 255, 204, 0.1); color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.3); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; flex-shrink: 0; user-select: none; }
         .note-row.admin-mode .note-num-badge { background: rgba(255, 0, 127, 0.15); color: #ff007f; border-color: rgba(255, 0, 127, 0.4); }
-        .note-text-input { 
-            flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #ff007f; border-radius: 4px;
-            outline: none; color: #fff; font-size: 14px; padding: 6px 10px; display: block; width: 100%; font-family: inherit;
-        }
+        .note-text-input { flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #ff007f; border-radius: 4px; outline: none; color: #fff; font-size: 14px; padding: 6px 10px; display: block; width: 100%; font-family: inherit; }
         .note-text-input:focus { background: rgba(0, 0, 0, 0.6); border-color: #00ffcc; box-shadow: 0 0 8px rgba(0, 255, 204, 0.3); }
         .note-display-wrapper { flex: 1; font-size: 14px; word-break: break-all; display: flex; align-items: center; justify-content: space-between; }
         .text-before-pipe { color: #ffffff; font-weight: 600; }
@@ -64,44 +56,35 @@
         .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
 
         /* === STYLING MENU TOMBOL SERVER GANDA === */
-        .wrapper-menu-server {
-            width: 100%; 
-            max-width: 900px;
-            margin-bottom: 10px; 
-            display: flex; 
-            flex-direction: row; /* Berjejer horizontal */
-            gap: 15px; 
-        }
-        .server-col {
-            flex: 1; /* Bagi rata lebar 50-50 */
-            display: flex; 
-            flex-direction: column; 
-        }
-        .pemicu-menu-utama {
-            background: #1a1535; border: 1px solid #5f27cd; border-radius: 8px; 
-            padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;
-            cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; transition: all 0.2s ease; user-select: none;
-        }
+        .wrapper-menu-server { width: 100%; max-width: 900px; margin-bottom: 10px; display: flex; flex-direction: row; gap: 15px; }
+        .server-col { flex: 1; display: flex; flex-direction: column; }
+        .pemicu-menu-utama { background: #1a1535; border: 1px solid #5f27cd; border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; transition: all 0.2s ease; user-select: none; }
         .pemicu-menu-utama:hover { background: #251e4a; border-color: #00ffcc; box-shadow: 0 0 8px rgba(0, 255, 204, 0.3); }
-        .wadah-iframe-server {
-            display: none; width: 100%; border-radius: 8px; border: 1px solid #3d3463; background: #121324; overflow: hidden;
-            margin-bottom: 15px; /* Jarak bawah jika dibuka */
-        }
+        .wadah-iframe-server { display: none; width: 100%; border-radius: 8px; border: 1px solid #3d3463; background: #121324; overflow: hidden; margin-bottom: 15px; }
+        
+        /* === STYLING MENU SCANNER (TEMA DARK MODE) === */
+        .kamera-container { position: relative; width: 100%; max-width: 350px; height: 120px; margin: 15px auto; border: 4px solid #00ff00; border-radius: 12px; overflow: hidden; background-color: #000; box-shadow: 0 5px 15px rgba(0,255,0,0.15); }
+        .kamera-container video { width: 100%; height: 100%; object-fit: cover; }
+        .btn-scanner { padding: 12px 15px; font-size: 15px; margin: 5px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
+        .btn-scan-biru { background-color: #007bff; color: white; }
+        .btn-scan-biru:hover { background-color: #0056b3; }
+        .btn-scan-kuning { background-color: #f0ad4e; color: white; }
+        .btn-scan-kuning:hover { background-color: #ec971f; }
+        .btn-scanner:disabled { background-color: #2c2547 !important; cursor: not-allowed; color: #6e678a; box-shadow: none; }
+        #hasil-scan-input { width: 90%; max-width: 350px; height: 45px; font-size: 22px; font-weight: bold; margin: 15px 0; padding: 10px; text-align: center; letter-spacing: 2px; border: 2px solid #3d3463; border-radius: 8px; background-color: #1a1535; color: #00ffcc; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
+        #status-scanner { color: #aaa; font-weight: bold; margin-bottom: 10px; min-height: 20px; font-size: 13px; }
     </style>
 </head>
 <body>
 
-<!-- === PANEL MENU SERVER 1 & SERVER 2 (TATA LETAK DIPERBAIKI) === -->
+<!-- === PANEL MENU SERVER 1 & SERVER 2 === -->
 <div class="wrapper-menu-server">
-    <!-- Baris khusus Tombol Server 1 -->
     <div class="server-col">
         <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP1', 'panahSrv1')">
             <span>🛠️ Server 1 (OTP Instan)</span>
             <span id="panahSrv1">▼</span>
         </div>
     </div>
-
-    <!-- Baris khusus Tombol Server 2 -->
     <div class="server-col">
         <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP2', 'panahSrv2')" style="border-color: #00e5ff;"> 
             <span>🔵 Server 2 (SMSCode.gg)</span>
@@ -110,7 +93,7 @@
     </div>
 </div>
 
-<!-- Wadah Iframe (Di luar kolom agar bisa mekar 100% penuh) -->
+<!-- Wadah Iframe Server -->
 <div style="width: 100%; max-width: 900px;">
     <div id="wadahOTP1" class="wadah-iframe-server">
         <iframe src="otpinstan.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
@@ -119,31 +102,6 @@
         <iframe src="smscode.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
     </div>
 </div>
-
-<script>
-    function toggleServerPanel(wadahId, panahId) {
-        const wadah = document.getElementById(wadahId);
-        const panah = document.getElementById(panahId);
-        
-        // Cek apakah panel yang diklik sedang tertutup
-        if (wadah.style.display === "none" || wadah.style.display === "") {
-            // Sembunyikan SEMUA panel iframe & reset panah (Mode Tab)
-            document.getElementById('wadahOTP1').style.display = "none";
-            document.getElementById('wadahOTP2').style.display = "none";
-            document.getElementById('panahSrv1').style.transform = "rotate(0deg)";
-            document.getElementById('panahSrv2').style.transform = "rotate(0deg)";
-            
-            // Buka panel yang diklik saja
-            wadah.style.display = "block";
-            panah.style.transform = "rotate(180deg)";
-        } else {
-            // Tutup jika panel yang sama diklik lagi
-            wadah.style.display = "none";
-            panah.style.transform = "rotate(0deg)";
-        }
-    }
-</script>
-<!-- === SELESAI PANEL SERVER === -->
 
     <div class="container-card">
         <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator</div>
@@ -154,6 +112,7 @@
         </div>
     </div>
 
+    <!-- === CATATAN UTAMA (SINKRON) === -->
     <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 10px;">
         <div class="title"><i class="fa-solid fa-cloud-sun" style="color: #00ffcc;"></i> Catatan Sinkron Multi-Device</div>
         
@@ -203,6 +162,36 @@
         </div>
     </div>
 
+    <!-- === MENU DROPDOWN SCANNER BARU === -->
+    <div class="wrapper-menu-server" style="margin-top: 10px;">
+        <div class="server-col">
+            <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahScanner', 'panahScanner')" style="border-color: #00ff00;">
+                <span>📷 Scanner Nomor</span>
+                <span id="panahScanner">▼</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wadah Scanner -->
+    <div style="width: 100%; max-width: 900px;">
+        <div id="wadahScanner" class="wadah-iframe-server" style="padding: 20px; text-align: center;">
+            <p style="color: #aaa; font-size: 13px; margin-top: 0;">Paskan nomor penuh di dalam kotak hijau, lalu Scan!</p>
+            <div class="kamera-container">
+                <video id="kamera" autoplay playsinline></video>
+            </div>
+            <div id="status-scanner">Kamera standby (Buka menu untuk menyalakan)...</div>
+            <canvas id="canvasScanner" style="display:none;"></canvas>
+            <div>
+                <button id="btn-scan" class="btn-scanner btn-scan-biru">📸 Ambil & Scan</button>
+                <button id="btn-ulangi" class="btn-scanner btn-scan-kuning" style="display:none;">🔄 Ulangi</button>
+            </div>
+            <input type="text" id="hasil-scan-input" placeholder="Hasil scan di sini..." readonly>
+            <br>
+            <button id="btn-copy-scanner" class="btn-scanner btn-scan-biru" disabled>📋 Salin Nomor</button>
+        </div>
+    </div>
+    <!-- === SELESAI MENU SCANNER === -->
+
     <div class="history-card" style="width: 100%; max-width: 900px; margin-top: 10px;">
         <div class="history-title"><span>RIWAYAT GENERATOR DATA</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
         <div id="historyList"></div>
@@ -211,6 +200,144 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
+        // === LOGIK MENU DROPDOWN (DIPERBARUI UNTUK 3 MENU) ===
+        function toggleServerPanel(wadahId, panahId) {
+            const wadah = document.getElementById(wadahId);
+            const panah = document.getElementById(panahId);
+            
+            // Cek apakah panel yang diklik sedang tertutup
+            if (wadah.style.display === "none" || wadah.style.display === "") {
+                // Sembunyikan SEMUA panel
+                document.getElementById('wadahOTP1').style.display = "none";
+                document.getElementById('wadahOTP2').style.display = "none";
+                document.getElementById('wadahScanner').style.display = "none";
+                document.getElementById('panahSrv1').style.transform = "rotate(0deg)";
+                document.getElementById('panahSrv2').style.transform = "rotate(0deg)";
+                document.getElementById('panahScanner').style.transform = "rotate(0deg)";
+                
+                // Buka panel yang diklik saja
+                wadah.style.display = "block";
+                panah.style.transform = "rotate(180deg)";
+
+                // Kontrol Kamera Scanner (Nyala saat dibuka)
+                if(wadahId === 'wadahScanner') startScannerCamera();
+                else stopScannerCamera();
+                
+            } else {
+                // Tutup jika panel yang sama diklik lagi
+                wadah.style.display = "none";
+                panah.style.transform = "rotate(0deg)";
+                
+                if(wadahId === 'wadahScanner') stopScannerCamera();
+            }
+        }
+
+        // === LOGIK FITUR SCANNER ===
+        const video = document.getElementById('kamera');
+        const canvasScanner = document.getElementById('canvasScanner');
+        const ctxScanner = canvasScanner.getContext('2d');
+        const btnScan = document.getElementById('btn-scan');
+        const btnUlangi = document.getElementById('btn-ulangi');
+        const btnCopyScanner = document.getElementById('btn-copy-scanner');
+        const hasilScanInput = document.getElementById('hasil-scan-input');
+        const statusScanner = document.getElementById('status-scanner');
+        let scannerStream = null;
+
+        function startScannerCamera() {
+            if (scannerStream) return;
+            statusScanner.innerText = "Menyalakan kamera...";
+            navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 }, advanced: [{ focusMode: "continuous" }] } 
+            }).then(stream => {
+                scannerStream = stream;
+                video.srcObject = stream;
+                video.onloadedmetadata = () => { statusScanner.innerText = "Siap digunakan."; statusScanner.style.color = "#00ffcc"; };
+            }).catch(err => {
+                statusScanner.innerText = "Error: Akses kamera ditolak/tidak tersedia.";
+                statusScanner.style.color = "#ff4a4a";
+            });
+        }
+
+        function stopScannerCamera() {
+            if (scannerStream) {
+                scannerStream.getTracks().forEach(track => track.stop());
+                scannerStream = null;
+                video.srcObject = null;
+                statusScanner.innerText = "Kamera dimatikan (Standby).";
+                statusScanner.style.color = "#aaa";
+            }
+        }
+
+        btnScan.addEventListener('click', () => {
+            if(!scannerStream) return;
+            video.pause(); 
+            
+            btnScan.style.display = "none";
+            btnUlangi.style.display = "inline-block";
+            btnCopyScanner.disabled = true;
+            hasilScanInput.value = "";
+            statusScanner.innerText = "Menganalisa angka... Mohon tunggu.";
+            statusScanner.style.color = "#f0ad4e";
+
+            const vWidth = video.videoWidth;
+            const vHeight = video.videoHeight;
+            const targetRatio = 350 / 120;
+            const videoRatio = vWidth / vHeight;
+            
+            let cropW, cropH;
+            if (videoRatio > targetRatio) {
+                cropH = vHeight;
+                cropW = vHeight * targetRatio;
+            } else {
+                cropW = vWidth;
+                cropH = vWidth / targetRatio;
+            }
+            const cropX = (vWidth - cropW) / 2;
+            const cropY = (vHeight - cropH) / 2;
+
+            canvasScanner.width = cropW;
+            canvasScanner.height = cropH;
+            ctxScanner.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+            
+            const imageData = canvasScanner.toDataURL('image/jpeg', 0.9);
+
+            Tesseract.recognize(imageData, 'eng')
+            .then(({ data: { text } }) => {
+                const hanyaAngka = text.replace(/[^0-9]/g, '');
+
+                if (hanyaAngka) {
+                    hasilScanInput.value = hanyaAngka;
+                    statusScanner.innerText = "Nomor berhasil didapatkan!";
+                    statusScanner.style.color = "#00ffcc";
+                    btnCopyScanner.disabled = false;
+                } else {
+                    statusScanner.innerText = "Nomor tidak terdeteksi. Silakan ulangi.";
+                    statusScanner.style.color = "#ff4a4a";
+                }
+            }).catch(err => {
+                statusScanner.innerText = "Gagal memindai gambar.";
+                statusScanner.style.color = "#ff4a4a";
+            });
+        });
+
+        btnUlangi.addEventListener('click', () => {
+            video.play();
+            btnScan.style.display = "inline-block";
+            btnUlangi.style.display = "none";
+            btnCopyScanner.disabled = true;
+            hasilScanInput.value = "";
+            statusScanner.innerText = "Siap digunakan.";
+            statusScanner.style.color = "#00ffcc";
+        });
+
+        btnCopyScanner.addEventListener('click', () => {
+            // Gunakan fungsi salin universal dari aplikasi utama
+            eksekusiSalinTeks(hasilScanInput.value).then(() => {
+                showToast("Nomor Hasil Scan Disalin! ✨");
+            });
+        });
+
+        // === LOGIK BAWAAN APLIKASI UTAMA (GENERATOR & SINKRON) ===
         let DATA_DUMMY_DATABASE = [];
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
@@ -370,17 +497,16 @@
                 
                 if(res.ok) {
                     const data = await res.json();
-                    currentFileSha = data.sha; // Otomatis update ID versi terbaru
-                    // Terjemahkan kode base64 dari GitHub menjadi teks biasa
+                    currentFileSha = data.sha; 
                     const textData = decodeURIComponent(escape(atob(data.content))); 
                     renderNotesList(textData);
                     statusLabel.innerText = "(Mode Pantau Aktif - Instan)";
                     statusLabel.style.color = "#00ffcc";
-                    return; // Berhenti di sini jika berhasil
+                    return; 
                 }
                 throw new Error("Gagal akses API");
             } catch(e) {
-                // 2. Jalur Alternatif (Membaca dari file lokal jika API gagal)
+                // 2. Jalur Alternatif
                 try {
                     const resLocal = await fetch(`./catatan_utama.txt?t=${Date.now()}`);
                     if(resLocal.ok) {
