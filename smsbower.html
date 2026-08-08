@@ -14,11 +14,15 @@
         .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
         .search-input:focus { border-color: var(--accent-cyan); }
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
+        
+        /* GAYA KOTAK SALIN & WARNA KETIKA OTP MASUK */
         .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
+        
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
+        
         .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
@@ -123,9 +127,7 @@
     <script>
         let daftarOrderan = []; let daftarServerTersedia = []; let produkTerpilihId = null; let namaProdukTerpilih = ""; let siklusCek = 0;
 
-        // ===== GANTI INI DENGAN URL CLOUDFLARE WORKER ANDA =====
         const WORKER_URL = "https://smsbower.tiktiksatu001.workers.dev"; 
-        // ========================================================
 
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
@@ -186,7 +188,6 @@
                 let arrData = resProd.data;
                 if (!arrData || arrData.length === 0) throw new Error("Stok kosong.");
 
-                // Menyimpan data multi-provider dari API
                 daftarServerTersedia = arrData.map(item => ({ id: item.id, stock: item.available, price: item.price }));
                 renderDropdownOptions();
                 
@@ -209,7 +210,6 @@
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
                 let sel = (produkTerpilihId === srv.id) ? "selected" : "";
-                // Menampilkan Provider ID di dalam dropdown
                 html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>Provider ${srv.id} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">₽ ${srv.price}</span></div>`;
             });
             container.innerHTML = html;
@@ -227,7 +227,6 @@
             const btn = document.getElementById("btnPesanAksi"); const teksAsli = btn.innerHTML;
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             try {
-                // Sekarang mengirimkan provider_id yang dipilih ke Cloudflare Worker
                 const responseData = await apiSMSCode('orders/create', 'POST', { provider_id: produkTerpilihId });
                 const createdOrder = responseData.data?.orders?.[0];
                 if (createdOrder) {
@@ -298,24 +297,65 @@
 
                 if (item.status === "completed" || item.status === "history_received") {
                     let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
-                    htmlRiwayat += `<div class="history-card"><div style="display:flex; justify-content:space-between;"><div><div class="srv-name">${item.layanan}</div><div class="srv-phone">${item.phone}</div></div><div class="srv-otp">${item.otp || '-'}</div></div>${btnKirimUlang}</div>`;
+                    htmlRiwayat += `<div class="history-card"><div style="display:flex; justify-content:space-between; align-items:center;"><div><div class="srv-name">${item.layanan}</div><div class="srv-phone">${item.phone}</div></div><div class="srv-otp">${item.otp || '-'}</div></div>${btnKirimUlang}</div>`;
                     countRiwayat++; return;
                 }
-                countAktif++; let sisa = Math.max(0, 300 - sec); let cool = Math.max(0, 120 - sec); 
-                let textStat = `Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
 
+                countAktif++; 
+                let sisa = Math.max(0, 300 - sec); 
+                let cool = Math.max(0, 120 - sec); 
+                let textStat = `⚡ Cek OTP... (${sec}s)`; 
+                let colStat = "#ffb86c"; 
+                let btnAksi = ""; 
+                let kotakOtp = "";
+
+                let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`;
+                let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
+
+                // TAMPILAN KETIKA OTP SUKSES MASUK (MENYERUPAI PANEL ASLI)
                 if (item.status === "received") { 
-                    textStat = `Menunggu Tindakan`; colStat = "#50fa7b"; 
-                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b;">KodeOTP:</div><div style="font-size:18px; color:#50fa7b; font-weight:bold;">${item.otp}</div></div></div>`;
-                    btnAksi = `<div style="display:flex; gap:8px; margin-top:10px;"><button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Selesai</button></div>`;
+                    textStat = `🎉 Menunggu Tindakan (Aktif)`; 
+                    colStat = "#50fa7b"; 
+                    kotakOtp = `
+                    <div class="box-copy-statik otp-masuk">
+                        <div>
+                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
+                            <div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div>
+                        </div>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button>
+                    </div>`;
+                    
+                    btnAksi = `
+                    <div style="display:flex; gap: 8px; margin-top: 10px;">
+                        <button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button>
+                        <button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button>
+                    </div>`;
                 } else if (item.status === "pending") {
-                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : 'Batalkan Pesanan'}</button>`;
+                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
-                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; color:#fff; font-weight:bold;">${item.phone}</div></div></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
+                
+                // STRUKTUR KOTAK NOMOR HP AKTIF DENGAN TOMBOL SALIN DI SEBELAH KANAN
+                htmlAktif += `
+                <div class="card-order">
+                    <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;">
+                        <span>${item.layanan}</span>
+                        <span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span>
+                    </div>
+                    <div class="box-copy-statik">
+                        <div>
+                            <div style="font-size:9px; color:#8b8da9;">Nomor HP:</div>
+                            <div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div>
+                        </div>
+                        <button onclick="salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button>
+                    </div>
+                    ${kotakOtp}
+                    <div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>
+                    ${btnAksi}
+                </div>`;
             });
 
-            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align:center; color:#6272a4; font-size:12px;">Kosong.</div>`;
-            containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align:center; color:#6272a4; font-size:11px;">Kosong.</div>`;
+            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
+            containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
             document.getElementById("countRiwayatBadge").innerText = countRiwayat;
         }
 
@@ -323,6 +363,7 @@
         function hapusSemuaRiwayatBawah() { daftarOrderan = daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); renderUILayout(); simpanDaftarOrderanKeLokal(); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
+        function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin!"); }
     </script>
 </body>
 </html>
