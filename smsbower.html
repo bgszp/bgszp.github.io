@@ -186,12 +186,13 @@
                 let arrData = resProd.data;
                 if (!arrData || arrData.length === 0) throw new Error("Stok kosong.");
 
+                // Menyimpan data multi-provider dari API
                 daftarServerTersedia = arrData.map(item => ({ id: item.id, stock: item.available, price: item.price }));
                 renderDropdownOptions();
                 
                 if (daftarServerTersedia.length > 0) { 
                     const srv = daftarServerTersedia[0]; produkTerpilihId = srv.id;
-                    namaProdukTerpilih = `Shopee Indonesia (₽ ${srv.price})`;
+                    namaProdukTerpilih = `Shopee ID (Provider ${srv.id})`;
                     document.getElementById("labelServerTerpilih").innerHTML = `₽ ${srv.price} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
                     document.getElementById("btnPesanAksi").disabled = false;
                     if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
@@ -208,14 +209,15 @@
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
                 let sel = (produkTerpilihId === srv.id) ? "selected" : "";
-                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>Stok: (${srv.stock})</span><span style="color:var(--accent-cyan); font-weight:bold;">₽ ${srv.price}</span></div>`;
+                // Menampilkan Provider ID di dalam dropdown
+                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>Provider ${srv.id} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">₽ ${srv.price}</span></div>`;
             });
             container.innerHTML = html;
         }
 
         function pilihServerDropdown(index) {
             const srv = daftarServerTersedia[index];
-            produkTerpilihId = srv.id; namaProdukTerpilih = `Shopee Indonesia (₽ ${srv.price})`;
+            produkTerpilihId = srv.id; namaProdukTerpilih = `Shopee ID (Provider ${srv.id})`;
             document.getElementById("labelServerTerpilih").innerHTML = `₽ ${srv.price} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
             document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false; renderDropdownOptions();
@@ -225,7 +227,8 @@
             const btn = document.getElementById("btnPesanAksi"); const teksAsli = btn.innerHTML;
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             try {
-                const responseData = await apiSMSCode('orders/create', 'POST', { });
+                // Sekarang mengirimkan provider_id yang dipilih ke Cloudflare Worker
+                const responseData = await apiSMSCode('orders/create', 'POST', { provider_id: produkTerpilihId });
                 const createdOrder = responseData.data?.orders?.[0];
                 if (createdOrder) {
                     daftarOrderan.unshift({ order_id: createdOrder.id, phone: createdOrder.phone_number, layanan: namaProdukTerpilih, waktu_dibuat: Date.now(), status: "pending", otp: "" });
