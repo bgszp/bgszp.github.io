@@ -14,15 +14,11 @@
         .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
         .search-input:focus { border-color: var(--accent-cyan); }
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
-        
-        /* GAYA KOTAK SALIN & WARNA KETIKA OTP MASUK */
         .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
-        
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
-        
         .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
@@ -275,12 +271,18 @@
                 try {
                     const d = await apiSMSCode(`orders/${i.order_id}`, 'GET');
                     let stat = d.data?.status; let otpCode = d.data?.otp_code; 
-                    if (stat === "COMPLETED") { i.status = "completed"; if(otpCode) i.otp = otpCode; renderUILayout(); simpanDaftarOrderanKeLokal(); } 
-                    else if (stat === "OTP_RECEIVED" || otpCode) {
+                    if (stat === "COMPLETED") { 
+                        i.status = "completed"; if(otpCode) i.otp = otpCode; renderUILayout(); simpanDaftarOrderanKeLokal(); 
+                    } else if (stat === "OTP_RECEIVED" || otpCode) {
                         if (i.status === "pending" || i.otp !== otpCode) {
-                            i.status = "received"; i.otp = otpCode; renderUILayout(); simpanDaftarOrderanKeLokal();
+                            i.status = "received"; i.otp = otpCode; 
+                            putarSuaraNotifKeras(); // <-- Mengaktifkan kembali suara dentingan stereo
+                            munculkanPopupNative(i.phone, i.otp, i.layanan); // <-- Mengaktifkan pop-up
+                            renderUILayout(); simpanDaftarOrderanKeLokal();
                         }
-                    } else if (stat === "CANCELED") { i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); }
+                    } else if (stat === "CANCELED") { 
+                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); 
+                    }
                 } catch (e) {}
             }
         }
@@ -312,7 +314,6 @@
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`;
                 let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
 
-                // TAMPILAN KETIKA OTP SUKSES MASUK (MENYERUPAI PANEL ASLI)
                 if (item.status === "received") { 
                     textStat = `🎉 Menunggu Tindakan (Aktif)`; 
                     colStat = "#50fa7b"; 
@@ -334,7 +335,6 @@
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
-                // STRUKTUR KOTAK NOMOR HP AKTIF DENGAN TOMBOL SALIN DI SEBELAH KANAN
                 htmlAktif += `
                 <div class="card-order">
                     <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;">
@@ -364,6 +364,55 @@
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin!"); }
+
+        // FUNGSI SUARA NOTIFIKASI UNIK (FUTURISTIK / SCI-FI CHIME)
+        function putarSuaraNotifKeras() {
+            try { 
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const audioCtx = new AudioContext(); 
+                let time = audioCtx.currentTime; 
+                
+                // Pola Melodi Unik: Dua sequence nada naik beruntun
+                const sequence = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (Chord C Major Berdering)
+                
+                sequence.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    // Menggunakan tipe 'sine' dan 'sawtooth' agar terdengar seperti lonceng digital
+                    osc.type = idx % 2 === 0 ? "sine" : "sawtooth";
+                    
+                    let startTime = time + (idx * 0.09);
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    
+                    // Efek gema/fade-out yang halus
+                    gain.gain.setValueAtTime(0.4, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+                    
+                    if (audioCtx.createStereoPanner) {
+                        const pan = audioCtx.createStereoPanner();
+                        // Mengatur posisi suara bergeser dari kiri ke kanan secara dinamis
+                        pan.pan.value = idx < 2 ? -0.5 : 0.5; 
+                        osc.connect(gain).connect(pan).connect(audioCtx.destination);
+                    } else {
+                        osc.connect(gain).connect(audioCtx.destination);
+                    }
+                    
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.4);
+                });
+
+            } catch (e) { 
+                console.log(e); 
+            }
+        }
+
+        function munculkanPopupNative(nomor, otp, layanan) {
+            if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
+            } 
+        }
     </script>
 </body>
 </html>
