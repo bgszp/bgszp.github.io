@@ -23,10 +23,10 @@
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
         .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
-        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; flex-direction: column; align-items: stretch; }
-        .history-card .srv-name { font-size: 10px; color: #8b8da9; }
-        .history-card .srv-phone { font-size: 13px; font-weight: bold; color: #fff; }
-        .history-card .srv-otp { font-size: 14px; font-weight: bold; color: var(--accent-green); background: #152923; padding: 4px 8px; border-radius: 6px; border: 1px solid #24523b; letter-spacing: 1px;}
+        
+        /* Modifikasi Card Riwayat agar menampung kotak salin dengan rapi */
+        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; }
+        
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
@@ -121,7 +121,12 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        let daftarOrderan = []; let daftarServerTersedia = []; let produkTerpilihId = null; let namaProdukTerpilih = ""; let siklusCek = 0;
+        let daftarOrderan = []; 
+        let daftarServerTersedia = []; 
+        let produkTerpilihId = null; 
+        let namaProdukTerpilih = ""; 
+        let hargaProdukTerpilih = 0; // Tambahan variabel untuk menyimpan harga
+        let siklusCek = 0;
 
         const WORKER_URL = "https://smsbower.tiktiksatu001.workers.dev"; 
 
@@ -188,8 +193,10 @@
                 renderDropdownOptions();
                 
                 if (daftarServerTersedia.length > 0) { 
-                    const srv = daftarServerTersedia[0]; produkTerpilihId = srv.id;
+                    const srv = daftarServerTersedia[0]; 
+                    produkTerpilihId = srv.id;
                     namaProdukTerpilih = `Shopee ID (Provider ${srv.id})`;
+                    hargaProdukTerpilih = srv.price; // Menyimpan harga produk
                     document.getElementById("labelServerTerpilih").innerHTML = `₽ ${srv.price} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
                     document.getElementById("btnPesanAksi").disabled = false;
                     if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
@@ -213,7 +220,9 @@
 
         function pilihServerDropdown(index) {
             const srv = daftarServerTersedia[index];
-            produkTerpilihId = srv.id; namaProdukTerpilih = `Shopee ID (Provider ${srv.id})`;
+            produkTerpilihId = srv.id; 
+            namaProdukTerpilih = `Shopee ID (Provider ${srv.id})`;
+            hargaProdukTerpilih = srv.price; // Memperbarui harga saat opsi diganti
             document.getElementById("labelServerTerpilih").innerHTML = `₽ ${srv.price} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
             document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false; renderDropdownOptions();
@@ -226,7 +235,8 @@
                 const responseData = await apiSMSCode('orders/create', 'POST', { provider_id: produkTerpilihId });
                 const createdOrder = responseData.data?.orders?.[0];
                 if (createdOrder) {
-                    daftarOrderan.unshift({ order_id: createdOrder.id, phone: createdOrder.phone_number, layanan: namaProdukTerpilih, waktu_dibuat: Date.now(), status: "pending", otp: "" });
+                    // Menyertakan harga saat memasukkan pesanan baru ke memori
+                    daftarOrderan.unshift({ order_id: createdOrder.id, phone: createdOrder.phone_number, layanan: namaProdukTerpilih, harga: hargaProdukTerpilih, waktu_dibuat: Date.now(), status: "pending", otp: "" });
                     renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
                 }
             } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
@@ -276,8 +286,8 @@
                     } else if (stat === "OTP_RECEIVED" || otpCode) {
                         if (i.status === "pending" || i.otp !== otpCode) {
                             i.status = "received"; i.otp = otpCode; 
-                            putarSuaraNotifKeras(); // <-- Mengaktifkan kembali suara dentingan stereo
-                            munculkanPopupNative(i.phone, i.otp, i.layanan); // <-- Mengaktifkan pop-up
+                            putarSuaraNotifKeras(); 
+                            munculkanPopupNative(i.phone, i.otp, i.layanan); 
                             renderUILayout(); simpanDaftarOrderanKeLokal();
                         }
                     } else if (stat === "CANCELED") { 
@@ -297,9 +307,38 @@
                 if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e)); }
                 if (item.status === "cancelled") return; 
 
+                // ---- FORMAT TANGGAL DAN WAKTU UNTUK RIWAYAT ----
+                let d = new Date(item.waktu_dibuat);
+                let timeStr = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + " " + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
                 if (item.status === "completed" || item.status === "history_received") {
                     let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
-                    htmlRiwayat += `<div class="history-card"><div style="display:flex; justify-content:space-between; align-items:center;"><div><div class="srv-name">${item.layanan}</div><div class="srv-phone">${item.phone}</div></div><div class="srv-otp">${item.otp || '-'}</div></div>${btnKirimUlang}</div>`;
+                    
+                    // ---- DESAIN BARU RIWAYAT (Harga, Waktu & Tombol Salin) ----
+                    htmlRiwayat += `
+                    <div class="history-card">
+                        <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;">
+                            <span>${item.layanan} • ₽ ${item.harga || '-'}</span>
+                            <span>⏱️ ${timeStr}</span>
+                        </div>
+                        
+                        <div class="box-copy-statik">
+                            <div>
+                                <div style="font-size:9px; color:#8b8da9;">Nomor HP:</div>
+                                <div style="font-size:14px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div>
+                            </div>
+                            <button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button>
+                        </div>
+                        
+                        <div class="box-copy-statik otp-masuk" style="margin-top:6px;">
+                            <div>
+                                <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
+                                <div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div>
+                            </div>
+                            <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button>
+                        </div>
+                        ${btnKirimUlang}
+                    </div>`;
                     countRiwayat++; return;
                 }
 
@@ -320,10 +359,10 @@
                     kotakOtp = `
                     <div class="box-copy-statik otp-masuk">
                         <div>
-                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
+                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
                             <div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div>
                         </div>
-                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button>
                     </div>`;
                     
                     btnAksi = `
@@ -365,7 +404,6 @@
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin!"); }
 
-        // FUNGSI SUARA NOTIFIKASI UNIK (FUTURISTIK / SCI-FI CHIME)
         function putarSuaraNotifKeras() {
             try { 
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -373,26 +411,22 @@
                 const audioCtx = new AudioContext(); 
                 let time = audioCtx.currentTime; 
                 
-                // Pola Melodi Unik: Dua sequence nada naik beruntun
-                const sequence = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (Chord C Major Berdering)
+                const sequence = [523.25, 659.25, 783.99, 1046.50]; 
                 
                 sequence.forEach((freq, idx) => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     
-                    // Menggunakan tipe 'sine' dan 'sawtooth' agar terdengar seperti lonceng digital
                     osc.type = idx % 2 === 0 ? "sine" : "sawtooth";
                     
                     let startTime = time + (idx * 0.09);
                     osc.frequency.setValueAtTime(freq, startTime);
                     
-                    // Efek gema/fade-out yang halus
                     gain.gain.setValueAtTime(0.4, startTime);
                     gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
                     
                     if (audioCtx.createStereoPanner) {
                         const pan = audioCtx.createStereoPanner();
-                        // Mengatur posisi suara bergeser dari kiri ke kanan secara dinamis
                         pan.pan.value = idx < 2 ? -0.5 : 0.5; 
                         osc.connect(gain).connect(pan).connect(audioCtx.destination);
                     } else {
@@ -402,7 +436,6 @@
                     osc.start(startTime);
                     osc.stop(startTime + 0.4);
                 });
-
             } catch (e) { 
                 console.log(e); 
             }
