@@ -73,18 +73,86 @@
         #hasil-scan-input { width: 90%; max-width: 350px; height: 45px; font-size: 22px; font-weight: bold; margin: 15px 0; padding: 10px; text-align: center; letter-spacing: 2px; border: 2px solid #3d3463; border-radius: 8px; background-color: #1a1535; color: #00ffcc; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
         #status-scanner { color: #aaa; font-weight: bold; margin-bottom: 10px; min-height: 20px; font-size: 13px; }
 
-        /* === STYLING TABEL ALARM COPAS === */
+        /* === STYLING TABEL ALARM COPAS (DIPERBARUI) === */
         .header-copas { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .btn-tambah-copas { background: #00ffcc; color: #0f0c1b; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; padding: 4px 8px; }
         .btn-tambah-copas:hover { background: #00cca3; }
-        .wadah-copas-tabel { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .row-copas-alarm { display: flex; gap: 6px; align-items: center; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 1px solid #3d3463; transition: all 0.3s ease; }
-        .row-copas-alarm.alarm-nyala { border-color: #ff007f; box-shadow: 0 0 12px rgba(255, 0, 127, 0.7); animation: kedipAlarm 1s infinite alternate; }
-        @keyframes kedipAlarm { from { background: rgba(255, 0, 127, 0.1); } to { background: rgba(255, 0, 127, 0.3); } }
-        .input-copas-ket { flex: 1; background: transparent; border: none; border-bottom: 1px dashed #6e678a; color: #fff; outline: none; font-size: 13px; font-family: inherit; width: 100%; }
+        .wadah-copas-tabel { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+        
+        /* Baris Tabel Utama */
+        .row-copas-alarm { 
+            position: relative; 
+            z-index: 1; 
+            overflow: hidden; 
+            display: flex; 
+            gap: 8px; 
+            align-items: flex-start; /* Angka berada di atas */
+            background: rgba(0,0,0,0.2); 
+            padding: 12px; 
+            border-radius: 8px; 
+            border: 1px solid #3d3463; 
+            transition: all 0.3s ease; 
+        }
+
+        /* === EFEK ANIMASI BORDER BERPUTAR === */
+        .row-copas-alarm.alarm-nyala { 
+            border-color: transparent; 
+            box-shadow: 0 0 12px rgba(255, 0, 127, 0.5);
+        }
+        .row-copas-alarm.alarm-nyala::before {
+            content: '';
+            position: absolute;
+            z-index: -2;
+            left: -50%;
+            top: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(transparent, #ff007f, #00ffcc, transparent 30%);
+            animation: putarGlow 2s linear infinite;
+        }
+        .row-copas-alarm.alarm-nyala::after {
+            content: '';
+            position: absolute;
+            z-index: -1;
+            inset: 2px; /* Ketebalan garis border berputar */
+            background: #141026; /* Warna latar belakang kotak menutupi tengahnya */
+            border-radius: 6px;
+        }
+        @keyframes putarGlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Input di dalam tabel */
+        .input-copas-ket { 
+            flex: 1; 
+            background: transparent; 
+            border: none; 
+            border-bottom: 1px dashed #6e678a; 
+            color: #fff; 
+            outline: none; 
+            font-size: 13px; 
+            font-family: inherit; 
+            width: 100%; 
+            resize: vertical; /* Bisa ditarik memanjang */
+            min-height: 25px;
+            padding-bottom: 4px;
+        }
         .input-copas-ket:focus { border-bottom-color: #00ffcc; }
-        .input-copas-waktu { width: 115px; background: #1a1535; border: 1px solid #3d3463; color: #00ffcc; border-radius: 4px; font-size: 10px; padding: 4px; outline: none; font-family: inherit; }
-        .btn-hapus-copas { background: transparent; border: none; color: #ff4a4a; cursor: pointer; font-size: 14px; padding: 0 4px; }
+        
+        .input-copas-waktu { 
+            width: 100%; 
+            max-width: 180px;
+            background: #1a1535; 
+            border: 1px solid #3d3463; 
+            color: #00ffcc; 
+            border-radius: 6px; 
+            font-size: 11px; 
+            padding: 6px 10px; 
+            outline: none; 
+            font-family: inherit; 
+        }
+        .btn-hapus-copas { background: transparent; border: none; color: #ff4a4a; cursor: pointer; font-size: 16px; padding: 4px; margin-top: -2px; }
     </style>
 </head>
 <body>
@@ -158,7 +226,7 @@
                 </button>
             </div>
             
-            <!-- === TABEL ALARM COPAS BARU === -->
+            <!-- === TABEL ALARM COPAS === -->
             <div>
                 <div class="header-copas">
                     <div style="font-size: 13px; font-weight: bold; color: #aaa; text-align: left;">DATA / COPAS (ALARM)</div>
@@ -349,7 +417,7 @@
             });
         });
 
-        // === LOGIK TABEL DATA COPAS (ALARM) ===
+        // === LOGIK TABEL DATA COPAS (ALARM) DIPERBARUI ===
         let dataCopasTabel = [];
 
         function muatDataCopas() {
@@ -357,7 +425,6 @@
             if (simpanan) {
                 dataCopasTabel = JSON.parse(simpanan);
             } else {
-                // Migrasi data dari textarea lama (jika ada) ke tabel baru
                 const lama = localStorage.getItem("aplikasi_notes_2");
                 if (lama && lama.trim() !== "") {
                     dataCopasTabel.push({ id: Date.now(), ket: lama, waktu: "" });
@@ -387,10 +454,17 @@
                 row.id = `row-copas-${item.id}`;
                 
                 row.innerHTML = `
-                    <div style="font-size:10px; color:#aaa; width:15px; font-weight:bold;">${index + 1}.</div>
-                    <input type="text" class="input-copas-ket" value="${item.ket}" placeholder="Keterangan..." onchange="updateDataCopas(${item.id}, 'ket', this.value)">
-                    <input type="datetime-local" class="input-copas-waktu" value="${item.waktu}" onchange="updateDataCopas(${item.id}, 'waktu', this.value)">
-                    <button class="btn-hapus-copas" onclick="hapusDataCopas(${item.id})"><i class="fa-solid fa-trash"></i></button>
+                    <div style="font-size:12px; color:#aaa; width:20px; font-weight:bold; margin-top: 5px;">${index + 1}.</div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; z-index: 2;">
+                        <div style="display: flex; gap: 8px; align-items: flex-start; width: 100%;">
+                            <textarea class="input-copas-ket" placeholder="Keterangan (bisa lebih dari 1 baris)..." onchange="updateDataCopas(${item.id}, 'ket', this.value)">${item.ket}</textarea>
+                            <button class="btn-hapus-copas" onclick="hapusDataCopas(${item.id})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-regular fa-clock" style="color: #6e678a; font-size: 14px;"></i>
+                            <input type="datetime-local" class="input-copas-waktu" value="${item.waktu}" onchange="updateDataCopas(${item.id}, 'waktu', this.value)">
+                        </div>
+                    </div>
                 `;
                 wadah.appendChild(row);
             });
@@ -436,7 +510,6 @@
             });
         }
         
-        // Cek alarm secara otomatis setiap 5 detik di latar belakang
         setInterval(cekAlarmCopas, 5000);
 
 
@@ -463,7 +536,6 @@
             
             if(localStorage.getItem("aplikasi_notes_3")) document.getElementById("userNotes3").value = localStorage.getItem("aplikasi_notes_3");
 
-            // Muat Data Tabel Alarm
             muatDataCopas();
 
             autoFetchForEveryone();
