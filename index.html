@@ -73,13 +73,12 @@
         #hasil-scan-input { width: 90%; max-width: 350px; height: 45px; font-size: 22px; font-weight: bold; margin: 15px 0; padding: 10px; text-align: center; letter-spacing: 2px; border: 2px solid #3d3463; border-radius: 8px; background-color: #1a1535; color: #00ffcc; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
         #status-scanner { color: #aaa; font-weight: bold; margin-bottom: 10px; min-height: 20px; font-size: 13px; }
 
-        /* === STYLING TABEL ALARM COPAS (DIPERBARUI) === */
+        /* === STYLING TABEL ALARM COPAS === */
         .header-copas { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .btn-tambah-copas { background: #00ffcc; color: #0f0c1b; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; padding: 4px 8px; }
         .btn-tambah-copas:hover { background: #00cca3; }
         .wadah-copas-tabel { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
         
-        /* Baris Tabel Utama */
         .row-copas-alarm { 
             position: relative; 
             z-index: 1; 
@@ -92,10 +91,8 @@
             border-radius: 8px; 
             border: 1px solid #3d3463; 
             transition: all 0.3s ease; 
-            flex-shrink: 0; /* SOLUSI: Mencegah kotak menjadi gepeng/terpotong */
+            flex-shrink: 0; 
         }
-
-        /* === EFEK ANIMASI BORDER BERPUTAR === */
         .row-copas-alarm.alarm-nyala { 
             border-color: transparent; 
             box-shadow: 0 0 12px rgba(255, 0, 127, 0.5);
@@ -123,8 +120,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        /* Input di dalam tabel */
         .input-copas-ket { 
             flex: 1; 
             background: transparent; 
@@ -230,7 +225,7 @@
             <!-- === TABEL ALARM COPAS === -->
             <div>
                 <div class="header-copas">
-                    <div style="font-size: 13px; font-weight: bold; color: #aaa; text-align: left;">DATA (Notifikasi)</div>
+                    <div style="font-size: 13px; font-weight: bold; color: #aaa; text-align: left;">DATA / COPAS (ALARM)</div>
                     <button type="button" class="btn-tambah-copas" onclick="tambahDataCopas()">+ Tambah</button>
                 </div>
                 <div id="wadahDataCopas" class="wadah-copas-tabel">
@@ -514,7 +509,7 @@
         setInterval(cekAlarmCopas, 5000);
 
 
-        // === LOGIK BAWAAN APLIKASI UTAMA (GENERATOR & SINKRON) ===
+        // === LOGIK BAWAAN APLIKASI UTAMA ===
         let DATA_DUMMY_DATABASE = [];
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
@@ -789,6 +784,7 @@
             }
         }
 
+        // === LOGIK FUNGSI GENERATE USERNAME TERBARU ===
         window.generateName = function() {
             if (DATA_DUMMY_DATABASE.length === 0) return;
             const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
@@ -797,14 +793,37 @@
             eksekusiSalinTeks(res).then(() => showToast("Berhasil Disalin! ✨"));
             tambahKeRiwayat(res);
         };
+        
         window.generateUsername = function() {
-            const val = document.getElementById('genNameOutput').value;
-            if (!val) return;
-            const res = val.split(',')[0].trim().replace(/\s+/g, '_').toLowerCase();
+            let val = document.getElementById('genNameOutput').value;
+            let namaAsli = "";
+
+            if (!val || val.trim() === "") {
+                if (DATA_DUMMY_DATABASE.length > 0) {
+                    const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
+                    namaAsli = item.nama;
+                } else {
+                    return;
+                }
+            } else {
+                namaAsli = val.split(',')[0].trim();
+            }
+
+            // MENGEMBALIKAN GARIS BAWAH: Ganti spasi dengan garis bawah
+            let usernameDasar = namaAsli.replace(/\s+/g, '_').toLowerCase();
+
+            if(usernameDasar === "") usernameDasar = "user";
+
+            let angkaAcak = Math.floor(Math.random() * 9999) + 10;
+            
+            // Menggabungkan nama (dengan garis bawah) dan angka acak
+            const res = usernameDasar + angkaAcak;
+            
             document.getElementById('genNameOutput').value = res;
-            eksekusiSalinTeks(res).then(() => showToast("Berhasil Disalin! ✨"));
+            eksekusiSalinTeks(res).then(() => showToast("Username Disalin! ✨"));
             tambahKeRiwayat(res);
         };
+
         function tambahKeRiwayat(t) {
             const list = document.getElementById('historyList'); const item = document.createElement('div');
             item.className = 'history-item'; item.innerText = t; 
