@@ -86,12 +86,13 @@
             overflow: hidden; 
             display: flex; 
             gap: 8px; 
-            align-items: flex-start; /* Angka berada di atas */
+            align-items: flex-start; 
             background: rgba(0,0,0,0.2); 
             padding: 12px; 
             border-radius: 8px; 
             border: 1px solid #3d3463; 
             transition: all 0.3s ease; 
+            flex-shrink: 0; /* SOLUSI: Mencegah kotak menjadi gepeng/terpotong */
         }
 
         /* === EFEK ANIMASI BORDER BERPUTAR === */
@@ -114,8 +115,8 @@
             content: '';
             position: absolute;
             z-index: -1;
-            inset: 2px; /* Ketebalan garis border berputar */
-            background: #141026; /* Warna latar belakang kotak menutupi tengahnya */
+            inset: 2px;
+            background: #141026; 
             border-radius: 6px;
         }
         @keyframes putarGlow {
@@ -134,7 +135,7 @@
             font-size: 13px; 
             font-family: inherit; 
             width: 100%; 
-            resize: vertical; /* Bisa ditarik memanjang */
+            resize: vertical; 
             min-height: 25px;
             padding-bottom: 4px;
         }
@@ -229,11 +230,11 @@
             <!-- === TABEL ALARM COPAS === -->
             <div>
                 <div class="header-copas">
-                    <div style="font-size: 13px; font-weight: bold; color: #aaa; text-align: left;">DATA</div>
+                    <div style="font-size: 13px; font-weight: bold; color: #aaa; text-align: left;">DATA (Notifikasi)</div>
                     <button type="button" class="btn-tambah-copas" onclick="tambahDataCopas()">+ Tambah</button>
                 </div>
                 <div id="wadahDataCopas" class="wadah-copas-tabel">
-                    <!-- Baris tabel alarm akan dimuat di sini oleh JavaScript -->
+                    <!-- Baris tabel alarm dimuat di sini -->
                 </div>
                 <div style="height: 10px;"></div>
             </div>
@@ -417,7 +418,7 @@
             });
         });
 
-        // === LOGIK TABEL DATA COPAS (ALARM) DIPERBARUI ===
+        // === LOGIK TABEL DATA COPAS (ALARM) ===
         let dataCopasTabel = [];
 
         function muatDataCopas() {
