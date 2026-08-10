@@ -72,6 +72,19 @@
         .btn-scanner:disabled { background-color: #2c2547 !important; cursor: not-allowed; color: #6e678a; box-shadow: none; }
         #hasil-scan-input { width: 90%; max-width: 350px; height: 45px; font-size: 22px; font-weight: bold; margin: 15px 0; padding: 10px; text-align: center; letter-spacing: 2px; border: 2px solid #3d3463; border-radius: 8px; background-color: #1a1535; color: #00ffcc; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
         #status-scanner { color: #aaa; font-weight: bold; margin-bottom: 10px; min-height: 20px; font-size: 13px; }
+
+        /* === STYLING TABEL ALARM COPAS === */
+        .header-copas { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .btn-tambah-copas { background: #00ffcc; color: #0f0c1b; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; padding: 4px 8px; }
+        .btn-tambah-copas:hover { background: #00cca3; }
+        .wadah-copas-tabel { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .row-copas-alarm { display: flex; gap: 6px; align-items: center; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 1px solid #3d3463; transition: all 0.3s ease; }
+        .row-copas-alarm.alarm-nyala { border-color: #ff007f; box-shadow: 0 0 12px rgba(255, 0, 127, 0.7); animation: kedipAlarm 1s infinite alternate; }
+        @keyframes kedipAlarm { from { background: rgba(255, 0, 127, 0.1); } to { background: rgba(255, 0, 127, 0.3); } }
+        .input-copas-ket { flex: 1; background: transparent; border: none; border-bottom: 1px dashed #6e678a; color: #fff; outline: none; font-size: 13px; font-family: inherit; width: 100%; }
+        .input-copas-ket:focus { border-bottom-color: #00ffcc; }
+        .input-copas-waktu { width: 115px; background: #1a1535; border: 1px solid #3d3463; color: #00ffcc; border-radius: 4px; font-size: 10px; padding: 4px; outline: none; font-family: inherit; }
+        .btn-hapus-copas { background: transparent; border: none; color: #ff4a4a; cursor: pointer; font-size: 14px; padding: 0 4px; }
     </style>
 </head>
 <body>
@@ -93,7 +106,7 @@
 
 <div style="width: 100%; max-width: 900px;">
     <div id="wadahOTP1" class="wadah-iframe-server">
-        <iframe src="smsbower.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+        <iframe src="otpinstan.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
     </div>
     <div id="wadahOTP2" class="wadah-iframe-server">
         <iframe src="smscode.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
@@ -109,9 +122,9 @@
         </div>
     </div>
 
-    <!-- === CATATAN UTAMA (SINKRON) === -->
+    <!-- === CATATAN UTAMA & COPAS === -->
     <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 10px;">
-        <div class="title"><i class="fa-solid fa-cloud-sun" style="color: #00ffcc;"></i> Catatan Sinkron Multi-Device</div>
+        <div class="title"><i class="fa-solid fa-cloud-sun" style="color: #00ffcc;"></i> Catatan Multi-Device</div>
         
         <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
             <div>
@@ -145,10 +158,16 @@
                 </button>
             </div>
             
+            <!-- === TABEL ALARM COPAS BARU === -->
             <div>
-                <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">DATA / COPAS</div>
-                <textarea id="userNotes2" placeholder="Tempel data acak..." style="width: 100%; min-height: 220px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px;" oninput="saveLocalNotes('userNotes2', 'aplikasi_notes_2')"></textarea>
-                <div style="height: 31px;"></div>
+                <div class="header-copas">
+                    <div style="font-size: 13px; font-weight: bold; color: #aaa; text-align: left;">DATA / COPAS (ALARM)</div>
+                    <button type="button" class="btn-tambah-copas" onclick="tambahDataCopas()">+ Tambah</button>
+                </div>
+                <div id="wadahDataCopas" class="wadah-copas-tabel">
+                    <!-- Baris tabel alarm akan dimuat di sini oleh JavaScript -->
+                </div>
+                <div style="height: 10px;"></div>
             </div>
             
             <div>
@@ -159,7 +178,7 @@
         </div>
     </div>
 
-    <!-- === MENU DROPDOWN SCANNER BARU === -->
+    <!-- === MENU DROPDOWN SCANNER === -->
     <div class="wrapper-menu-server" style="margin-top: 10px;">
         <div class="server-col">
             <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahScanner', 'panahScanner')" style="border-color: #00ff00;">
@@ -186,7 +205,6 @@
             <button id="btn-copy-scanner" class="btn-scanner btn-scan-biru" disabled>📋 Salin Nomor</button>
         </div>
     </div>
-    <!-- === SELESAI MENU SCANNER === -->
 
     <div class="history-card" style="width: 100%; max-width: 900px; margin-top: 10px;">
         <div class="history-title"><span>RIWAYAT GENERATOR DATA</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
@@ -196,6 +214,7 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
+        // === LOGIK MENU DROPDOWN ===
         function toggleServerPanel(wadahId, panahId) {
             const wadah = document.getElementById(wadahId);
             const panah = document.getElementById(panahId);
@@ -222,7 +241,7 @@
             }
         }
 
-        // === LOGIK FITUR SCANNER DIPERBARUI ===
+        // === LOGIK FITUR SCANNER ===
         const video = document.getElementById('kamera');
         const canvasScanner = document.getElementById('canvasScanner');
         const ctxScanner = canvasScanner.getContext('2d');
@@ -283,7 +302,6 @@
                 cropH = vWidth / targetRatio;
             }
             
-            // FITUR BARU: Margin Aman (Safe Zone) 
             const safeW = cropW * 0.8;
             const safeH = cropH * 0.8;
             const cropX = ((vWidth - cropW) / 2) + (cropW * 0.1);
@@ -292,7 +310,6 @@
             canvasScanner.width = safeW;
             canvasScanner.height = safeH;
             
-            // FITUR BARU: Efek Filter Gambar
             ctxScanner.filter = 'grayscale(100%) contrast(300%) brightness(120%)';
             ctxScanner.drawImage(video, cropX, cropY, safeW, safeH, 0, 0, safeW, safeH);
             
@@ -301,7 +318,6 @@
             Tesseract.recognize(imageData, 'eng')
             .then(({ data: { text } }) => {
                 const hanyaAngka = text.replace(/[^0-9]/g, '');
-
                 if (hanyaAngka) {
                     hasilScanInput.value = hanyaAngka;
                     statusScanner.innerText = "Selesai! Akurasi telah ditingkatkan.";
@@ -333,7 +349,98 @@
             });
         });
 
-        // === LOGIK BAWAAN APLIKASI UTAMA ===
+        // === LOGIK TABEL DATA COPAS (ALARM) ===
+        let dataCopasTabel = [];
+
+        function muatDataCopas() {
+            const simpanan = localStorage.getItem("aplikasi_notes_2_tabel");
+            if (simpanan) {
+                dataCopasTabel = JSON.parse(simpanan);
+            } else {
+                // Migrasi data dari textarea lama (jika ada) ke tabel baru
+                const lama = localStorage.getItem("aplikasi_notes_2");
+                if (lama && lama.trim() !== "") {
+                    dataCopasTabel.push({ id: Date.now(), ket: lama, waktu: "" });
+                    localStorage.removeItem("aplikasi_notes_2");
+                }
+            }
+            renderDataCopas();
+        }
+
+        function simpanDataCopas() {
+            localStorage.setItem("aplikasi_notes_2_tabel", JSON.stringify(dataCopasTabel));
+            cekAlarmCopas();
+        }
+
+        function renderDataCopas() {
+            const wadah = document.getElementById("wadahDataCopas");
+            wadah.innerHTML = "";
+            
+            if (dataCopasTabel.length === 0) {
+                wadah.innerHTML = '<div style="color:#6e678a; font-size:12px; text-align:center; margin-top:20px;">Belum ada data. Klik + Tambah.</div>';
+                return;
+            }
+
+            dataCopasTabel.forEach((item, index) => {
+                const row = document.createElement("div");
+                row.className = "row-copas-alarm";
+                row.id = `row-copas-${item.id}`;
+                
+                row.innerHTML = `
+                    <div style="font-size:10px; color:#aaa; width:15px; font-weight:bold;">${index + 1}.</div>
+                    <input type="text" class="input-copas-ket" value="${item.ket}" placeholder="Keterangan..." onchange="updateDataCopas(${item.id}, 'ket', this.value)">
+                    <input type="datetime-local" class="input-copas-waktu" value="${item.waktu}" onchange="updateDataCopas(${item.id}, 'waktu', this.value)">
+                    <button class="btn-hapus-copas" onclick="hapusDataCopas(${item.id})"><i class="fa-solid fa-trash"></i></button>
+                `;
+                wadah.appendChild(row);
+            });
+            cekAlarmCopas();
+        }
+
+        function tambahDataCopas() {
+            dataCopasTabel.push({ id: Date.now(), ket: "", waktu: "" });
+            simpanDataCopas();
+            renderDataCopas();
+        }
+
+        function updateDataCopas(id, field, value) {
+            const item = dataCopasTabel.find(x => x.id === id);
+            if (item) {
+                item[field] = value;
+                simpanDataCopas();
+            }
+        }
+
+        function hapusDataCopas(id) {
+            dataCopasTabel = dataCopasTabel.filter(x => x.id !== id);
+            simpanDataCopas();
+            renderDataCopas();
+        }
+
+        function cekAlarmCopas() {
+            const sekarang = new Date().getTime();
+            dataCopasTabel.forEach(item => {
+                const rowEl = document.getElementById(`row-copas-${item.id}`);
+                if (rowEl) {
+                    if (item.waktu) {
+                        const waktuAlarm = new Date(item.waktu).getTime();
+                        if (sekarang >= waktuAlarm) {
+                            rowEl.classList.add("alarm-nyala");
+                        } else {
+                            rowEl.classList.remove("alarm-nyala");
+                        }
+                    } else {
+                        rowEl.classList.remove("alarm-nyala");
+                    }
+                }
+            });
+        }
+        
+        // Cek alarm secara otomatis setiap 5 detik di latar belakang
+        setInterval(cekAlarmCopas, 5000);
+
+
+        // === LOGIK BAWAAN APLIKASI UTAMA (GENERATOR & SINKRON) ===
         let DATA_DUMMY_DATABASE = [];
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
@@ -354,8 +461,10 @@
 
             if(localStorage.getItem("git_token")) document.getElementById("gitToken").value = localStorage.getItem("git_token");
             
-            if(localStorage.getItem("aplikasi_notes_2")) document.getElementById("userNotes2").value = localStorage.getItem("aplikasi_notes_2");
             if(localStorage.getItem("aplikasi_notes_3")) document.getElementById("userNotes3").value = localStorage.getItem("aplikasi_notes_3");
+
+            // Muat Data Tabel Alarm
+            muatDataCopas();
 
             autoFetchForEveryone();
         });
