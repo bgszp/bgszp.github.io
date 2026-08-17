@@ -45,7 +45,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
             <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (Shopee & WA)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
-                👛 <span id="txtSaldoLive">₽ 0</span>
+                👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
             </div>
         </div>
@@ -70,7 +70,6 @@
         <div class="dropdown-box-wrapper">
             <label class="form-label">🛒 Setup Layanan Utama</label>
             <div class="unified-order-box">
-                <!-- DROPDOWN BARU UNTUK LAYANAN -->
                 <select id="dropdownLayanan" class="unified-select-op" onchange="muatProdukLayanan(true)">
                     <option value="ka" selected>Shopee (Indonesia)</option>
                     <option value="wa">WhatsApp (Indonesia)</option>
@@ -114,13 +113,17 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Panel Diinisialisasi (Mendukung Multi-Layanan).
+            └> Sistem Panel Diinisialisasi (Mendukung IDR).
         </div>
     </div>
     
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
+        // === PENGATURAN KURS RUBEL KE RUPIAH ===
+        // Ubah angka ini jika Anda ingin menyesuaikan nilai tukar atau markup harga
+        const KURS_RUB = 175; 
+        
         let daftarOrderan = []; 
         let daftarServerTersedia = []; 
         let produkTerpilihId = null; 
@@ -129,6 +132,11 @@
         let siklusCek = 0;
 
         const WORKER_URL = "https://smsbower.tiktiksatu001.workers.dev"; 
+
+        // Fungsi format Rupiah
+        function formatRupiah(angka) {
+            return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
+        }
 
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
             const token = localStorage.getItem("otp_key_smscode");
@@ -173,7 +181,6 @@
             refreshSemuaDataLive(); showToast("Dibersihkan!");
         }
 
-        // FUNGSI BARU MUAT PRODUK BERDASARKAN LAYANAN YANG DIPILIH
         async function inisialisasiLayanan() {
             await muatProdukLayanan(false);
         }
@@ -182,7 +189,6 @@
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
                 let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
-                // Ambil kata pertama (Shopee / WhatsApp)
                 let prefixLayanan = elemNamaSrv.split(' ')[0]; 
 
                 if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `Mencari harga...`;
@@ -198,7 +204,8 @@
                     produkTerpilihId = srv.id;
                     namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
                     hargaProdukTerpilih = srv.price; 
-                    document.getElementById("labelServerTerpilih").innerHTML = `₽ ${srv.price} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+                    
+                    document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_RUB)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
                     document.getElementById("btnPesanAksi").disabled = false;
                     if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
                 } 
@@ -214,7 +221,7 @@
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
                 let sel = (produkTerpilihId === srv.id) ? "selected" : "";
-                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>Provider ${srv.id} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">₽ ${srv.price}</span></div>`;
+                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>Provider ${srv.id} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.price * KURS_RUB)}</span></div>`;
             });
             container.innerHTML = html;
         }
@@ -226,7 +233,7 @@
             produkTerpilihId = srv.id; 
             namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
             hargaProdukTerpilih = srv.price; 
-            document.getElementById("labelServerTerpilih").innerHTML = `₽ ${srv.price} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_RUB)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
             document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false; renderDropdownOptions();
         }
@@ -257,7 +264,8 @@
         async function ambilSaldoLive() {
             try {
                 const d = await apiSMSCode('balance', 'GET'); 
-                document.getElementById("txtSaldoLive").innerText = "₽ " + parseFloat(d.data?.balance || 0).toLocaleString("id-ID");
+                let saldoRubel = parseFloat(d.data?.balance || 0);
+                document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoRubel * KURS_RUB);
             } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; }
         }
 
@@ -310,17 +318,18 @@
                 if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e)); }
                 if (item.status === "cancelled") return; 
 
-                // Format Waktu Riwayat
                 let d = new Date(item.waktu_dibuat);
                 let timeStr = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + " " + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
                 if (item.status === "completed" || item.status === "history_received") {
                     let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
                     
+                    let teksHargaHistory = item.harga ? formatRupiah(item.harga * KURS_RUB) : '-';
+
                     htmlRiwayat += `
                     <div class="history-card">
                         <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;">
-                            <span>${item.layanan} • ₽ ${item.harga || '-'}</span>
+                            <span>${item.layanan} • ${teksHargaHistory}</span>
                             <span>⏱️ ${timeStr}</span>
                         </div>
                         <div class="box-copy-statik">
@@ -359,10 +368,10 @@
                     kotakOtp = `
                     <div class="box-copy-statik otp-masuk">
                         <div>
-                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
+                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
                             <div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div>
                         </div>
-                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
                     </div>`;
                     
                     btnAksi = `
