@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMSBower Shopee Panel</title>
+    <title>SMSBower Multi Panel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -23,10 +23,7 @@
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
         .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
-        
-        /* Modifikasi Card Riwayat agar menampung kotak salin dengan rapi */
         .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; }
-        
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
@@ -46,7 +43,7 @@
     <div class="container">
         <!-- HEADER SALDO -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis Shopee ID</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (Shopee & WA)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">₽ 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
@@ -69,15 +66,18 @@
             </div>
         </div>
 
-        <!-- AREA PEMESANAN -->
+        <!-- AREA PEMESANAN DENGAN MULTI LAYANAN -->
         <div class="dropdown-box-wrapper">
-            <label class="form-label">🛒 Setup Layanan</label>
+            <label class="form-label">🛒 Setup Layanan Utama</label>
             <div class="unified-order-box">
-                <select id="dropdownOperator" class="unified-select-op" onchange="muatProdukShopee(true)">
-                    <option value="">Memuat Operator...</option>
+                <!-- DROPDOWN BARU UNTUK LAYANAN -->
+                <select id="dropdownLayanan" class="unified-select-op" onchange="muatProdukLayanan(true)">
+                    <option value="ka" selected>Shopee (Indonesia)</option>
+                    <option value="wa">WhatsApp (Indonesia)</option>
                 </select>
+                
                 <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
-                    <span id="labelServerTerpilih" style="color: #fff;">Pilih Operator...</span>
+                    <span id="labelServerTerpilih" style="color: #fff;">Pilih Provider / Tier...</span>
                     <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Tier</span>
                 </div>
             </div>
@@ -114,7 +114,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Panel Diinisialisasi.
+            └> Sistem Panel Diinisialisasi (Mendukung Multi-Layanan).
         </div>
     </div>
     
@@ -125,7 +125,7 @@
         let daftarServerTersedia = []; 
         let produkTerpilihId = null; 
         let namaProdukTerpilih = ""; 
-        let hargaProdukTerpilih = 0; // Tambahan variabel untuk menyimpan harga
+        let hargaProdukTerpilih = 0; 
         let siklusCek = 0;
 
         const WORKER_URL = "https://smsbower.tiktiksatu001.workers.dev"; 
@@ -134,7 +134,7 @@
             const token = localStorage.getItem("otp_key_smscode");
             if (!token) throw new Error("API Key belum disetting.");
             let targetUrl = `${WORKER_URL}/v1/${endpoint}`;
-            if (method === "GET") targetUrl += `?nocache=${Date.now()}`; 
+            if (method === "GET") targetUrl += (targetUrl.includes('?') ? '&' : '?') + `nocache=${Date.now()}`; 
             
             let options = { method: method, headers: { "Authorization": `Bearer ${token.trim()}`, "Content-Type": "application/json" } };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
@@ -173,19 +173,20 @@
             refreshSemuaDataLive(); showToast("Dibersihkan!");
         }
 
-        async function inisialisasiLayananShopee() {
-            try {
-                const resOp = await apiSMSCode(`catalog/operators`, 'GET');
-                let dropdownOp = document.getElementById("dropdownOperator"); dropdownOp.innerHTML = "";
-                resOp.data.forEach(op => { dropdownOp.innerHTML += `<option value="${op.id}">${op.name}</option>`; });
-                await muatProdukShopee(false);
-            } catch (e) { document.getElementById("dropdownOperator").innerHTML = `<option value="">Gagal Memuat</option>`; }
+        // FUNGSI BARU MUAT PRODUK BERDASARKAN LAYANAN YANG DIPILIH
+        async function inisialisasiLayanan() {
+            await muatProdukLayanan(false);
         }
 
-        async function muatProdukShopee(autoOpen = false) {
+        async function muatProdukLayanan(autoOpen = false) {
             try {
+                let serviceId = document.getElementById("dropdownLayanan").value;
+                let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
+                // Ambil kata pertama (Shopee / WhatsApp)
+                let prefixLayanan = elemNamaSrv.split(' ')[0]; 
+
                 if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `Mencari harga...`;
-                const resProd = await apiSMSCode(`catalog/products`, 'GET');
+                const resProd = await apiSMSCode(`catalog/products?service=${serviceId}`, 'GET');
                 let arrData = resProd.data;
                 if (!arrData || arrData.length === 0) throw new Error("Stok kosong.");
 
@@ -195,8 +196,8 @@
                 if (daftarServerTersedia.length > 0) { 
                     const srv = daftarServerTersedia[0]; 
                     produkTerpilihId = srv.id;
-                    namaProdukTerpilih = `Shopee ID (Provider ${srv.id})`;
-                    hargaProdukTerpilih = srv.price; // Menyimpan harga produk
+                    namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
+                    hargaProdukTerpilih = srv.price; 
                     document.getElementById("labelServerTerpilih").innerHTML = `₽ ${srv.price} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
                     document.getElementById("btnPesanAksi").disabled = false;
                     if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
@@ -219,10 +220,12 @@
         }
 
         function pilihServerDropdown(index) {
+            let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
+            let prefixLayanan = elemNamaSrv.split(' ')[0]; 
             const srv = daftarServerTersedia[index];
             produkTerpilihId = srv.id; 
-            namaProdukTerpilih = `Shopee ID (Provider ${srv.id})`;
-            hargaProdukTerpilih = srv.price; // Memperbarui harga saat opsi diganti
+            namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
+            hargaProdukTerpilih = srv.price; 
             document.getElementById("labelServerTerpilih").innerHTML = `₽ ${srv.price} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
             document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false; renderDropdownOptions();
@@ -232,10 +235,10 @@
             const btn = document.getElementById("btnPesanAksi"); const teksAsli = btn.innerHTML;
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             try {
-                const responseData = await apiSMSCode('orders/create', 'POST', { provider_id: produkTerpilihId });
+                let serviceId = document.getElementById("dropdownLayanan").value;
+                const responseData = await apiSMSCode('orders/create', 'POST', { provider_id: produkTerpilihId, service: serviceId });
                 const createdOrder = responseData.data?.orders?.[0];
                 if (createdOrder) {
-                    // Menyertakan harga saat memasukkan pesanan baru ke memori
                     daftarOrderan.unshift({ order_id: createdOrder.id, phone: createdOrder.phone_number, layanan: namaProdukTerpilih, harga: hargaProdukTerpilih, waktu_dibuat: Date.now(), status: "pending", otp: "" });
                     renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
                 }
@@ -250,7 +253,7 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); inisialisasiLayananShopee(); }
+        function refreshSemuaDataLive() { ambilSaldoLive(); inisialisasiLayanan(); }
         async function ambilSaldoLive() {
             try {
                 const d = await apiSMSCode('balance', 'GET'); 
@@ -307,21 +310,19 @@
                 if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e)); }
                 if (item.status === "cancelled") return; 
 
-                // ---- FORMAT TANGGAL DAN WAKTU UNTUK RIWAYAT ----
+                // Format Waktu Riwayat
                 let d = new Date(item.waktu_dibuat);
                 let timeStr = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + " " + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
                 if (item.status === "completed" || item.status === "history_received") {
                     let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
                     
-                    // ---- DESAIN BARU RIWAYAT (Harga, Waktu & Tombol Salin) ----
                     htmlRiwayat += `
                     <div class="history-card">
                         <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;">
                             <span>${item.layanan} • ₽ ${item.harga || '-'}</span>
                             <span>⏱️ ${timeStr}</span>
                         </div>
-                        
                         <div class="box-copy-statik">
                             <div>
                                 <div style="font-size:9px; color:#8b8da9;">Nomor HP:</div>
@@ -329,10 +330,9 @@
                             </div>
                             <button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button>
                         </div>
-                        
                         <div class="box-copy-statik otp-masuk" style="margin-top:6px;">
                             <div>
-                                <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
+                                <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
                                 <div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div>
                             </div>
                             <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button>
@@ -359,10 +359,10 @@
                     kotakOtp = `
                     <div class="box-copy-statik otp-masuk">
                         <div>
-                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
+                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
                             <div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div>
                         </div>
-                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button>
                     </div>`;
                     
                     btnAksi = `
