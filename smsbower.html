@@ -113,14 +113,14 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Panel Diinisialisasi (Mendukung IDR).
+            └> Sistem Panel Diinisialisasi (IDR & Bypass WA).
         </div>
     </div>
     
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        // === PERBAIKAN: NILAI KURS DOLAR ===
+        // === NILAI KURS DOLAR ===
         const NILAI_KURS = 17815; 
         
         let daftarOrderan = []; 
@@ -352,6 +352,13 @@
                 countAktif++; 
                 let sisa = Math.max(0, 300 - sec); 
                 let cool = Math.max(0, 120 - sec); 
+                
+                // === LOGIKA BYPASS COOLDOWN KHUSUS WHATSAPP ===
+                if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) {
+                    cool = 0; // Memaksa nilai cooldown menjadi 0
+                }
+                // ==============================================
+
                 let textStat = `⚡ Cek OTP... (${sec}s)`; 
                 let colStat = "#ffb86c"; 
                 let btnAksi = ""; 
