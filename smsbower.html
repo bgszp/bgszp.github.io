@@ -120,9 +120,8 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        // === PENGATURAN KURS RUBEL KE RUPIAH ===
-        // Ubah angka ini jika Anda ingin menyesuaikan nilai tukar atau markup harga
-        const KURS_RUB = 175; 
+        // === PERBAIKAN: NILAI KURS DOLAR ===
+        const NILAI_KURS = 16000; 
         
         let daftarOrderan = []; 
         let daftarServerTersedia = []; 
@@ -133,7 +132,6 @@
 
         const WORKER_URL = "https://smsbower.tiktiksatu001.workers.dev"; 
 
-        // Fungsi format Rupiah
         function formatRupiah(angka) {
             return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
         }
@@ -205,7 +203,7 @@
                     namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
                     hargaProdukTerpilih = srv.price; 
                     
-                    document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_RUB)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+                    document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * NILAI_KURS)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
                     document.getElementById("btnPesanAksi").disabled = false;
                     if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
                 } 
@@ -221,7 +219,7 @@
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
                 let sel = (produkTerpilihId === srv.id) ? "selected" : "";
-                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>Provider ${srv.id} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.price * KURS_RUB)}</span></div>`;
+                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>Provider ${srv.id} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.price * NILAI_KURS)}</span></div>`;
             });
             container.innerHTML = html;
         }
@@ -233,7 +231,7 @@
             produkTerpilihId = srv.id; 
             namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
             hargaProdukTerpilih = srv.price; 
-            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_RUB)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * NILAI_KURS)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
             document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false; renderDropdownOptions();
         }
@@ -264,8 +262,8 @@
         async function ambilSaldoLive() {
             try {
                 const d = await apiSMSCode('balance', 'GET'); 
-                let saldoRubel = parseFloat(d.data?.balance || 0);
-                document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoRubel * KURS_RUB);
+                let saldoApi = parseFloat(d.data?.balance || 0);
+                document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoApi * NILAI_KURS);
             } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; }
         }
 
@@ -324,7 +322,7 @@
                 if (item.status === "completed" || item.status === "history_received") {
                     let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
                     
-                    let teksHargaHistory = item.harga ? formatRupiah(item.harga * KURS_RUB) : '-';
+                    let teksHargaHistory = item.harga ? formatRupiah(item.harga * NILAI_KURS) : '-';
 
                     htmlRiwayat += `
                     <div class="history-card">
@@ -368,10 +366,10 @@
                     kotakOtp = `
                     <div class="box-copy-statik otp-masuk">
                         <div>
-                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
+                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
                             <div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div>
                         </div>
-                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button>
                     </div>`;
                     
                     btnAksi = `
