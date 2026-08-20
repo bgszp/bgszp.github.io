@@ -6,252 +6,511 @@
     <title>HeroSMS Multi Panel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
-        :root { 
-            --bg-main: #0b0c16; 
-            --bg-card: #121324; 
-            --bg-item: #181933; 
-            --border-color: #2c2e5c; 
-            --accent-cyan: #00ffcc; 
-            --accent-purple: #9d4edd; 
-            --accent-red: #ff5555; 
-            --accent-green: #50fa7b; 
-            --text-main: #f8f8f2; 
-            --text-sub: #8b8da9; 
-        }
+        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
         * { box-sizing: border-box; transition: all 0.2s ease; }
-        body { 
-            background-color: var(--bg-main); 
-            color: var(--text-main); 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 10px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            min-height: 100vh; 
-        }
-        .container { 
-            width: 100%; 
-            max-width: 480px; 
-            background: var(--bg-card); 
-            border-radius: 14px; 
-            border: 1px solid var(--border-color); 
-            padding: 15px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6); 
-            margin-bottom: 10px; 
-        }
-        h2 { text-align: center; color: var(--accent-cyan); margin-top: 0; }
-        .search-input { 
-            width: 100%; 
-            padding: 10px; 
-            border-radius: 8px; 
-            background: #0b0c16; 
-            border: 1px solid #3d3463; 
-            color: #fff; 
-            font-size: 13px; 
-            outline: none; 
-            margin-bottom: 10px; 
-        }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
+        .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
+        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
         .search-input:focus { border-color: var(--accent-cyan); }
-        .card-order { 
-            background: #1a1b35; 
-            border: 1px solid var(--border-color); 
-            border-radius: 10px; 
-            padding: 12px; 
-            margin-top: 12px; 
-        }
-        .box-copy-statik { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            background: #131428; 
-            padding: 8px 10px; 
-            border-radius: 8px; 
-            border: 1px solid #222448; 
-            margin: 6px 0; 
-        }
+        .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
+        .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
-        .btn-copy-static { 
-            background: #25274d; 
-            border: 1px solid #3d3f7a; 
-            color: var(--accent-cyan); 
-            padding: 5px 10px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-size: 11px; 
-            font-weight: bold; 
-        }
+        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
-        .btn-action-full {
-            background: var(--accent-purple);
-            color: white; 
-            border: none; 
-            padding: 10px; 
-            border-radius: 8px; 
-            font-size: 14px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            width: 100%; 
-            margin-top: 10px;
-        }
-        .btn-batal { 
-            background: var(--accent-red);
-            color: white; 
-            border: none; 
-            padding: 8px 10px; 
-            border-radius: 6px; 
-            font-size: 12px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            width: 100%; 
-            margin-top: 10px; 
-        }
-        .flex-row { display: flex; gap: 10px; }
-        .status-text { font-size: 12px; color: var(--text-sub); text-align: center; margin-top: 5px; }
-        #balance-display { text-align: center; font-size: 18px; font-weight: bold; color: var(--accent-green); margin-bottom: 15px;}
+        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-resend { background: #4a3c8c; color: #fff; }
+        .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
+        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
+        .unified-order-box { display: flex; flex-direction: column; gap: 6px; background: #0b0c16; border: 1px solid #4a3c8c; border-radius: 10px; padding: 8px; }
+        .unified-select-op { border: none; background: #121324; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 10px; border-radius: 6px; outline: none; cursor: pointer; width: 100%; }
+        .dropdown-selected-bar { background: #121324; border: none; border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
+        .dropdown-list-options { display: none; margin-top: 8px; background: #121324; border: 1px solid #3d3463; border-radius: 10px; max-height: 250px; overflow-y: auto; }
+        .dropdown-list-options.active { display: block; }
+        .dropdown-item-row { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1b35; cursor: pointer; font-size: 13px; }
+        .dropdown-item-row.selected { background: #25204d; border-left: 3px solid var(--accent-purple); }
+        .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; display: block; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h2><i class="fa-solid fa-bolt"></i> HeroSMS Panel</h2>
-        
-        <input type="text" id="apiKey" class="search-input" placeholder="Masukkan API Key HeroSMS Anda">
-        <button class="btn-action-full" onclick="cekSaldo()"><i class="fa-solid fa-wallet"></i> Cek Saldo</button>
-        <div id="balance-display">Saldo: Rp 0</div>
-
-        <hr style="border-color: var(--border-color);">
-
-        <input type="text" id="serviceCode" class="search-input" placeholder="Kode Layanan (Cth: wa untuk WhatsApp)">
-        <input type="text" id="countryCode" class="search-input" placeholder="Kode Negara (Cth: 6 untuk Indonesia)">
-        <button class="btn-action-full" onclick="orderNomor()"><i class="fa-solid fa-cart-shopping"></i> Beli Nomor</button>
-    </div>
-
-    <div class="container" id="orderArea" style="display: none;">
-        <h3 style="margin-top: 0; font-size: 15px;">Order Aktif</h3>
-        <div class="card-order">
-            <div class="box-copy-statik">
-                <span id="displayNumber">628xxx</span>
-                <button class="btn-copy-static" onclick="copyText('displayNumber')"><i class="fa-solid fa-copy"></i> Copy</button>
-            </div>
-            <div class="box-copy-statik otp-masuk">
-                <span id="displayOtp" style="color: var(--accent-green); font-weight: bold;">Menunggu SMS...</span>
-                <button class="btn-copy-static btn-green" onclick="copyText('displayOtp')"><i class="fa-solid fa-copy"></i> Copy</button>
-            </div>
-            
-            <div class="status-text" id="statusPesan">Mengecek pesan masuk dalam 5 detik...</div>
-            
-            <div class="flex-row">
-                <button class="btn-batal" onclick="batalkanOrder()"><i class="fa-solid fa-ban"></i> Batalkan / Refund</button>
-                <button class="btn-batal" style="background: var(--accent-green); color: #000;" onclick="selesaikanOrder()"><i class="fa-solid fa-check"></i> Selesai</button>
+        <!-- HEADER SALDO -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (HeroSMS)</h3>
+            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
+                👛 <span id="txtSaldoLive">Rp 0</span>
+                <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
             </div>
         </div>
+
+        <!-- SETTING TOKEN -->
+        <div style="margin-bottom: 12px;">
+            <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()">
+                <span>🔑 Konfigurasi API Key (HeroSMS)</span>
+                <span id="panahApiKey" style="font-size: 10px;">▼</span>
+            </div>
+            <div id="wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 HeroSMS API Key:</label>
+                <div style="display: flex; gap: 6px;">
+                    <input type="password" id="otpKeyHero" placeholder="Masukkan API Key HeroSMS" class="search-input" style="margin-bottom:0;">
+                    <button onclick="simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
+                </div>
+                <small id="statusKeyHero" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
+            </div>
+        </div>
+
+        <!-- AREA PEMESANAN DENGAN MULTI LAYANAN -->
+        <div class="dropdown-box-wrapper">
+            <label class="form-label">🛒 Setup Layanan Utama</label>
+            <div class="unified-order-box">
+                <select id="dropdownLayanan" class="unified-select-op" onchange="muatProdukLayanan(true)">
+                    <option value="ka" selected>Shopee</option>
+                    <option value="wa">WhatsApp</option>
+                    <option value="tg">Telegram</option>
+                    <option value="ig">Instagram</option>
+                </select>
+                
+                <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
+                    <span id="labelServerTerpilih" style="color: #fff;">Pilih Negara / Tier...</span>
+                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Negara</span>
+                </div>
+            </div>
+            <div id="containerListDropdown" class="dropdown-list-options"></div>
+            <button class="btn-pesan-sekarang" id="btnPesanAksi" onclick="eksekusiBeliTerpilih()" disabled>
+                <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
+            </button>
+        </div>
+
+        <!-- NOMOR AKTIF -->
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📱 Nomor & OTP Aktif:</span>
+                <button onclick="bersihkanAktif()" style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer;">🧹 Bersihkan</button>
+            </div>
+            <div id="containerListOrder">
+                <div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
+            </div>
+        </div>
+
+        <!-- RIWAYAT SUKSES -->
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div class="pemicu-dropdown" onclick="toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
+                <span>📜 Riwayat Sukses (<span id="countRiwayatBadge">0</span>)</span>
+                <span id="panahRiwayat" style="font-size: 10px;">▼</span>
+            </div>
+            <div id="wadahRiwayatDropdown" style="display: none; background: #0b0c16; padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <div style="text-align: right; margin-bottom: 10px;">
+                    <span onclick="hapusSemuaRiwayatBawah()" style="cursor: pointer; font-size: 10px; color: var(--accent-red); font-weight: bold;">🗑️ Hapus Riwayat</span>
+                </div>
+                <div id="containerRiwayat">
+                    <div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>
+                </div>
+            </div>
+        </div>
+        <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
+            └> Sistem Panel Diinisialisasi (HeroSMS API & CORS Proxy Aktif).
+        </div>
     </div>
+    
+    <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        const API_URL = "https://hero-sms.com/stubs/handler_api.php";
-        let currentActivationId = null;
-        let intervalCek = null;
+        // === KONFIGURASI HEROSMS & CORS ===
+        const CORS_PROXY = "https://api.allorigins.win/raw?url="; // Mem-bypass Error Koneksi (CORS)
+        const API_BASE = "https://hero-sms.com/stubs/handler_api.php";
+        const KURS_RUBEL = 175; // Estimasi 1 Rubel = Rp 175 untuk konversi UI
+        
+        let daftarOrderan = []; 
+        let daftarServerTersedia = []; 
+        let produkTerpilihId = null; 
+        let namaProdukTerpilih = ""; 
+        let hargaProdukTerpilih = 0; 
+        let siklusCek = 0;
 
-        async function cekSaldo() {
-            const apiKey = document.getElementById("apiKey").value;
-            if(!apiKey) return alert("API Key wajib diisi!");
-            
-            try {
-                let res = await fetch(`${API_URL}?api_key=${apiKey}&action=getBalance`);
-                let text = await res.text();
-                if(text.includes("ACCESS_BALANCE")) {
-                    let saldo = text.split(":")[1];
-                    document.getElementById("balance-display").innerText = "Saldo: ₽ " + saldo;
-                } else {
-                    alert("Gagal cek saldo: " + text);
-                }
-            } catch (err) { alert("Error koneksi!"); }
+        // Daftar negara mock up untuk UI "Tier/Provider" (6: ID, 48: PL, 50: RU)
+        const MASTER_NEGARA = { "6": "Indonesia", "48": "Polandia", "50": "Rusia" };
+
+        function formatRupiah(angka) {
+            return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
         }
 
-        async function orderNomor() {
-            const apiKey = document.getElementById("apiKey").value;
-            const service = document.getElementById("serviceCode").value || "wa";
-            const country = document.getElementById("countryCode").value || "6";
+        function logConsole(msg) {
+            const logBox = document.getElementById("miniConsoleLog");
+            logBox.innerHTML += `<br>└> ${msg}`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
 
-            if(!apiKey) return alert("API Key belum diisi!");
+        // Fungsi fetch utama yang dibungkus proxy CORS
+        async function fetchHeroAPI(action, params = {}) {
+            const token = localStorage.getItem("otp_key_hero");
+            if (!token) throw new Error("API Key belum disetting.");
             
+            let url = `${API_BASE}?api_key=${token}&action=${action}`;
+            for (let k in params) url += `&${k}=${params[k]}`;
+            
+            // Bypass CORS dengan allorigins
+            const proxiedUrl = CORS_PROXY + encodeURIComponent(url);
+
             try {
-                let res = await fetch(`${API_URL}?api_key=${apiKey}&action=getNumber&service=${service}&country=${country}`);
+                const res = await fetch(proxiedUrl);
                 let text = await res.text();
                 
-                if(text.includes("ACCESS_NUMBER")) {
-                    let parts = text.split(":");
-                    currentActivationId = parts[1];
-                    let number = parts[2];
+                // Menangani error balasan standar HeroSMS/SMS-Activate
+                if(text === "BAD_KEY") throw new Error("API Key Salah/Invalid");
+                if(text === "NO_BALANCE") throw new Error("Saldo Tidak Cukup");
+                if(text === "NO_NUMBERS") throw new Error("Stok Nomor Kosong");
+                if(text.includes("BANNED")) throw new Error("Akun Diblokir Sementara");
+                
+                return text; 
+            } catch (e) { throw new Error(e.message || "Gagal terhubung ke server."); }
+        }
 
-                    document.getElementById("displayNumber").innerText = number;
-                    document.getElementById("displayOtp").innerText = "Menunggu SMS...";
-                    document.getElementById("orderArea").style.display = "block";
-                    
-                    // Mulai Auto-Cek OTP
-                    if(intervalCek) clearInterval(intervalCek);
-                    intervalCek = setInterval(cekStatusOTP, 5000);
+        document.addEventListener("DOMContentLoaded", function() {
+            const savedKey = localStorage.getItem("otp_key_hero");
+            if(savedKey) {
+                document.getElementById("otpKeyHero").value = savedKey;
+                document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
+                document.getElementById("statusKeyHero").style.color = "#50fa7b";
+                refreshSemuaDataLive();
+            } else toggleApiKeyDropdown();
 
+            const orderanLokal = localStorage.getItem("daftar_orderan_hero");
+            if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
+
+            setInterval(mesinWaktuTerpusat, 1000);
+            setInterval(mesinCekSmsTerpusat, 3000); // HeroSMS merekomendasikan polling jangan terlalu cepat
+        });
+
+        function toggleRiwayatDropdown() { const w = document.getElementById("wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
+        function toggleApiKeyDropdown() { const w = document.getElementById("wadahApiKeyDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
+        function toggleDropdownList() { document.getElementById("containerListDropdown").classList.toggle("active"); }
+
+        function bersihkanAktif() {
+            let pindah = false;
+            daftarOrderan.forEach(item => { if (item.status === "received") { item.status = "history_received"; pindah = true; } });
+            if (pindah) { renderUILayout(); simpanDaftarOrderanKeLokal(); }
+            refreshSemuaDataLive(); showToast("Dibersihkan!");
+        }
+
+        async function inisialisasiLayanan() {
+            await muatProdukLayanan(false);
+        }
+
+        async function muatProdukLayanan(autoOpen = false) {
+            try {
+                let serviceId = document.getElementById("dropdownLayanan").value;
+                let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
+                let prefixLayanan = elemNamaSrv; 
+
+                if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `Mencari harga...`;
+                
+                // Ambil daftar harga dari HeroSMS
+                const resText = await fetchHeroAPI('getPrices', { service: serviceId });
+                let data = JSON.parse(resText);
+                
+                daftarServerTersedia = [];
+                // Filter hanya negara target untuk UI yang rapi
+                for (let countryId in MASTER_NEGARA) {
+                    if (data[countryId] && data[countryId][serviceId]) {
+                        daftarServerTersedia.push({
+                            id: countryId,
+                            nama: MASTER_NEGARA[countryId],
+                            stock: data[countryId][serviceId].count,
+                            price: data[countryId][serviceId].cost
+                        });
+                    }
+                }
+
+                if (daftarServerTersedia.length === 0) throw new Error("Stok kosong di negara whitelist.");
+
+                renderDropdownOptions();
+                
+                const srv = daftarServerTersedia[0]; 
+                produkTerpilihId = srv.id;
+                namaProdukTerpilih = `${prefixLayanan} (${srv.nama})`;
+                hargaProdukTerpilih = srv.price; 
+                
+                document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_RUBEL)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+                document.getElementById("btnPesanAksi").disabled = false;
+                if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
+                
+            } catch (e) {
+                document.getElementById("labelServerTerpilih").innerText = "Stok Kosong / Error";
+                document.getElementById("btnPesanAksi").disabled = true; document.getElementById("containerListDropdown").innerHTML = "";
+                logConsole(e.message);
+            }
+        }
+
+        function renderDropdownOptions() {
+            const container = document.getElementById("containerListDropdown");
+            if(daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center;">Kosong</div>`; return; }
+            let html = "";
+            daftarServerTersedia.forEach((srv, index) => {
+                let sel = (produkTerpilihId === srv.id) ? "selected" : "";
+                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>${srv.nama} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.price * KURS_RUBEL)}</span></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function pilihServerDropdown(index) {
+            let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
+            const srv = daftarServerTersedia[index];
+            produkTerpilihId = srv.id; 
+            namaProdukTerpilih = `${elemNamaSrv} (${srv.nama})`;
+            hargaProdukTerpilih = srv.price; 
+            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_RUBEL)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+            document.getElementById("containerListDropdown").classList.remove("active");
+            document.getElementById("btnPesanAksi").disabled = false; renderDropdownOptions();
+        }
+
+        async function eksekusiBeliTerpilih() {
+            const btn = document.getElementById("btnPesanAksi"); const teksAsli = btn.innerHTML;
+            btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
+            try {
+                let serviceId = document.getElementById("dropdownLayanan").value;
+                const resText = await fetchHeroAPI('getNumber', { service: serviceId, country: produkTerpilihId });
+                
+                if (resText.includes("ACCESS_NUMBER")) {
+                    let parts = resText.split(":");
+                    let orderId = parts[1];
+                    let phone = parts[2];
+
+                    daftarOrderan.unshift({ 
+                        order_id: orderId, 
+                        phone: phone, 
+                        layanan: namaProdukTerpilih, 
+                        harga: hargaProdukTerpilih, 
+                        waktu_dibuat: Date.now(), 
+                        status: "pending", 
+                        otp: "" 
+                    });
+                    renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
+                    logConsole(`Berhasil membeli nomor: ${phone}`);
                 } else {
-                    alert("Gagal beli nomor: " + text);
+                    throw new Error(resText);
                 }
-            } catch (err) { alert("Error koneksi!"); }
+            } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
         }
 
-        async function cekStatusOTP() {
-            if(!currentActivationId) return;
-            const apiKey = document.getElementById("apiKey").value;
-
-            try {
-                let res = await fetch(`${API_URL}?api_key=${apiKey}&action=getStatus&id=${currentActivationId}`);
-                let text = await res.text();
-
-                if(text.includes("STATUS_OK")) {
-                    let otp = text.split(":")[1];
-                    document.getElementById("displayOtp").innerText = otp;
-                    document.getElementById("statusPesan").innerText = "SMS Berhasil Diterima!";
-                    clearInterval(intervalCek); // Berhenti ngecek jika udah masuk
-                } else if (text === "STATUS_WAIT_CODE") {
-                    document.getElementById("statusPesan").innerText = "Masih menunggu SMS masuk...";
-                } else if (text === "STATUS_CANCEL") {
-                    document.getElementById("statusPesan").innerText = "Order Dibatalkan.";
-                    clearInterval(intervalCek);
-                }
-            } catch (err) { console.log(err); }
+        function simpanKonfigurasi() {
+            const key = document.getElementById("otpKeyHero").value.trim();
+            if(!key) return alert("Masukkan Token!");
+            localStorage.setItem("otp_key_hero", key);
+            document.getElementById("statusKeyHero").innerText = "✅ Token Disimpan!";
+            refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        async function batalkanOrder() {
-            if(!currentActivationId) return;
-            const apiKey = document.getElementById("apiKey").value;
-            
-            // Status 8 = Cancel Activation (berdasarkan protokol SMS-Activate)
+        function refreshSemuaDataLive() { ambilSaldoLive(); inisialisasiLayanan(); }
+        
+        async function ambilSaldoLive() {
             try {
-                let res = await fetch(`${API_URL}?api_key=${apiKey}&action=setStatus&status=8&id=${currentActivationId}`);
-                let text = await res.text();
-                alert("Status: " + text);
-                document.getElementById("orderArea").style.display = "none";
-                if(intervalCek) clearInterval(intervalCek);
-                cekSaldo(); // update saldo setelah refund
-            } catch(e) {}
+                const res = await fetchHeroAPI('getBalance'); 
+                if (res.includes("ACCESS_BALANCE")) {
+                    let saldoApi = parseFloat(res.split(":")[1] || 0);
+                    document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoApi * KURS_RUBEL);
+                }
+            } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; }
+        }
+
+        // HeroSMS Statuses: 8 = Cancel, 6 = Finish
+        async function eksekusiBatalkanServer(index) {
+            const item = daftarOrderan[index];
+            try { 
+                await fetchHeroAPI('setStatus', { status: 8, id: item.order_id }); 
+                item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Dibatalkan!"); 
+            } catch (e) {}
         }
         
-        async function selesaikanOrder() {
-            if(!currentActivationId) return;
-            const apiKey = document.getElementById("apiKey").value;
-            
-            // Status 6 = Complete Activation 
-            try {
-                let res = await fetch(`${API_URL}?api_key=${apiKey}&action=setStatus&status=6&id=${currentActivationId}`);
-                alert("Sukses menyelesaikan order.");
-                document.getElementById("orderArea").style.display = "none";
-                if(intervalCek) clearInterval(intervalCek);
-            } catch(e) {}
+        // Pada HeroSMS / SMS-Activate, setStatus 3 (Minta OTP lagi) jika status masih pending
+        async function eksekusiResend(index) {
+            const item = daftarOrderan[index];
+            try { await fetchHeroAPI('setStatus', { status: 3, id: item.order_id }); showToast("Kirim Ulang OTP diminta."); } catch (e) {}
         }
 
-        function copyText(elementId) {
-            let text = document.getElementById(elementId).innerText;
-            navigator.clipboard.writeText(text);
+        async function eksekusiSelesai(index) {
+            const item = daftarOrderan[index];
+            try { 
+                await fetchHeroAPI('setStatus', { status: 6, id: item.order_id }); 
+                item.status = "completed"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Selesai!"); 
+            } catch(err) {}
+        }
+
+        async function mesinCekSmsTerpusat() {
+            siklusCek++; let sudahCekTerbaru = false;
+            for (let index = 0; index < daftarOrderan.length; index++) {
+                let i = daftarOrderan[index];
+                if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
+                
+                // Polling logic
+                let izinkanCek = (i.status === "pending" && !sudahCekTerbaru) ? (sudahCekTerbaru = true) : (siklusCek % 3 === 0);
+                if (!izinkanCek) continue;
+                
+                try {
+                    const resText = await fetchHeroAPI('getStatus', { id: i.order_id });
+                    
+                    if (resText.includes("STATUS_OK")) { 
+                        let otpCode = resText.split(":")[1];
+                        if (i.status === "pending" || i.otp !== otpCode) {
+                            i.status = "received"; i.otp = otpCode; 
+                            putarSuaraNotifKeras(); 
+                            munculkanPopupNative(i.phone, i.otp, i.layanan); 
+                            renderUILayout(); simpanDaftarOrderanKeLokal();
+                        }
+                    } else if (resText === "STATUS_CANCEL") { 
+                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); 
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function renderUILayout() {
+            const containerAktif = document.getElementById("containerListOrder");
+            const containerRiwayat = document.getElementById("containerRiwayat");
+            let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
+
+            daftarOrderan.forEach((item, index) => {
+                let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
+                
+                // Batal otomatis jika lebih dari 20 menit (1200 detik) sesuai standar
+                if (item.status === "pending" && sec >= 1200) { 
+                    item.status = "cancelled"; fetchHeroAPI('setStatus', { status: 8, id: item.order_id }).catch(e=>console.log(e)); 
+                }
+                if (item.status === "cancelled") return; 
+
+                let d = new Date(item.waktu_dibuat);
+                let timeStr = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + " " + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
+                if (item.status === "completed" || item.status === "history_received") {
+                    let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
+                    let teksHargaHistory = item.harga ? formatRupiah(item.harga * KURS_RUBEL) : '-';
+
+                    htmlRiwayat += `
+                    <div class="history-card">
+                        <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;">
+                            <span>${item.layanan} • ${teksHargaHistory}</span>
+                            <span>⏱️ ${timeStr}</span>
+                        </div>
+                        <div class="box-copy-statik">
+                            <div>
+                                <div style="font-size:9px; color:#8b8da9;">Nomor HP:</div>
+                                <div style="font-size:14px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div>
+                            </div>
+                            <button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button>
+                        </div>
+                        <div class="box-copy-statik otp-masuk" style="margin-top:6px;">
+                            <div>
+                                <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
+                                <div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div>
+                            </div>
+                            <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button>
+                        </div>
+                        ${btnKirimUlang}
+                    </div>`;
+                    countRiwayat++; return;
+                }
+
+                countAktif++; 
+                let sisa = Math.max(0, 1200 - sec); // Waktu 20 Menit standard
+                let cool = Math.max(0, 120 - sec); // 2 menit nunggu cancel di Hero
+                
+                // BYPASS COOLDOWN CANCEL
+                if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) {
+                    cool = 0; 
+                }
+
+                let textStat = `⚡ Cek OTP... (${sec}s)`; 
+                let colStat = "#ffb86c"; 
+                let btnAksi = ""; 
+                let kotakOtp = "";
+
+                let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`;
+                let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
+
+                if (item.status === "received") { 
+                    textStat = `🎉 Menunggu Tindakan (Aktif)`; 
+                    colStat = "#50fa7b"; 
+                    kotakOtp = `
+                    <div class="box-copy-statik otp-masuk">
+                        <div>
+                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
+                            <div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div>
+                        </div>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
+                    </div>`;
+                    
+                    btnAksi = `
+                    <div style="display:flex; gap: 8px; margin-top: 10px;">
+                        <button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai (Simpan)</button>
+                    </div>`;
+                } else if (item.status === "pending") {
+                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu Cancel (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
+                }
+                
+                htmlAktif += `
+                <div class="card-order">
+                    <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;">
+                        <span>${item.layanan}</span>
+                        <span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span>
+                    </div>
+                    <div class="box-copy-statik">
+                        <div>
+                            <div style="font-size:9px; color:#8b8da9;">Nomor HP:</div>
+                            <div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div>
+                        </div>
+                        <button onclick="salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button>
+                    </div>
+                    ${kotakOtp}
+                    <div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>
+                    ${btnAksi}
+                </div>`;
+            });
+
+            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
+            containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
+            document.getElementById("countRiwayatBadge").innerText = countRiwayat;
+        }
+
+        function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_hero", JSON.stringify(daftarOrderan)); }
+        function hapusSemuaRiwayatBawah() { daftarOrderan = daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); renderUILayout(); simpanDaftarOrderanKeLokal(); }
+        function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
+        function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
+        function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin!"); }
+
+        function putarSuaraNotifKeras() {
+            try { 
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const audioCtx = new AudioContext(); 
+                let time = audioCtx.currentTime; 
+                
+                const sequence = [523.25, 659.25, 783.99, 1046.50]; 
+                
+                sequence.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = idx % 2 === 0 ? "sine" : "sawtooth";
+                    let startTime = time + (idx * 0.09);
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    gain.gain.setValueAtTime(0.4, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+                    osc.connect(gain).connect(audioCtx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.4);
+                });
+            } catch (e) { console.log(e); }
+        }
+
+        function munculkanPopupNative(nomor, otp, layanan) {
+            if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
+            } 
         }
     </script>
 </body>
