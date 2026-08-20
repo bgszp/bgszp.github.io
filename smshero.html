@@ -115,16 +115,18 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Panel Diinisialisasi (HeroSMS API & CORS Proxy Aktif).
+            └> Sistem Panel Diinisialisasi (Menggunakan Cloudflare Worker).
         </div>
     </div>
     
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        // === KONFIGURASI HEROSMS & CORS ===
-        const CORS_PROXY = "https://api.allorigins.win/raw?url="; // Mem-bypass Error Koneksi (CORS)
-        const API_BASE = "https://hero-sms.com/stubs/handler_api.php";
+        // =========================================================
+        // GANTI URL DI BAWAH DENGAN URL CLOUDFLARE WORKER ANDA
+        // =========================================================
+        const WORKER_URL = "https://herosms-proxy.tiktiksatu001.workers.dev"; 
+        
         const KURS_RUBEL = 175; // Estimasi 1 Rubel = Rp 175 untuk konversi UI
         
         let daftarOrderan = []; 
@@ -134,7 +136,7 @@
         let hargaProdukTerpilih = 0; 
         let siklusCek = 0;
 
-        // Daftar negara mock up untuk UI "Tier/Provider" (6: ID, 48: PL, 50: RU)
+        // Daftar negara mock up untuk UI (6: ID, 48: PL, 50: RU)
         const MASTER_NEGARA = { "6": "Indonesia", "48": "Polandia", "50": "Rusia" };
 
         function formatRupiah(angka) {
@@ -147,29 +149,29 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // Fungsi fetch utama yang dibungkus proxy CORS
+        // Fungsi fetch utama yang menembak ke Worker Cloudflare Pribadi
         async function fetchHeroAPI(action, params = {}) {
             const token = localStorage.getItem("otp_key_hero");
             if (!token) throw new Error("API Key belum disetting.");
             
-            let url = `${API_BASE}?api_key=${token}&action=${action}`;
+            // Build URL dengan Worker Anda
+            let url = `${WORKER_URL}?api_key=${token}&action=${action}`;
             for (let k in params) url += `&${k}=${params[k]}`;
-            
-            // Bypass CORS dengan allorigins
-            const proxiedUrl = CORS_PROXY + encodeURIComponent(url);
 
             try {
-                const res = await fetch(proxiedUrl);
-                let text = await res.text();
+                const res = await fetch(url, { cache: "no-store" });
+                let textResponse = await res.text();
+
+                // Menangani error balasan standar HeroSMS
+                if(textResponse === "BAD_KEY") throw new Error("API Key Salah/Invalid");
+                if(textResponse === "NO_BALANCE") throw new Error("Saldo Tidak Cukup");
+                if(textResponse === "NO_NUMBERS") throw new Error("Stok Nomor Kosong");
+                if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir Sementara");
                 
-                // Menangani error balasan standar HeroSMS/SMS-Activate
-                if(text === "BAD_KEY") throw new Error("API Key Salah/Invalid");
-                if(text === "NO_BALANCE") throw new Error("Saldo Tidak Cukup");
-                if(text === "NO_NUMBERS") throw new Error("Stok Nomor Kosong");
-                if(text.includes("BANNED")) throw new Error("Akun Diblokir Sementara");
-                
-                return text; 
-            } catch (e) { throw new Error(e.message || "Gagal terhubung ke server."); }
+                return textResponse; 
+            } catch (e) { 
+                throw new Error(e.message || "Gagal terhubung ke Cloudflare Worker."); 
+            }
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -185,7 +187,7 @@
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
-            setInterval(mesinCekSmsTerpusat, 3000); // HeroSMS merekomendasikan polling jangan terlalu cepat
+            setInterval(mesinCekSmsTerpusat, 3000);
         });
 
         function toggleRiwayatDropdown() { const w = document.getElementById("wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
@@ -204,6 +206,11 @@
         }
 
         async function muatProdukLayanan(autoOpen = false) {
+            if (WORKER_URL.includes("URL_WORKER_CLOUDFLARE_ANDA")) {
+                logConsole("SILAKAN UBAH WORKER_URL DI DALAM KODE DAHULU!");
+                return;
+            }
+
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
                 let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
@@ -213,10 +220,15 @@
                 
                 // Ambil daftar harga dari HeroSMS
                 const resText = await fetchHeroAPI('getPrices', { service: serviceId });
-                let data = JSON.parse(resText);
+                
+                let data;
+                try {
+                    data = JSON.parse(resText);
+                } catch(e) {
+                    throw new Error("Format JSON Harga Invalid dari Server.");
+                }
                 
                 daftarServerTersedia = [];
-                // Filter hanya negara target untuk UI yang rapi
                 for (let countryId in MASTER_NEGARA) {
                     if (data[countryId] && data[countryId][serviceId]) {
                         daftarServerTersedia.push({
@@ -228,7 +240,7 @@
                     }
                 }
 
-                if (daftarServerTersedia.length === 0) throw new Error("Stok kosong di negara whitelist.");
+                if (daftarServerTersedia.length === 0) throw new Error("Stok kosong di negara tersebut.");
 
                 renderDropdownOptions();
                 
@@ -242,7 +254,7 @@
                 if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
                 
             } catch (e) {
-                document.getElementById("labelServerTerpilih").innerText = "Stok Kosong / Error";
+                document.getElementById("labelServerTerpilih").innerText = "Kosong / Error API";
                 document.getElementById("btnPesanAksi").disabled = true; document.getElementById("containerListDropdown").innerHTML = "";
                 logConsole(e.message);
             }
@@ -319,7 +331,6 @@
             } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; }
         }
 
-        // HeroSMS Statuses: 8 = Cancel, 6 = Finish
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
             try { 
@@ -328,7 +339,6 @@
             } catch (e) {}
         }
         
-        // Pada HeroSMS / SMS-Activate, setStatus 3 (Minta OTP lagi) jika status masih pending
         async function eksekusiResend(index) {
             const item = daftarOrderan[index];
             try { await fetchHeroAPI('setStatus', { status: 3, id: item.order_id }); showToast("Kirim Ulang OTP diminta."); } catch (e) {}
@@ -348,7 +358,6 @@
                 let i = daftarOrderan[index];
                 if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
                 
-                // Polling logic
                 let izinkanCek = (i.status === "pending" && !sudahCekTerbaru) ? (sudahCekTerbaru = true) : (siklusCek % 3 === 0);
                 if (!izinkanCek) continue;
                 
@@ -378,7 +387,6 @@
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
-                // Batal otomatis jika lebih dari 20 menit (1200 detik) sesuai standar
                 if (item.status === "pending" && sec >= 1200) { 
                     item.status = "cancelled"; fetchHeroAPI('setStatus', { status: 8, id: item.order_id }).catch(e=>console.log(e)); 
                 }
@@ -417,10 +425,9 @@
                 }
 
                 countAktif++; 
-                let sisa = Math.max(0, 1200 - sec); // Waktu 20 Menit standard
-                let cool = Math.max(0, 120 - sec); // 2 menit nunggu cancel di Hero
+                let sisa = Math.max(0, 1200 - sec); 
+                let cool = Math.max(0, 120 - sec); 
                 
-                // BYPASS COOLDOWN CANCEL
                 if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) {
                     cool = 0; 
                 }
