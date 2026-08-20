@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeroSMS Multi Panel</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-main: #0b0c16; 
+            --bg-card: #121324; 
+            --bg-item: #181933; 
+            --border-color: #2c2e5c; 
+            --accent-cyan: #00ffcc; 
+            --accent-purple: #9d4edd; 
+            --accent-red: #ff5555; 
+            --accent-green: #50fa7b; 
+            --text-main: #f8f8f2; 
+            --text-sub: #8b8da9; 
+        }
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { 
+            background-color: var(--bg-main); 
+            color: var(--text-main); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        .container { 
+            width: 100%; 
+            max-width: 480px; 
+            background: var(--bg-card); 
+            border-radius: 14px; 
+            border: 1px solid var(--border-color); 
+            padding: 15px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6); 
+            margin-bottom: 10px; 
+        }
+        h2 { text-align: center; color: var(--accent-cyan); margin-top: 0; }
+        .search-input { 
+            width: 100%; 
+            padding: 10px; 
+            border-radius: 8px; 
+            background: #0b0c16; 
+            border: 1px solid #3d3463; 
+            color: #fff; 
+            font-size: 13px; 
+            outline: none; 
+            margin-bottom: 10px; 
+        }
+        .search-input:focus { border-color: var(--accent-cyan); }
+        .card-order { 
+            background: #1a1b35; 
+            border: 1px solid var(--border-color); 
+            border-radius: 10px; 
+            padding: 12px; 
+            margin-top: 12px; 
+        }
+        .box-copy-statik { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: #131428; 
+            padding: 8px 10px; 
+            border-radius: 8px; 
+            border: 1px solid #222448; 
+            margin: 6px 0; 
+        }
+        .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
+        .btn-copy-static { 
+            background: #25274d; 
+            border: 1px solid #3d3f7a; 
+            color: var(--accent-cyan); 
+            padding: 5px 10px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 11px; 
+            font-weight: bold; 
+        }
+        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
+        .btn-action-full {
+            background: var(--accent-purple);
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-top: 10px;
+        }
+        .btn-batal { 
+            background: var(--accent-red);
+            color: white; 
+            border: none; 
+            padding: 8px 10px; 
+            border-radius: 6px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-top: 10px; 
+        }
+        .flex-row { display: flex; gap: 10px; }
+        .status-text { font-size: 12px; color: var(--text-sub); text-align: center; margin-top: 5px; }
+        #balance-display { text-align: center; font-size: 18px; font-weight: bold; color: var(--accent-green); margin-bottom: 15px;}
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2><i class="fa-solid fa-bolt"></i> HeroSMS Panel</h2>
+        
+        <input type="text" id="apiKey" class="search-input" placeholder="Masukkan API Key HeroSMS Anda">
+        <button class="btn-action-full" onclick="cekSaldo()"><i class="fa-solid fa-wallet"></i> Cek Saldo</button>
+        <div id="balance-display">Saldo: Rp 0</div>
+
+        <hr style="border-color: var(--border-color);">
+
+        <input type="text" id="serviceCode" class="search-input" placeholder="Kode Layanan (Cth: wa untuk WhatsApp)">
+        <input type="text" id="countryCode" class="search-input" placeholder="Kode Negara (Cth: 6 untuk Indonesia)">
+        <button class="btn-action-full" onclick="orderNomor()"><i class="fa-solid fa-cart-shopping"></i> Beli Nomor</button>
+    </div>
+
+    <div class="container" id="orderArea" style="display: none;">
+        <h3 style="margin-top: 0; font-size: 15px;">Order Aktif</h3>
+        <div class="card-order">
+            <div class="box-copy-statik">
+                <span id="displayNumber">628xxx</span>
+                <button class="btn-copy-static" onclick="copyText('displayNumber')"><i class="fa-solid fa-copy"></i> Copy</button>
+            </div>
+            <div class="box-copy-statik otp-masuk">
+                <span id="displayOtp" style="color: var(--accent-green); font-weight: bold;">Menunggu SMS...</span>
+                <button class="btn-copy-static btn-green" onclick="copyText('displayOtp')"><i class="fa-solid fa-copy"></i> Copy</button>
+            </div>
+            
+            <div class="status-text" id="statusPesan">Mengecek pesan masuk dalam 5 detik...</div>
+            
+            <div class="flex-row">
+                <button class="btn-batal" onclick="batalkanOrder()"><i class="fa-solid fa-ban"></i> Batalkan / Refund</button>
+                <button class="btn-batal" style="background: var(--accent-green); color: #000;" onclick="selesaikanOrder()"><i class="fa-solid fa-check"></i> Selesai</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://hero-sms.com/stubs/handler_api.php";
+        let currentActivationId = null;
+        let intervalCek = null;
+
+        async function cekSaldo() {
+            const apiKey = document.getElementById("apiKey").value;
+            if(!apiKey) return alert("API Key wajib diisi!");
+            
+            try {
+                let res = await fetch(`${API_URL}?api_key=${apiKey}&action=getBalance`);
+                let text = await res.text();
+                if(text.includes("ACCESS_BALANCE")) {
+                    let saldo = text.split(":")[1];
+                    document.getElementById("balance-display").innerText = "Saldo: ₽ " + saldo;
+                } else {
+                    alert("Gagal cek saldo: " + text);
+                }
+            } catch (err) { alert("Error koneksi!"); }
+        }
+
+        async function orderNomor() {
+            const apiKey = document.getElementById("apiKey").value;
+            const service = document.getElementById("serviceCode").value || "wa";
+            const country = document.getElementById("countryCode").value || "6";
+
+            if(!apiKey) return alert("API Key belum diisi!");
+            
+            try {
+                let res = await fetch(`${API_URL}?api_key=${apiKey}&action=getNumber&service=${service}&country=${country}`);
+                let text = await res.text();
+                
+                if(text.includes("ACCESS_NUMBER")) {
+                    let parts = text.split(":");
+                    currentActivationId = parts[1];
+                    let number = parts[2];
+
+                    document.getElementById("displayNumber").innerText = number;
+                    document.getElementById("displayOtp").innerText = "Menunggu SMS...";
+                    document.getElementById("orderArea").style.display = "block";
+                    
+                    // Mulai Auto-Cek OTP
+                    if(intervalCek) clearInterval(intervalCek);
+                    intervalCek = setInterval(cekStatusOTP, 5000);
+
+                } else {
+                    alert("Gagal beli nomor: " + text);
+                }
+            } catch (err) { alert("Error koneksi!"); }
+        }
+
+        async function cekStatusOTP() {
+            if(!currentActivationId) return;
+            const apiKey = document.getElementById("apiKey").value;
+
+            try {
+                let res = await fetch(`${API_URL}?api_key=${apiKey}&action=getStatus&id=${currentActivationId}`);
+                let text = await res.text();
+
+                if(text.includes("STATUS_OK")) {
+                    let otp = text.split(":")[1];
+                    document.getElementById("displayOtp").innerText = otp;
+                    document.getElementById("statusPesan").innerText = "SMS Berhasil Diterima!";
+                    clearInterval(intervalCek); // Berhenti ngecek jika udah masuk
+                } else if (text === "STATUS_WAIT_CODE") {
+                    document.getElementById("statusPesan").innerText = "Masih menunggu SMS masuk...";
+                } else if (text === "STATUS_CANCEL") {
+                    document.getElementById("statusPesan").innerText = "Order Dibatalkan.";
+                    clearInterval(intervalCek);
+                }
+            } catch (err) { console.log(err); }
+        }
+
+        async function batalkanOrder() {
+            if(!currentActivationId) return;
+            const apiKey = document.getElementById("apiKey").value;
+            
+            // Status 8 = Cancel Activation (berdasarkan protokol SMS-Activate)
+            try {
+                let res = await fetch(`${API_URL}?api_key=${apiKey}&action=setStatus&status=8&id=${currentActivationId}`);
+                let text = await res.text();
+                alert("Status: " + text);
+                document.getElementById("orderArea").style.display = "none";
+                if(intervalCek) clearInterval(intervalCek);
+                cekSaldo(); // update saldo setelah refund
+            } catch(e) {}
+        }
+        
+        async function selesaikanOrder() {
+            if(!currentActivationId) return;
+            const apiKey = document.getElementById("apiKey").value;
+            
+            // Status 6 = Complete Activation 
+            try {
+                let res = await fetch(`${API_URL}?api_key=${apiKey}&action=setStatus&status=6&id=${currentActivationId}`);
+                alert("Sukses menyelesaikan order.");
+                document.getElementById("orderArea").style.display = "none";
+                if(intervalCek) clearInterval(intervalCek);
+            } catch(e) {}
+        }
+
+        function copyText(elementId) {
+            let text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text);
+        }
+    </script>
+</body>
+</html>
