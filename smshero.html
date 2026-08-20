@@ -159,26 +159,32 @@
         }
 
         async function fetchHeroAPI(action, params = {}) {
-            const token = localStorage.getItem("otp_key_hero");
-            if (!token) throw new Error("API Key belum disetting.");
-            
-            let url = `${WORKER_URL}?api_key=${token}&action=${action}`;
-            for (let k in params) url += `&${k}=${params[k]}`;
+    const token = localStorage.getItem("otp_key_hero");
+    if (!token) throw new Error("API Key belum disetting.");
+    
+    let url = `${WORKER_URL}?api_key=${token}&action=${action}`;
+    for (let k in params) url += `&${k}=${params[k]}`;
 
-            try {
-                const res = await fetch(url, { cache: "no-store" });
-                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-                let textResponse = await res.text();
+    try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+        let textResponse = await res.text();
 
-                if(textResponse === "BAD_KEY") throw new Error("API Key HeroSMS Salah!");
-                if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");
-                if(textResponse === "NO_NUMBERS") throw new Error("Stok Nomor Kosong!");
-                if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
-                
-                return textResponse; 
-            } catch (e) { 
-                throw new Error("Koneksi gagal/CORS. Cek Worker URL Anda!"); 
-            }
+        // Menampilkan pesan error asli dari server HeroSMS
+        if(textResponse === "BAD_KEY") throw new Error("API Key HeroSMS Salah!");
+        if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");
+        if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor untuk operator ini kosong!");
+        if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
+        if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG")) throw new Error("Layanan/Operator tidak tersedia.");
+        
+        return textResponse; 
+    } catch (e) { 
+        // Jika errornya dari server langsung (bukan karena koneksi internet putus)
+        if (e.message.includes("Stok") || e.message.includes("Salah") || e.message.includes("Kosong") || e.message.includes("tidak tersedia")) {
+            throw e;
+        }
+        throw new Error("Koneksi gagal/CORS. Cek Worker URL Anda!"); 
+    }
         }
 
         document.addEventListener("DOMContentLoaded", function() {
