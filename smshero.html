@@ -43,7 +43,7 @@
     <div class="container">
         <!-- HEADER SALDO -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (HeroSMS)</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (ID)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
@@ -68,7 +68,7 @@
 
         <!-- AREA PEMESANAN DENGAN MULTI LAYANAN -->
         <div class="dropdown-box-wrapper">
-            <label class="form-label">🛒 Setup Layanan Utama</label>
+            <label class="form-label">🛒 Setup Layanan Utama (Indonesia)</label>
             <div class="unified-order-box">
                 <select id="dropdownLayanan" class="unified-select-op" onchange="muatProdukLayanan(true)">
                     <option value="ka" selected>Shopee</option>
@@ -78,8 +78,8 @@
                 </select>
                 
                 <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
-                    <span id="labelServerTerpilih" style="color: #fff;">Pilih Negara / Tier...</span>
-                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Negara</span>
+                    <span id="labelServerTerpilih" style="color: #fff;">Pilih Operator...</span>
+                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Operator</span>
                 </div>
             </div>
             <div id="containerListDropdown" class="dropdown-list-options"></div>
@@ -115,7 +115,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Panel Diinisialisasi (Menggunakan Cloudflare Worker).
+            └> Menunggu sistem berjalan...
         </div>
     </div>
     
@@ -123,11 +123,13 @@
 
     <script>
         // =========================================================
-        // GANTI URL DI BAWAH DENGAN URL CLOUDFLARE WORKER ANDA
+        // PASTIKAN URL WORKER INI AKTIF DAN BENAR
         // =========================================================
         const WORKER_URL = "https://herosms-proxy.tiktiksatu001.workers.dev"; 
         
-        const KURS_RUBEL = 175; // Estimasi 1 Rubel = Rp 175 untuk konversi UI
+        // Asumsi kurs dollar (Dapat Anda sesuaikan)
+        const KURS_USD = 16000; 
+        const ID_NEGARA_INDONESIA = "6"; // ID Indonesia untuk protokol SMS-Activate
         
         let daftarOrderan = []; 
         let daftarServerTersedia = []; 
@@ -136,8 +138,15 @@
         let hargaProdukTerpilih = 0; 
         let siklusCek = 0;
 
-        // Daftar negara mock up untuk UI (6: ID, 48: PL, 50: RU)
-        const MASTER_NEGARA = { "6": "Indonesia", "48": "Polandia", "50": "Rusia" };
+        // Daftar operator Indonesia
+        const MASTER_OPERATOR = { 
+            "any": "Semua Operator (Random)", 
+            "telkomsel": "Telkomsel", 
+            "indosat": "Indosat", 
+            "xl": "XL / Axis", 
+            "three": "Tri (3)", 
+            "smartfren": "Smartfren" 
+        };
 
         function formatRupiah(angka) {
             return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
@@ -145,32 +154,30 @@
 
         function logConsole(msg) {
             const logBox = document.getElementById("miniConsoleLog");
-            logBox.innerHTML += `<br>└> ${msg}`;
+            logBox.innerHTML += `<br>└> <span style="color: #ffb86c">${new Date().toLocaleTimeString()}</span>: ${msg}`;
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // Fungsi fetch utama yang menembak ke Worker Cloudflare Pribadi
         async function fetchHeroAPI(action, params = {}) {
             const token = localStorage.getItem("otp_key_hero");
             if (!token) throw new Error("API Key belum disetting.");
             
-            // Build URL dengan Worker Anda
             let url = `${WORKER_URL}?api_key=${token}&action=${action}`;
             for (let k in params) url += `&${k}=${params[k]}`;
 
             try {
                 const res = await fetch(url, { cache: "no-store" });
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 let textResponse = await res.text();
 
-                // Menangani error balasan standar HeroSMS
-                if(textResponse === "BAD_KEY") throw new Error("API Key Salah/Invalid");
-                if(textResponse === "NO_BALANCE") throw new Error("Saldo Tidak Cukup");
-                if(textResponse === "NO_NUMBERS") throw new Error("Stok Nomor Kosong");
-                if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir Sementara");
+                if(textResponse === "BAD_KEY") throw new Error("API Key HeroSMS Salah!");
+                if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");
+                if(textResponse === "NO_NUMBERS") throw new Error("Stok Nomor Kosong!");
+                if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
                 
                 return textResponse; 
             } catch (e) { 
-                throw new Error(e.message || "Gagal terhubung ke Cloudflare Worker."); 
+                throw new Error("Koneksi gagal/CORS. Cek Worker URL Anda!"); 
             }
         }
 
@@ -180,8 +187,12 @@
                 document.getElementById("otpKeyHero").value = savedKey;
                 document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
                 document.getElementById("statusKeyHero").style.color = "#50fa7b";
+                logConsole("Sistem berjalan (Region: Indonesia, Kurs: USD).");
                 refreshSemuaDataLive();
-            } else toggleApiKeyDropdown();
+            } else {
+                logConsole("Silakan masukkan API Key terlebih dahulu.");
+                toggleApiKeyDropdown();
+            }
 
             const orderanLokal = localStorage.getItem("daftar_orderan_hero");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
@@ -206,50 +217,52 @@
         }
 
         async function muatProdukLayanan(autoOpen = false) {
-            if (WORKER_URL.includes("URL_WORKER_CLOUDFLARE_ANDA")) {
-                logConsole("SILAKAN UBAH WORKER_URL DI DALAM KODE DAHULU!");
-                return;
-            }
-
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
                 let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
-                let prefixLayanan = elemNamaSrv; 
 
                 if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `Mencari harga...`;
                 
-                // Ambil daftar harga dari HeroSMS
-                const resText = await fetchHeroAPI('getPrices', { service: serviceId });
+                // Fetch harga khusus negara 6 (Indonesia)
+                const resText = await fetchHeroAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });
                 
                 let data;
                 try {
                     data = JSON.parse(resText);
                 } catch(e) {
-                    throw new Error("Format JSON Harga Invalid dari Server.");
+                    throw new Error("Gagal mengambil data produk.");
+                }
+                
+                let stockID = 0;
+                let priceUSD = 0;
+                
+                // Ambil harga dan stok dari data JSON
+                if (data[ID_NEGARA_INDONESIA] && data[ID_NEGARA_INDONESIA][serviceId]) {
+                    stockID = data[ID_NEGARA_INDONESIA][serviceId].count;
+                    priceUSD = data[ID_NEGARA_INDONESIA][serviceId].cost;
+                } else {
+                    throw new Error("Stok layanan ini sedang kosong di Indonesia.");
                 }
                 
                 daftarServerTersedia = [];
-                for (let countryId in MASTER_NEGARA) {
-                    if (data[countryId] && data[countryId][serviceId]) {
-                        daftarServerTersedia.push({
-                            id: countryId,
-                            nama: MASTER_NEGARA[countryId],
-                            stock: data[countryId][serviceId].count,
-                            price: data[countryId][serviceId].cost
-                        });
-                    }
+                // Buat list berdasarkan operator, menggunakan harga dasar yang sama
+                for (let opId in MASTER_OPERATOR) {
+                    daftarServerTersedia.push({
+                        id: opId, // ID ini adalah nama operator untuk parameter getNumber
+                        nama: MASTER_OPERATOR[opId],
+                        stock: stockID, // Stok global Indonesia
+                        price: priceUSD // Harga dalam Dollar
+                    });
                 }
-
-                if (daftarServerTersedia.length === 0) throw new Error("Stok kosong di negara tersebut.");
 
                 renderDropdownOptions();
                 
                 const srv = daftarServerTersedia[0]; 
                 produkTerpilihId = srv.id;
-                namaProdukTerpilih = `${prefixLayanan} (${srv.nama})`;
+                namaProdukTerpilih = `${elemNamaSrv} (${srv.nama})`;
                 hargaProdukTerpilih = srv.price; 
                 
-                document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_RUBEL)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+                document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_USD)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
                 document.getElementById("btnPesanAksi").disabled = false;
                 if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
                 
@@ -266,7 +279,7 @@
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
                 let sel = (produkTerpilihId === srv.id) ? "selected" : "";
-                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>${srv.nama} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.price * KURS_RUBEL)}</span></div>`;
+                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>${srv.nama} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok ID)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.price * KURS_USD)}</span></div>`;
             });
             container.innerHTML = html;
         }
@@ -277,7 +290,7 @@
             produkTerpilihId = srv.id; 
             namaProdukTerpilih = `${elemNamaSrv} (${srv.nama})`;
             hargaProdukTerpilih = srv.price; 
-            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_RUBEL)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_USD)} <span style="font-size:11px;">(${srv.stock} stok ID)</span>`;
             document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false; renderDropdownOptions();
         }
@@ -287,7 +300,12 @@
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
-                const resText = await fetchHeroAPI('getNumber', { service: serviceId, country: produkTerpilihId });
+                // Memanggil getNumber dengan parameter operator yang dipilih
+                const resText = await fetchHeroAPI('getNumber', { 
+                    service: serviceId, 
+                    country: ID_NEGARA_INDONESIA, 
+                    operator: produkTerpilihId 
+                });
                 
                 if (resText.includes("ACCESS_NUMBER")) {
                     let parts = resText.split(":");
@@ -304,11 +322,11 @@
                         otp: "" 
                     });
                     renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
-                    logConsole(`Berhasil membeli nomor: ${phone}`);
+                    logConsole(`Berhasil order: ${phone}`);
                 } else {
                     throw new Error(resText);
                 }
-            } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
+            } catch (e) { alert("Gagal order: " + e.message); logConsole(e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
         }
 
         function simpanKonfigurasi() {
@@ -326,9 +344,9 @@
                 const res = await fetchHeroAPI('getBalance'); 
                 if (res.includes("ACCESS_BALANCE")) {
                     let saldoApi = parseFloat(res.split(":")[1] || 0);
-                    document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoApi * KURS_RUBEL);
+                    document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoApi * KURS_USD);
                 }
-            } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; }
+            } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; logConsole(e.message); }
         }
 
         async function eksekusiBatalkanServer(index) {
@@ -336,12 +354,12 @@
             try { 
                 await fetchHeroAPI('setStatus', { status: 8, id: item.order_id }); 
                 item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Dibatalkan!"); 
-            } catch (e) {}
+            } catch (e) { logConsole("Gagal batal: " + e.message); }
         }
         
         async function eksekusiResend(index) {
             const item = daftarOrderan[index];
-            try { await fetchHeroAPI('setStatus', { status: 3, id: item.order_id }); showToast("Kirim Ulang OTP diminta."); } catch (e) {}
+            try { await fetchHeroAPI('setStatus', { status: 3, id: item.order_id }); showToast("Kirim Ulang diminta."); } catch (e) {}
         }
 
         async function eksekusiSelesai(index) {
@@ -397,7 +415,7 @@
 
                 if (item.status === "completed" || item.status === "history_received") {
                     let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
-                    let teksHargaHistory = item.harga ? formatRupiah(item.harga * KURS_RUBEL) : '-';
+                    let teksHargaHistory = item.harga ? formatRupiah(item.harga * KURS_USD) : '-';
 
                     htmlRiwayat += `
                     <div class="history-card">
