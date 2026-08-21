@@ -123,11 +123,10 @@
 
     <script>
         // =========================================================
-        // CLOUDFLARE WORKER PRIBADI ANDA
+        // URL WORKER SUDAH DIPERBAIKI (MENGGUNAKAN HTTPS)
         // =========================================================
         const WORKER_URL = "https://herosms-proxy.tiktiksatu001.workers.dev"; 
         
-        // Asumsi kurs dollar (Dapat Anda sesuaikan)
         const KURS_USD = 16000; 
         const ID_NEGARA_INDONESIA = "6"; 
         
@@ -138,7 +137,6 @@
         let hargaProdukTerpilih = 0; 
         let siklusCek = 0;
 
-        // Daftar operator Indonesia
         const MASTER_OPERATOR = { 
             "any": "Semua Operator (Random)", 
             "telkomsel": "Telkomsel", 
@@ -170,7 +168,6 @@
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 let textResponse = await res.text();
 
-                // Pengecekan Error Asli Server
                 if(textResponse === "BAD_KEY") throw new Error("API Key HeroSMS Salah!");
                 if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");
                 if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor untuk operator ini kosong!");
@@ -179,7 +176,6 @@
                 
                 return textResponse; 
             } catch (e) { 
-                // Melempar error spesifik agar tidak terbaca sebagai "Koneksi gagal"
                 if (e.message.includes("Stok") || e.message.includes("Salah") || e.message.includes("Kosong") || e.message.includes("tidak tersedia") || e.message.includes("Diblokir")) {
                     throw e;
                 }
@@ -193,7 +189,7 @@
                 document.getElementById("otpKeyHero").value = savedKey;
                 document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
                 document.getElementById("statusKeyHero").style.color = "#50fa7b";
-                logConsole("Sistem berjalan (Waktu & Fitur Blokir Antrian Aktif).");
+                logConsole("Sistem berjalan (Pesanan Baru Diprioritaskan, Lama Diblokir).");
                 refreshSemuaDataLive();
             } else {
                 logConsole("Silakan masukkan API Key terlebih dahulu.");
@@ -314,8 +310,6 @@
                     let orderId = parts[1];
                     let phone = parts[2];
 
-                    let waktuTungguMaksimal = 300; // Kembalikan ke 300 detik (5 Menit) untuk semua antrian
-
                     daftarOrderan.unshift({ 
                         order_id: orderId, 
                         phone: phone, 
@@ -324,7 +318,7 @@
                         waktu_dibuat: Date.now(), 
                         status: "pending", 
                         otp: "",
-                        max_wait: waktuTungguMaksimal
+                        max_wait: 300 // Kembali disamaratakan 5 Menit (300 detik)
                     });
                     renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
                     logConsole(`Berhasil order: ${phone}`);
@@ -378,12 +372,12 @@
         async function mesinCekSmsTerpusat() {
             siklusCek++; 
 
-            // Cari index antrian yang paling lama (paling tua) di antara yang aktif
-            let oldestActiveOrderIndex = -1;
-            for (let j = daftarOrderan.length - 1; j >= 0; j--) {
+            // Cari index pesanan TERBARU (paling atas) yang sedang aktif
+            let activeOrderIndex = -1;
+            for (let j = 0; j < daftarOrderan.length; j++) {
                 if (daftarOrderan[j].status === "pending" || daftarOrderan[j].status === "received") {
-                    oldestActiveOrderIndex = j;
-                    break; // Ditemukan yang paling lama
+                    activeOrderIndex = j;
+                    break; // Ambil yang indeksnya paling kecil (paling atas di daftar)
                 }
             }
 
@@ -391,9 +385,9 @@
                 let i = daftarOrderan[index];
                 if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
                 
-                // BLOKIR CEK OTP UNTUK ANTRIAN KE-2 DST.
-                // Jika pesanan ini statusnya pending TAPI bukan pesanan yang paling lama, skip cek API-nya.
-                if (i.status === "pending" && index !== oldestActiveOrderIndex) {
+                // BLOKIR JIKA BUKAN PESANAN TERBARU
+                // Pesanan yang index-nya lebih besar dari activeOrderIndex (antrian ke-2, ke-3 dst di bawahnya) akan dilewati proses ceknya.
+                if (i.status === "pending" && index !== activeOrderIndex) {
                     continue; 
                 }
 
@@ -423,11 +417,11 @@
             const containerRiwayat = document.getElementById("containerRiwayat");
             let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
 
-            // Cari index antrian paling lama (untuk visual UI)
-            let oldestActiveOrderIndex = -1;
-            for (let j = daftarOrderan.length - 1; j >= 0; j--) {
+            // Cari index pesanan TERBARU (paling atas) yang sedang aktif untuk UI
+            let activeOrderIndex = -1;
+            for (let j = 0; j < daftarOrderan.length; j++) {
                 if (daftarOrderan[j].status === "pending" || daftarOrderan[j].status === "received") {
-                    oldestActiveOrderIndex = j;
+                    activeOrderIndex = j;
                     break;
                 }
             }
@@ -436,7 +430,6 @@
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 let maxWait = item.max_wait || 300; 
                 
-                // Batal otomatis setelah waktu habis (sekarang 5 menit untuk semua)
                 if (item.status === "pending" && sec >= maxWait) { 
                     item.status = "cancelled"; fetchHeroAPI('setStatus', { status: 8, id: item.order_id }).catch(e=>console.log(e)); 
                 }
@@ -486,12 +479,12 @@
 
                 let textStat = `⚡ Cek OTP... (${sec}s)`; 
                 
-                // Indikator UI untuk Antrian ke-2 yang diblokir
-                if (item.status === "pending" && index !== oldestActiveOrderIndex) {
+                // Indikator UI: Jika bukan urutan teratas (bukan yang baru dipesan), maka diblokir
+                if (item.status === "pending" && index !== activeOrderIndex) {
                     textStat = `⏸️ Diblokir (Menunggu Antrian) - Batal otomatis dlm ${sisa}s`;
                 }
 
-                let colStat = (item.status === "pending" && index !== oldestActiveOrderIndex) ? "#ff5555" : "#ffb86c"; 
+                let colStat = (item.status === "pending" && index !== activeOrderIndex) ? "#ff5555" : "#ffb86c"; 
                 let btnAksi = ""; 
                 let kotakOtp = "";
 
@@ -537,7 +530,7 @@
                 </div>`;
             });
 
-            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
+            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>`;
             containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
             document.getElementById("countRiwayatBadge").innerText = countRiwayat;
         }
