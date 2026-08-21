@@ -6,6 +6,78 @@
     <title>Generator Data Futuristik v3.6</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    
+    <!-- Firebase SDK (Modular v10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYx-nRn5tusVMNSkze4tp-pwbjEyg-y5Y",
+            authDomain: "data-publik.firebaseapp.com",
+            databaseURL: "https://data-publik-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "data-publik",
+            storageBucket: "data-publik.firebasestorage.app",
+            messagingSenderId: "376849069775",
+            appId: "1:376849069775:web:1cf9c6857f71935ed0e9ba"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Fungsi Global untuk Firebase Publik
+        window.tambahCatatanPublik = function() {
+            const input = document.getElementById("inputCatatanPublik");
+            const teks = input.value.trim();
+            if(!teks) return;
+
+            const dbRef = ref(db, 'catatan_publik');
+            push(dbRef, {
+                pesan: teks,
+                waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date().toLocaleDateString('id-ID')
+            }).then(() => {
+                input.value = "";
+                showToast("Catatan Publik Terkirim! 🚀");
+            });
+        };
+
+        window.hapusCatatanPublik = function(id) {
+            const dbRef = ref(db, 'catatan_publik/' + id);
+            remove(dbRef).then(() => {
+                showToast("Catatan dihapus! 🗑️");
+            });
+        };
+
+        // Pantau Perubahan Realtime
+        const dbRef = ref(db, 'catatan_publik');
+        onValue(dbRef, (snapshot) => {
+            const wadah = document.getElementById("wadahCatatanPublikList");
+            wadah.innerHTML = "";
+            
+            const data = snapshot.val();
+            if (!data) {
+                wadah.innerHTML = '<div style="color:#6e678a; font-size:12px; text-align:center; margin-top:20px;">Belum ada catatan publik. Jadilah yang pertama menulis!</div>';
+                return;
+            }
+
+            Object.keys(data).forEach((key, index) => {
+                const item = data[key];
+                const row = document.createElement("div");
+                row.className = "row-copas-alarm";
+                row.innerHTML = `
+                    <div style="font-size:12px; color:#00ffcc; width:20px; font-weight:bold; margin-top: 5px;">${index + 1}.</div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; z-index: 2;">
+                        <div style="font-size: 13px; color: #fff; word-break: break-all; white-space: pre-wrap;">${item.pesan}</div>
+                        <div style="font-size: 10px; color: #8e85b3;"><i class="fa-regular fa-clock"></i> ${item.waktu || ''}</div>
+                    </div>
+                    <button class="btn-hapus-copas" onclick="hapusCatatanPublik('${key}')"><i class="fa-solid fa-trash"></i></button>
+                `;
+                wadah.appendChild(row);
+            });
+        });
+    </script>
+
     <style>
         * { box-sizing: border-box; transition: all 0.3s ease; }
         body { 
@@ -37,7 +109,6 @@
         .btn-admin-control { margin-top: 8px; padding: 8px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #3d3463; background: #1a1535; color: #d6c7ff; cursor: pointer; width: 100%; }
         .notes-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .btn-refresh-note { background: #1a1535; border: 1px solid #3d3463; color: #00ffcc; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: bold; }
-        .btn-refresh-note:hover { background: #3d3463; box-shadow: 0 0 8px rgba(0, 255, 204, 0.4); }
         .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
         
         .note-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #1a1535; border: 1px solid #3d3463; border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; }
@@ -47,7 +118,6 @@
         .note-num-badge { background: rgba(0, 255, 204, 0.1); color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.3); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; flex-shrink: 0; user-select: none; }
         .note-row.admin-mode .note-num-badge { background: rgba(255, 0, 127, 0.15); color: #ff007f; border-color: rgba(255, 0, 127, 0.4); }
         .note-text-input { flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #ff007f; border-radius: 4px; outline: none; color: #fff; font-size: 14px; padding: 6px 10px; display: block; width: 100%; font-family: inherit; }
-        .note-text-input:focus { background: rgba(0, 0, 0, 0.6); border-color: #00ffcc; box-shadow: 0 0 8px rgba(0, 255, 204, 0.3); }
         .note-display-wrapper { flex: 1; font-size: 14px; word-break: break-all; display: flex; align-items: center; justify-content: space-between; }
         .text-before-pipe { color: #ffffff; font-weight: 600; }
         .text-after-pipe { color: #8e85b3; font-style: italic; font-size: 13px; margin-left: 4px; }
@@ -73,81 +143,27 @@
         #hasil-scan-input { width: 90%; max-width: 350px; height: 45px; font-size: 22px; font-weight: bold; margin: 15px 0; padding: 10px; text-align: center; letter-spacing: 2px; border: 2px solid #3d3463; border-radius: 8px; background-color: #1a1535; color: #00ffcc; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
         #status-scanner { color: #aaa; font-weight: bold; margin-bottom: 10px; min-height: 20px; font-size: 13px; }
 
-        /* === STYLING TABEL ALARM COPAS === */
+        /* === STYLING TABEL ALARM COPAS & PUBLIK === */
         .header-copas { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .btn-tambah-copas { background: #00ffcc; color: #0f0c1b; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; padding: 4px 8px; }
         .btn-tambah-copas:hover { background: #00cca3; }
         .wadah-copas-tabel { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
         
         .row-copas-alarm { 
-            position: relative; 
-            z-index: 1; 
-            overflow: hidden; 
-            display: flex; 
-            gap: 8px; 
-            align-items: flex-start; 
-            background: rgba(0,0,0,0.2); 
-            padding: 12px; 
-            border-radius: 8px; 
-            border: 1px solid #3d3463; 
-            transition: all 0.3s ease; 
-            flex-shrink: 0; 
+            position: relative; z-index: 1; overflow: hidden; display: flex; gap: 8px; align-items: flex-start; 
+            background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid #3d3463; transition: all 0.3s ease; flex-shrink: 0; 
         }
-        .row-copas-alarm.alarm-nyala { 
-            border-color: transparent; 
-            box-shadow: 0 0 12px rgba(255, 0, 127, 0.5);
-        }
+        .row-copas-alarm.alarm-nyala { border-color: transparent; box-shadow: 0 0 12px rgba(255, 0, 127, 0.5); }
         .row-copas-alarm.alarm-nyala::before {
-            content: '';
-            position: absolute;
-            z-index: -2;
-            left: -50%;
-            top: -50%;
-            width: 200%;
-            height: 200%;
-            background: conic-gradient(transparent, #ff007f, #00ffcc, transparent 30%);
-            animation: putarGlow 2s linear infinite;
+            content: ''; position: absolute; z-index: -2; left: -50%; top: -50%; width: 200%; height: 200%;
+            background: conic-gradient(transparent, #ff007f, #00ffcc, transparent 30%); animation: putarGlow 2s linear infinite;
         }
-        .row-copas-alarm.alarm-nyala::after {
-            content: '';
-            position: absolute;
-            z-index: -1;
-            inset: 2px;
-            background: #141026; 
-            border-radius: 6px;
-        }
-        @keyframes putarGlow {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .input-copas-ket { 
-            flex: 1; 
-            background: transparent; 
-            border: none; 
-            border-bottom: 1px dashed #6e678a; 
-            color: #fff; 
-            outline: none; 
-            font-size: 13px; 
-            font-family: inherit; 
-            width: 100%; 
-            resize: vertical; 
-            min-height: 25px;
-            padding-bottom: 4px;
-        }
-        .input-copas-ket:focus { border-bottom-color: #00ffcc; }
+        .row-copas-alarm.alarm-nyala::after { content: ''; position: absolute; z-index: -1; inset: 2px; background: #141026; border-radius: 6px; }
+        @keyframes putarGlow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .input-copas-waktu { 
-            width: 100%; 
-            max-width: 180px;
-            background: #1a1535; 
-            border: 1px solid #3d3463; 
-            color: #00ffcc; 
-            border-radius: 6px; 
-            font-size: 11px; 
-            padding: 6px 10px; 
-            outline: none; 
-            font-family: inherit; 
-        }
+        .input-copas-ket { flex: 1; background: transparent; border: none; border-bottom: 1px dashed #6e678a; color: #fff; outline: none; font-size: 13px; font-family: inherit; width: 100%; resize: vertical; min-height: 25px; padding-bottom: 4px; }
+        .input-copas-ket:focus { border-bottom-color: #00ffcc; }
+        .input-copas-waktu { width: 100%; max-width: 180px; background: #1a1535; border: 1px solid #3d3463; color: #00ffcc; border-radius: 6px; font-size: 11px; padding: 6px 10px; outline: none; font-family: inherit; }
         .btn-hapus-copas { background: transparent; border: none; color: #ff4a4a; cursor: pointer; font-size: 16px; padding: 4px; margin-top: -2px; }
     </style>
 </head>
@@ -170,10 +186,10 @@
 
 <div style="width: 100%; max-width: 900px;">
     <div id="wadahOTP1" class="wadah-iframe-server">
-        <iframe src="smsbower.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+        <iframe src="otpinstan.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
     </div>
     <div id="wadahOTP2" class="wadah-iframe-server">
-        <iframe src="smshero.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+        <iframe src="smscode.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
     </div>
 </div>
 
@@ -228,16 +244,23 @@
                     <div style="font-size: 13px; font-weight: bold; color: #aaa; text-align: left;">DATA / COPAS (ALARM)</div>
                     <button type="button" class="btn-tambah-copas" onclick="tambahDataCopas()">+ Tambah</button>
                 </div>
-                <div id="wadahDataCopas" class="wadah-copas-tabel">
-                    <!-- Baris tabel alarm dimuat di sini -->
-                </div>
+                <div id="wadahDataCopas" class="wadah-copas-tabel"></div>
                 <div style="height: 10px;"></div>
             </div>
             
+            <!-- === MENU BARU: CATATAN PUBLIK (FIREBASE) === -->
             <div>
-                <div style="font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 5px; text-align: left;">LAIN-LAIN / TODO</div>
-                <textarea id="userNotes3" placeholder="Info lainnya..." style="width: 100%; min-height: 220px; padding: 12px; background: #1a1535; color: #fff; border: 1px solid #3d3463; border-radius: 8px;" oninput="saveLocalNotes('userNotes3', 'aplikasi_notes_3')"></textarea>
-                <div style="height: 31px;"></div>
+                <div class="header-copas">
+                    <div style="font-size: 13px; font-weight: bold; color: #00ffcc; text-align: left;"><i class="fa-solid fa-globe"></i> CATATAN PUBLIK</div>
+                </div>
+                <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                    <input type="text" id="inputCatatanPublik" class="input-copas-ket" placeholder="Tulis catatan publik..." style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; border: 1px solid #3d3463;">
+                    <button type="button" class="btn-tambah-copas" onclick="tambahCatatanPublik()">Kirim</button>
+                </div>
+                <div id="wadahCatatanPublikList" class="wadah-copas-tabel">
+                    <!-- Data Publik Realtime Muncul di Sini -->
+                </div>
+                <div style="height: 10px;"></div>
             </div>
         </div>
     </div>
@@ -278,7 +301,6 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        // === LOGIK MENU DROPDOWN ===
         function toggleServerPanel(wadahId, panahId) {
             const wadah = document.getElementById(wadahId);
             const panah = document.getElementById(panahId);
@@ -300,12 +322,11 @@
             } else {
                 wadah.style.display = "none";
                 panah.style.transform = "rotate(0deg)";
-                
                 if(wadahId === 'wadahScanner') stopScannerCamera();
             }
         }
 
-        // === LOGIK FITUR SCANNER ===
+        // === LOGIK SCANNER ===
         const video = document.getElementById('kamera');
         const canvasScanner = document.getElementById('canvasScanner');
         const ctxScanner = canvasScanner.getContext('2d');
@@ -344,7 +365,6 @@
         btnScan.addEventListener('click', () => {
             if(!scannerStream) return;
             video.pause(); 
-            
             btnScan.style.display = "none";
             btnUlangi.style.display = "inline-block";
             btnCopyScanner.disabled = true;
@@ -373,7 +393,6 @@
 
             canvasScanner.width = safeW;
             canvasScanner.height = safeH;
-            
             ctxScanner.filter = 'grayscale(100%) contrast(300%) brightness(120%)';
             ctxScanner.drawImage(video, cropX, cropY, safeW, safeH, 0, 0, safeW, safeH);
             
@@ -389,7 +408,7 @@
                     btnCopyScanner.disabled = false;
                 } else {
                     statusScanner.innerText = "Nomor tidak terdeteksi. Silakan ulangi.";
-                    statusScanner.style.color = "#ff4a4a";
+                    statusScanner.style.color = "#d9534f";
                 }
             }).catch(err => {
                 statusScanner.innerText = "Gagal memindai gambar.";
@@ -420,12 +439,6 @@
             const simpanan = localStorage.getItem("aplikasi_notes_2_tabel");
             if (simpanan) {
                 dataCopasTabel = JSON.parse(simpanan);
-            } else {
-                const lama = localStorage.getItem("aplikasi_notes_2");
-                if (lama && lama.trim() !== "") {
-                    dataCopasTabel.push({ id: Date.now(), ket: lama, waktu: "" });
-                    localStorage.removeItem("aplikasi_notes_2");
-                }
             }
             renderDataCopas();
         }
@@ -438,22 +451,19 @@
         function renderDataCopas() {
             const wadah = document.getElementById("wadahDataCopas");
             wadah.innerHTML = "";
-            
             if (dataCopasTabel.length === 0) {
                 wadah.innerHTML = '<div style="color:#6e678a; font-size:12px; text-align:center; margin-top:20px;">Belum ada data. Klik + Tambah.</div>';
                 return;
             }
-
             dataCopasTabel.forEach((item, index) => {
                 const row = document.createElement("div");
                 row.className = "row-copas-alarm";
                 row.id = `row-copas-${item.id}`;
-                
                 row.innerHTML = `
                     <div style="font-size:12px; color:#aaa; width:20px; font-weight:bold; margin-top: 5px;">${index + 1}.</div>
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; z-index: 2;">
                         <div style="display: flex; gap: 8px; align-items: flex-start; width: 100%;">
-                            <textarea class="input-copas-ket" placeholder="Keterangan (bisa lebih dari 1 baris)..." onchange="updateDataCopas(${item.id}, 'ket', this.value)">${item.ket}</textarea>
+                            <textarea class="input-copas-ket" placeholder="Keterangan..." onchange="updateDataCopas(${item.id}, 'ket', this.value)">${item.ket}</textarea>
                             <button class="btn-hapus-copas" onclick="hapusDataCopas(${item.id})"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
@@ -475,10 +485,7 @@
 
         function updateDataCopas(id, field, value) {
             const item = dataCopasTabel.find(x => x.id === id);
-            if (item) {
-                item[field] = value;
-                simpanDataCopas();
-            }
+            if (item) { item[field] = value; simpanDataCopas(); }
         }
 
         function hapusDataCopas(id) {
@@ -491,49 +498,32 @@
             const sekarang = new Date().getTime();
             dataCopasTabel.forEach(item => {
                 const rowEl = document.getElementById(`row-copas-${item.id}`);
-                if (rowEl) {
-                    if (item.waktu) {
-                        const waktuAlarm = new Date(item.waktu).getTime();
-                        if (sekarang >= waktuAlarm) {
-                            rowEl.classList.add("alarm-nyala");
-                        } else {
-                            rowEl.classList.remove("alarm-nyala");
-                        }
-                    } else {
-                        rowEl.classList.remove("alarm-nyala");
-                    }
+                if (rowEl && item.waktu) {
+                    if (sekarang >= new Date(item.waktu).getTime()) rowEl.classList.add("alarm-nyala");
+                    else rowEl.classList.remove("alarm-nyala");
                 }
             });
         }
-        
         setInterval(cekAlarmCopas, 5000);
 
-
-        // === LOGIK BAWAAN APLIKASI UTAMA ===
+        // === LOGIK BAWAAN UTAMA ===
         let DATA_DUMMY_DATABASE = [];
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
         let currentFileSha = ""; 
         let rawNotesLines = [];
-
         const DEFAULT_USER = "bgszp";
         const DEFAULT_REPO = "bgszp.github.io";
 
         document.addEventListener("DOMContentLoaded", function() {
             fetch(`./data_pengguna.json?t=${Date.now()}`).then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
-
             if(!localStorage.getItem("git_user")) document.getElementById("gitUser").value = DEFAULT_USER;
             else document.getElementById("gitUser").value = localStorage.getItem("git_user");
-
             if(!localStorage.getItem("git_repo")) document.getElementById("gitRepo").value = DEFAULT_REPO;
             else document.getElementById("gitRepo").value = localStorage.getItem("git_repo");
-
             if(localStorage.getItem("git_token")) document.getElementById("gitToken").value = localStorage.getItem("git_token");
             
-            if(localStorage.getItem("aplikasi_notes_3")) document.getElementById("userNotes3").value = localStorage.getItem("aplikasi_notes_3");
-
             muatDataCopas();
-
             autoFetchForEveryone();
         });
 
@@ -543,20 +533,15 @@
             localStorage.setItem("git_token", document.getElementById("gitToken").value.trim());
         }
 
-        function saveLocalNotes(id, key) { localStorage.setItem(key, document.getElementById(id).value); }
-
         function eksekusiSalinTeks(teks) {
             if (navigator.clipboard && window.isSecureContext) {
                 return navigator.clipboard.writeText(teks);
             } else {
                 const textArea = document.createElement("textarea");
                 textArea.value = teks;
-                textArea.style.position = "fixed"; 
-                textArea.style.left = "-999999px";
-                textArea.style.top = "-999999px";
+                textArea.style.position = "fixed"; textArea.style.left = "-999999px"; textArea.style.top = "-999999px";
                 document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
+                textArea.focus(); textArea.select();
                 try { document.execCommand('copy'); } catch (err) {}
                 document.body.removeChild(textArea);
                 return Promise.resolve();
@@ -566,17 +551,13 @@
         function renderNotesList(fullText) {
             const container = document.getElementById("notesContainer");
             container.innerHTML = "";
-            
             rawNotesLines = fullText.split("\n");
-            if(rawNotesLines.length === 0 || (rawNotesLines.length === 1 && rawNotesLines[0].trim() === "")) { 
-                rawNotesLines = [""]; 
-            }
+            if(rawNotesLines.length === 0 || (rawNotesLines.length === 1 && rawNotesLines[0].trim() === "")) rawNotesLines = [""]; 
 
             rawNotesLines.forEach((text, index) => {
                 const rowNum = index + 1;
                 const rowDiv = document.createElement("div");
                 rowDiv.className = isAdminAuthenticated ? "note-row admin-mode" : "note-row";
-
                 const badge = document.createElement("div");
                 badge.className = "note-num-badge";
                 badge.innerText = `[${rowNum}]`;
@@ -588,39 +569,25 @@
                     inputField.id = `inp-note-${index}`;
                     inputField.className = "note-text-input";
                     inputField.value = text;
-                    inputField.placeholder = "Ketik catatan di sini (Enter untuk baris baru)...";
-                    inputField.onkeydown = function(e) {
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            insertNewRowAfter(index);
-                        }
-                    };
+                    inputField.placeholder = "Ketik catatan...";
+                    inputField.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); insertNewRowAfter(index); } };
                     rowDiv.appendChild(inputField);
                 } else {
                     const displayWrapper = document.createElement("div");
                     displayWrapper.className = "note-display-wrapper";
-                    
                     if(text.includes("|")) {
                         const parts = text.split("|");
                         displayWrapper.innerHTML = `<div><span class="text-before-pipe">${parts[0]}</span><span class="text-after-pipe">|${parts.slice(1).join("|")}</span></div>`;
                     } else {
                         displayWrapper.innerHTML = `<div><span class="text-before-pipe">${text || '<span style="color:#555;">(Baris Kosong)</span>'}</span></div>`;
                     }
-                    
                     displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`;
                     rowDiv.appendChild(displayWrapper);
-
                     rowDiv.onclick = function() {
-                        const currentInpValue = text;
-                        if(currentInpValue.trim() !== "") {
-                            let finalCopyText = currentInpValue;
-                            if(currentInpValue.includes("|")) { 
-                                finalCopyText = currentInpValue.split("|")[0].trim(); 
-                            }
+                        if(text.trim() !== "") {
+                            let finalCopyText = text.includes("|") ? text.split("|")[0].trim() : text;
                             if(finalCopyText !== "") {
-                                eksekusiSalinTeks(finalCopyText).then(() => { 
-                                    showToast(`Baris ${rowNum} Disalin! ✨`); 
-                                });
+                                eksekusiSalinTeks(finalCopyText).then(() => { showToast(`Baris ${rowNum} Disalin! ✨`); });
                             }
                         }
                     };
@@ -653,7 +620,6 @@
         async function autoFetchForEveryone() {
             const statusLabel = document.getElementById("syncStatus");
             statusLabel.innerText = "(Memantau Live...)";
-            
             const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
             const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
             const token = document.getElementById("gitToken").value.trim();
@@ -661,39 +627,25 @@
             try {
                 const headers = {};
                 if(token) headers["Authorization"] = `token ${token}`;
-                
-                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
-                    headers: headers,
-                    cache: "no-store"
-                });
-                
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, { headers: headers, cache: "no-store" });
                 if(res.ok) {
                     const data = await res.json();
                     currentFileSha = data.sha; 
-                    const textData = decodeURIComponent(escape(atob(data.content))); 
-                    renderNotesList(textData);
+                    renderNotesList(decodeURIComponent(escape(atob(data.content))));
                     statusLabel.innerText = "(Mode Pantau Aktif - Instan)";
                     statusLabel.style.color = "#00ffcc";
                     return; 
                 }
-                throw new Error("Gagal akses API");
+                throw new Error();
             } catch(e) {
                 try {
                     const resLocal = await fetch(`./catatan_utama.txt?t=${Date.now()}`);
                     if(resLocal.ok) {
-                        const textData = await resLocal.text();
-                        renderNotesList(textData);
+                        renderNotesList(await resLocal.text());
                         statusLabel.innerText = "(Mode Pantau Aktif - Delay)";
                         statusLabel.style.color = "#00ffcc";
-                        fetchShaQuietly();
-                    } else {
-                        renderNotesList("");
-                        statusLabel.innerText = "(Catatan Kosong)";
-                    }
-                } catch(err) {
-                    statusLabel.innerText = "(Gagal Memuat)";
-                    statusLabel.style.color = "#ff4a4a";
-                }
+                    } else { renderNotesList(""); statusLabel.innerText = "(Kosong)"; }
+                } catch(err) { statusLabel.innerText = "(Gagal Memuat)"; statusLabel.style.color = "#ff4a4a"; }
             }
         }
 
@@ -703,13 +655,8 @@
             const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
             if(!token) return;
             try {
-                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
-                    headers: { "Authorization": `token ${token}` }
-                });
-                if(res.ok) {
-                    const data = await res.json();
-                    currentFileSha = data.sha;
-                }
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, { headers: { "Authorization": `token ${token}` } });
+                if(res.ok) { const data = await res.json(); currentFileSha = data.sha; }
             } catch(e){}
         }
 
@@ -729,37 +676,23 @@
                     btnAdmin.style.background = "#ff007f";
                     iconLock.className = "fa-solid fa-lock-open";
                     showToast("Mode Admin Terbuka! 🔓");
-                } else if (inputPin !== null) { alert("PIN Salah! Akses ditolak."); }
+                } else if (inputPin !== null) { alert("PIN Salah!"); }
             } else {
                 const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
                 const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
                 const token = document.getElementById("gitToken").value.trim();
-                
-                if(!token) {
-                    alert("Gagal Menyimpan! Isi GITHUB TOKEN terlebih dahulu.");
-                    return;
-                }
+                if(!token) { alert("Isi GITHUB TOKEN terlebih dahulu."); return; }
 
                 statusLabel.innerText = "(Mengupload...)";
                 btnAdmin.disabled = true;
-
                 const combinedText = packInputsToString();
-                const base64Content = btoa(unescape(encodeURIComponent(combinedText)));
-                const bodyPayload = {
-                    message: "Update live text vertical pipe divider via panel",
-                    content: base64Content
-                };
-
+                const bodyPayload = { message: "Update catatan", content: btoa(unescape(encodeURIComponent(combinedText))) };
                 await fetchShaQuietly();
                 if(currentFileSha) bodyPayload.sha = currentFileSha;
 
                 try {
                     const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
-                        method: "PUT",
-                        headers: { 
-                            "Authorization": `token ${token}`, 
-                            "Content-Type": "application/json"
-                        },
+                        method: "PUT", headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
                         body: JSON.stringify(bodyPayload)
                     });
                     if(res.ok) {
@@ -771,20 +704,16 @@
                         btnAdmin.style.background = "#1a1535";
                         iconLock.className = "fa-solid fa-lock";
                         statusLabel.innerText = "(Mode Pantau Aktif)";
-                        statusLabel.style.color = "#00ffcc";
                         showToast("Tersimpan secara Global! ☁️");
                         renderNotesList(combinedText);
                     } else { throw new Error(); }
                 } catch(e) {
-                    alert("Gagal memperbarui Cloud. Periksa konfigurasi Token Anda.");
+                    alert("Gagal memperbarui Cloud.");
                     statusLabel.innerText = "(Gagal Menyimpan)";
-                } finally {
-                    btnAdmin.disabled = false;
-                }
+                } finally { btnAdmin.disabled = false; }
             }
         }
 
-        // === LOGIK FUNGSI GENERATE USERNAME TERBARU ===
         window.generateName = function() {
             if (DATA_DUMMY_DATABASE.length === 0) return;
             const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
@@ -796,29 +725,10 @@
         
         window.generateUsername = function() {
             let val = document.getElementById('genNameOutput').value;
-            let namaAsli = "";
-
-            if (!val || val.trim() === "") {
-                if (DATA_DUMMY_DATABASE.length > 0) {
-                    const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
-                    namaAsli = item.nama;
-                } else {
-                    return;
-                }
-            } else {
-                namaAsli = val.split(',')[0].trim();
-            }
-
-            // MENGEMBALIKAN GARIS BAWAH: Ganti spasi dengan garis bawah
+            let namaAsli = (!val || val.trim() === "") ? (DATA_DUMMY_DATABASE.length > 0 ? DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)].nama : "user") : val.split(',')[0].trim();
             let usernameDasar = namaAsli.replace(/\s+/g, '_').toLowerCase();
-
             if(usernameDasar === "") usernameDasar = "user";
-
-            let angkaAcak = Math.floor(Math.random() * 9999) + 10;
-            
-            // Menggabungkan nama (dengan garis bawah) dan angka acak
-            const res = usernameDasar + angkaAcak;
-            
+            const res = usernameDasar + (Math.floor(Math.random() * 9999) + 10);
             document.getElementById('genNameOutput').value = res;
             eksekusiSalinTeks(res).then(() => showToast("Username Disalin! ✨"));
             tambahKeRiwayat(res);
@@ -827,10 +737,7 @@
         function tambahKeRiwayat(t) {
             const list = document.getElementById('historyList'); const item = document.createElement('div');
             item.className = 'history-item'; item.innerText = t; 
-            item.onclick = function() { 
-                document.getElementById('genNameOutput').value = t;
-                eksekusiSalinTeks(t).then(() => showToast("Berhasil Disalin! ✨"));
-            };
+            item.onclick = function() { document.getElementById('genNameOutput').value = t; eksekusiSalinTeks(t).then(() => showToast("Disalin! ✨")); };
             list.insertBefore(item, list.firstChild);
         }
         function clearHistory() { document.getElementById('historyList').innerHTML = ''; }
