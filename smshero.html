@@ -125,11 +125,11 @@
         // =========================================================
         // PASTIKAN URL WORKER INI AKTIF DAN BENAR
         // =========================================================
-        const WORKER_URL = "https://herosms-proxy.tiktiksatu001.workers.dev"; 
+        const WORKER_URL = "URL_WORKER_ANDA_DISINI"; 
         
         // Asumsi kurs dollar (Dapat Anda sesuaikan)
-        const KURS_USD = 17771; 
-        const ID_NEGARA_INDONESIA = "6"; // ID Indonesia untuk protokol SMS-Activate
+        const KURS_USD = 17691; 
+        const ID_NEGARA_INDONESIA = "6"; 
         
         let daftarOrderan = []; 
         let daftarServerTersedia = []; 
@@ -159,32 +159,36 @@
         }
 
         async function fetchHeroAPI(action, params = {}) {
-    const token = localStorage.getItem("otp_key_hero");
-    if (!token) throw new Error("API Key belum disetting.");
-    
-    let url = `${WORKER_URL}?api_key=${token}&action=${action}`;
-    for (let k in params) url += `&${k}=${params[k]}`;
+            const token = localStorage.getItem("otp_key_hero");
+            if (!token) throw new Error("API Key belum disetting.");
+            
+            if (WORKER_URL === "URL_WORKER_ANDA_DISINI") {
+                throw new Error("TOLONG GANTI WORKER_URL DI KODE HTML!");
+            }
 
-    try {
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-        let textResponse = await res.text();
+            let url = `${WORKER_URL}?api_key=${token}&action=${action}`;
+            for (let k in params) url += `&${k}=${params[k]}`;
 
-        // Menampilkan pesan error asli dari server HeroSMS
-        if(textResponse === "BAD_KEY") throw new Error("API Key HeroSMS Salah!");
-        if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");
-        if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor untuk operator ini kosong!");
-        if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
-        if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG")) throw new Error("Layanan/Operator tidak tersedia.");
-        
-        return textResponse; 
-    } catch (e) { 
-        // Jika errornya dari server langsung (bukan karena koneksi internet putus)
-        if (e.message.includes("Stok") || e.message.includes("Salah") || e.message.includes("Kosong") || e.message.includes("tidak tersedia")) {
-            throw e;
-        }
-        throw new Error("Koneksi gagal/CORS. Cek Worker URL Anda!"); 
-    }
+            try {
+                const res = await fetch(url, { cache: "no-store" });
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                let textResponse = await res.text();
+
+                // Pengecekan Error Asli Server
+                if(textResponse === "BAD_KEY") throw new Error("API Key HeroSMS Salah!");
+                if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");
+                if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor untuk operator ini kosong!");
+                if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
+                if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG")) throw new Error("Layanan/Operator tidak tersedia.");
+                
+                return textResponse; 
+            } catch (e) { 
+                // Melempar error spesifik agar tidak terbaca sebagai "Koneksi gagal"
+                if (e.message.includes("Stok") || e.message.includes("Salah") || e.message.includes("Kosong") || e.message.includes("tidak tersedia") || e.message.includes("Diblokir")) {
+                    throw e;
+                }
+                throw new Error("Koneksi gagal/CORS. Cek Worker URL Anda!"); 
+            }
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -193,7 +197,7 @@
                 document.getElementById("otpKeyHero").value = savedKey;
                 document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
                 document.getElementById("statusKeyHero").style.color = "#50fa7b";
-                logConsole("Sistem berjalan (Region: Indonesia, Kurs: USD).");
+                logConsole("Sistem berjalan (Region: Indonesia, Antrian Dinamis 5M/2M).");
                 refreshSemuaDataLive();
             } else {
                 logConsole("Silakan masukkan API Key terlebih dahulu.");
@@ -229,7 +233,6 @@
 
                 if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `Mencari harga...`;
                 
-                // Fetch harga khusus negara 6 (Indonesia)
                 const resText = await fetchHeroAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });
                 
                 let data;
@@ -242,7 +245,6 @@
                 let stockID = 0;
                 let priceUSD = 0;
                 
-                // Ambil harga dan stok dari data JSON
                 if (data[ID_NEGARA_INDONESIA] && data[ID_NEGARA_INDONESIA][serviceId]) {
                     stockID = data[ID_NEGARA_INDONESIA][serviceId].count;
                     priceUSD = data[ID_NEGARA_INDONESIA][serviceId].cost;
@@ -251,13 +253,12 @@
                 }
                 
                 daftarServerTersedia = [];
-                // Buat list berdasarkan operator, menggunakan harga dasar yang sama
                 for (let opId in MASTER_OPERATOR) {
                     daftarServerTersedia.push({
-                        id: opId, // ID ini adalah nama operator untuk parameter getNumber
+                        id: opId, 
                         nama: MASTER_OPERATOR[opId],
-                        stock: stockID, // Stok global Indonesia
-                        price: priceUSD // Harga dalam Dollar
+                        stock: stockID, 
+                        price: priceUSD 
                     });
                 }
 
@@ -306,7 +307,6 @@
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
-                // Memanggil getNumber dengan parameter operator yang dipilih
                 const resText = await fetchHeroAPI('getNumber', { 
                     service: serviceId, 
                     country: ID_NEGARA_INDONESIA, 
@@ -318,6 +318,14 @@
                     let orderId = parts[1];
                     let phone = parts[2];
 
+                    // ==========================================
+                    // LOGIKA WAKTU TUNGGU (ANTRIAN DINAMIS)
+                    // ==========================================
+                    let aktifCount = daftarOrderan.filter(o => o.status === "pending" || o.status === "received").length;
+                    
+                    // Jika orderan aktif 0 atau 1, max wait 5 menit (300s). Jika 2 atau lebih (antrian 3 ke atas), max wait 2 menit (120s).
+                    let waktuTungguMaksimal = (aktifCount >= 2) ? 120 : 300; 
+
                     daftarOrderan.unshift({ 
                         order_id: orderId, 
                         phone: phone, 
@@ -325,10 +333,11 @@
                         harga: hargaProdukTerpilih, 
                         waktu_dibuat: Date.now(), 
                         status: "pending", 
-                        otp: "" 
+                        otp: "",
+                        max_wait: waktuTungguMaksimal // Simpan parameter waktu tunggu ke data pesanan
                     });
                     renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
-                    logConsole(`Berhasil order: ${phone}`);
+                    logConsole(`Berhasil order: ${phone} (Oto-Cancel: ${waktuTungguMaksimal/60} menit)`);
                 } else {
                     throw new Error(resText);
                 }
@@ -411,9 +420,14 @@
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
-                if (item.status === "pending" && sec >= 1200) { 
+                // Ambil batas waktu maksimal dari data orderan, jika tidak ada (versi lama) set 5 menit.
+                let maxWait = item.max_wait || 300; 
+
+                // Pembatalan otomatis (Auto-Cancel)
+                if (item.status === "pending" && sec >= maxWait) { 
                     item.status = "cancelled"; fetchHeroAPI('setStatus', { status: 8, id: item.order_id }).catch(e=>console.log(e)); 
                 }
+                
                 if (item.status === "cancelled") return; 
 
                 let d = new Date(item.waktu_dibuat);
@@ -449,7 +463,9 @@
                 }
 
                 countAktif++; 
-                let sisa = Math.max(0, 1200 - sec); 
+                
+                // Kalkulasi sisa waktu mundur
+                let sisa = Math.max(0, maxWait - sec); 
                 let cool = Math.max(0, 120 - sec); 
                 
                 if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) {
