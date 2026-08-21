@@ -12,7 +12,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyBYx-nRn5tusVMNSkze4tp-pwbjEyg-y5Y",
             authDomain: "data-publik.firebaseapp.com",
@@ -26,7 +25,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Fungsi Global untuk Firebase Publik
         window.tambahCatatanPublik = function() {
             const input = document.getElementById("inputCatatanPublik");
             const teks = input.value.trim();
@@ -49,7 +47,6 @@
             });
         };
 
-        // Pantau Perubahan Realtime
         const dbRef = ref(db, 'catatan_publik');
         onValue(dbRef, (snapshot) => {
             const wadah = document.getElementById("wadahCatatanPublikList");
@@ -57,7 +54,7 @@
             
             const data = snapshot.val();
             if (!data) {
-                wadah.innerHTML = '<div style="color:#6e678a; font-size:12px; text-align:center; margin-top:20px;">Belum ada catatan publik. Jadilah yang pertama menulis!</div>';
+                wadah.innerHTML = '<div style="color:#6e678a; font-size:12px; text-align:center; margin-top:20px;">Belum ada catatan publik.</div>';
                 return;
             }
 
@@ -105,24 +102,13 @@
         .history-item { font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .config-field { width: 100%; padding: 12px; background: #110d24; border: 1px solid #3d3463; border-radius: 8px; color: #00ffcc; font-family: monospace; font-size: 13px; text-align: center; outline: none; }
-        .btn-admin-control { margin-top: 8px; padding: 8px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #3d3463; background: #1a1535; color: #d6c7ff; cursor: pointer; width: 100%; }
-        .notes-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .btn-refresh-note { background: #1a1535; border: 1px solid #3d3463; color: #00ffcc; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: bold; }
-        .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
         
-        .note-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #1a1535; border: 1px solid #3d3463; border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; }
-        .note-row:hover { background: #251e4a; border-color: #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.25); transform: translateY(-1px); }
-        .note-row:active { transform: scale(0.98); }
-        .note-row.admin-mode { cursor: default; background: #1e1233; border-color: #ff007f; }
-        .note-num-badge { background: rgba(0, 255, 204, 0.1); color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.3); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; flex-shrink: 0; user-select: none; }
-        .note-row.admin-mode .note-num-badge { background: rgba(255, 0, 127, 0.15); color: #ff007f; border-color: rgba(255, 0, 127, 0.4); }
-        .note-text-input { flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #ff007f; border-radius: 4px; outline: none; color: #fff; font-size: 14px; padding: 6px 10px; display: block; width: 100%; font-family: inherit; }
-        .note-display-wrapper { flex: 1; font-size: 14px; word-break: break-all; display: flex; align-items: center; justify-content: space-between; }
-        .text-before-pipe { color: #ffffff; font-weight: 600; }
-        .text-after-pipe { color: #8e85b3; font-style: italic; font-size: 13px; margin-left: 4px; }
-        .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
-        .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
+        /* Styling Kotak Catatan Lokal HP */
+        .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; display: flex; flex-direction: column; gap: 8px; }
+        .note-row { display: flex; align-items: center; gap: 10px; background: #1a1535; border: 1px solid #3d3463; border-radius: 8px; padding: 10px 14px; position: relative; }
+        .note-num-badge { background: rgba(0, 255, 204, 0.1); color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.3); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; flex-shrink: 0; }
+        .note-text-input { flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #00ffcc; border-radius: 4px; outline: none; color: #fff; font-size: 14px; padding: 6px 10px; font-family: inherit; }
+        .note-text-input:focus { background: rgba(0, 0, 0, 0.6); box-shadow: 0 0 8px rgba(0, 255, 204, 0.3); }
 
         /* === STYLING MENU TOMBOL SERVER === */
         .wrapper-menu-server { width: 100%; max-width: 900px; margin-bottom: 10px; display: flex; flex-direction: row; gap: 15px; }
@@ -186,10 +172,10 @@
 
 <div style="width: 100%; max-width: 900px;">
     <div id="wadahOTP1" class="wadah-iframe-server">
-        <iframe src="otpinstan.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+        <iframe src="smsbower.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
     </div>
     <div id="wadahOTP2" class="wadah-iframe-server">
-        <iframe src="smscode.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+        <iframe src="smshero.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
     </div>
 </div>
 
@@ -202,43 +188,27 @@
         </div>
     </div>
 
-    <!-- === CATATAN UTAMA & COPAS === -->
+    <!-- === KOTAK 3 MENU UTAMA (LOKAL HP, COPAS ALARM, CATATAN PUBLIK) === -->
     <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 10px;">
-        <div class="title"><i class="fa-solid fa-cloud-sun" style="color: #00ffcc;"></i> Catatan Multi-Device</div>
-        
-        <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-            <div>
-                <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB USERNAME</label>
-                <input type="text" id="gitUser" class="config-field" placeholder="bgszp" oninput="saveGitConfig()">
-            </div>
-            <div>
-                <label style="font-size:11px; color:#aaa; display:block; text-align:left;">NAMA REPO WEB</label>
-                <input type="text" id="gitRepo" class="config-field" placeholder="bgszp.github.io" oninput="saveGitConfig()">
-            </div>
-            <div>
-                <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB TOKEN (PAT)</label>
-                <input type="password" id="gitToken" class="config-field" placeholder="github_pat_..." oninput="saveGitConfig()">
-            </div>
-        </div>
+        <div class="title"><i class="fa-solid id=" style="color: #00ffcc;"></i> Pusat Catatan &amp; Data</div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            
+            <!-- 1. CATATAN LOKAL HP -->
             <div>
-                <div class="notes-header-flex">
-                    <div style="font-size: 13px; font-weight: bold; color: #ff007f; text-align: left;">
-                        <i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA (LIVE)
-                        <span id="syncStatus" style="font-size:10px; color:#aaa; margin-left:5px;">(Membaca...)</span>
+                <div class="header-copas">
+                    <div style="font-size: 13px; font-weight: bold; color: #00ffcc; text-align: left;">
+                        <i class="fa-solid fa-mobile-screen"></i> CATATAN LOKAL HP
                     </div>
-                    <button type="button" class="btn-refresh-note" onclick="autoFetchForEveryone()">
-                        <i class="fa-solid fa-rotate"></i> Refresh
-                    </button>
+                    <button type="button" class="btn-tambah-copas" onclick="tambahBarisLokalHP()">+ Baris</button>
                 </div>
-                <div id="notesContainer" class="notes-list-container"></div>
-                <button type="button" class="btn-admin-control" id="btnAdminAuth" onclick="toggleAdminAccess()">
-                    <i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit
-                </button>
+                <div id="notesContainer" class="notes-list-container">
+                    <!-- Dimuat otomatis via Javascript -->
+                </div>
+                <div style="height: 25px;"></div>
             </div>
             
-            <!-- === TABEL ALARM COPAS === -->
+            <!-- 2. TABEL ALARM COPAS -->
             <div>
                 <div class="header-copas">
                     <div style="font-size: 13px; font-weight: bold; color: #aaa; text-align: left;">DATA / COPAS (ALARM)</div>
@@ -248,7 +218,7 @@
                 <div style="height: 10px;"></div>
             </div>
             
-            <!-- === MENU BARU: CATATAN PUBLIK (FIREBASE) === -->
+            <!-- 3. CATATAN PUBLIK (FIREBASE) -->
             <div>
                 <div class="header-copas">
                     <div style="font-size: 13px; font-weight: bold; color: #00ffcc; text-align: left;"><i class="fa-solid fa-globe"></i> CATATAN PUBLIK</div>
@@ -257,9 +227,7 @@
                     <input type="text" id="inputCatatanPublik" class="input-copas-ket" placeholder="Tulis catatan publik..." style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; border: 1px solid #3d3463;">
                     <button type="button" class="btn-tambah-copas" onclick="tambahCatatanPublik()">Kirim</button>
                 </div>
-                <div id="wadahCatatanPublikList" class="wadah-copas-tabel">
-                    <!-- Data Publik Realtime Muncul di Sini -->
-                </div>
+                <div id="wadahCatatanPublikList" class="wadah-copas-tabel"></div>
                 <div style="height: 10px;"></div>
             </div>
         </div>
@@ -432,6 +400,67 @@
             });
         });
 
+        // === LOGIK CATATAN LOKAL HP (STORAGE HP) ===
+        let localNotesData = ["", "", "", ""];
+
+        function muatCatatanLokalHP() {
+            const saved = localStorage.getItem("aplikasi_catatan_lokal_hp");
+            if (saved) {
+                try { localNotesData = JSON.parse(saved); } catch(e){}
+            }
+            renderCatatanLokalHP();
+        }
+
+        function simpanCatatanLokalHP() {
+            localStorage.setItem("aplikasi_catatan_lokal_hp", JSON.stringify(localNotesData));
+        }
+
+        function renderCatatanLokalHP() {
+            const container = document.getElementById("notesContainer");
+            container.innerHTML = "";
+
+            localNotesData.forEach((text, index) => {
+                const rowDiv = document.createElement("div");
+                rowDiv.className = "note-row";
+
+                const badge = document.createElement("div");
+                badge.className = "note-num-badge";
+                badge.innerText = `[${index + 1}]`;
+                rowDiv.appendChild(badge);
+
+                const inputField = document.createElement("input");
+                inputField.type = "text";
+                inputField.className = "note-text-input";
+                inputField.value = text;
+                inputField.placeholder = "Ketik catatan di sini...";
+                inputField.oninput = function() {
+                    localNotesData[index] = this.value;
+                    simpanCatatanLokalHP();
+                };
+                rowDiv.appendChild(inputField);
+
+                if (localNotesData.length > 1) {
+                    const btnHapus = document.createElement("button");
+                    btnHapus.className = "btn-hapus-copas";
+                    btnHapus.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                    btnHapus.onclick = function() {
+                        localNotesData.splice(index, 1);
+                        simpanCatatanLokalHP();
+                        renderCatatanLokalHP();
+                    };
+                    rowDiv.appendChild(btnHapus);
+                }
+
+                container.appendChild(rowDiv);
+            });
+        }
+
+        function tambahBarisLokalHP() {
+            localNotesData.push("");
+            simpanCatatanLokalHP();
+            renderCatatanLokalHP();
+        }
+
         // === LOGIK TABEL DATA COPAS (ALARM) ===
         let dataCopasTabel = [];
 
@@ -508,30 +537,12 @@
 
         // === LOGIK BAWAAN UTAMA ===
         let DATA_DUMMY_DATABASE = [];
-        const ADMIN_PIN = "1234"; 
-        let isAdminAuthenticated = false;
-        let currentFileSha = ""; 
-        let rawNotesLines = [];
-        const DEFAULT_USER = "bgszp";
-        const DEFAULT_REPO = "bgszp.github.io";
 
         document.addEventListener("DOMContentLoaded", function() {
             fetch(`./data_pengguna.json?t=${Date.now()}`).then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
-            if(!localStorage.getItem("git_user")) document.getElementById("gitUser").value = DEFAULT_USER;
-            else document.getElementById("gitUser").value = localStorage.getItem("git_user");
-            if(!localStorage.getItem("git_repo")) document.getElementById("gitRepo").value = DEFAULT_REPO;
-            else document.getElementById("gitRepo").value = localStorage.getItem("git_repo");
-            if(localStorage.getItem("git_token")) document.getElementById("gitToken").value = localStorage.getItem("git_token");
-            
+            muatCatatanLokalHP();
             muatDataCopas();
-            autoFetchForEveryone();
         });
-
-        function saveGitConfig() {
-            localStorage.setItem("git_user", document.getElementById("gitUser").value.trim());
-            localStorage.setItem("git_repo", document.getElementById("gitRepo").value.trim());
-            localStorage.setItem("git_token", document.getElementById("gitToken").value.trim());
-        }
 
         function eksekusiSalinTeks(teks) {
             if (navigator.clipboard && window.isSecureContext) {
@@ -545,172 +556,6 @@
                 try { document.execCommand('copy'); } catch (err) {}
                 document.body.removeChild(textArea);
                 return Promise.resolve();
-            }
-        }
-
-        function renderNotesList(fullText) {
-            const container = document.getElementById("notesContainer");
-            container.innerHTML = "";
-            rawNotesLines = fullText.split("\n");
-            if(rawNotesLines.length === 0 || (rawNotesLines.length === 1 && rawNotesLines[0].trim() === "")) rawNotesLines = [""]; 
-
-            rawNotesLines.forEach((text, index) => {
-                const rowNum = index + 1;
-                const rowDiv = document.createElement("div");
-                rowDiv.className = isAdminAuthenticated ? "note-row admin-mode" : "note-row";
-                const badge = document.createElement("div");
-                badge.className = "note-num-badge";
-                badge.innerText = `[${rowNum}]`;
-                rowDiv.appendChild(badge);
-
-                if(isAdminAuthenticated) {
-                    const inputField = document.createElement("input");
-                    inputField.type = "text";
-                    inputField.id = `inp-note-${index}`;
-                    inputField.className = "note-text-input";
-                    inputField.value = text;
-                    inputField.placeholder = "Ketik catatan...";
-                    inputField.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); insertNewRowAfter(index); } };
-                    rowDiv.appendChild(inputField);
-                } else {
-                    const displayWrapper = document.createElement("div");
-                    displayWrapper.className = "note-display-wrapper";
-                    if(text.includes("|")) {
-                        const parts = text.split("|");
-                        displayWrapper.innerHTML = `<div><span class="text-before-pipe">${parts[0]}</span><span class="text-after-pipe">|${parts.slice(1).join("|")}</span></div>`;
-                    } else {
-                        displayWrapper.innerHTML = `<div><span class="text-before-pipe">${text || '<span style="color:#555;">(Baris Kosong)</span>'}</span></div>`;
-                    }
-                    displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`;
-                    rowDiv.appendChild(displayWrapper);
-                    rowDiv.onclick = function() {
-                        if(text.trim() !== "") {
-                            let finalCopyText = text.includes("|") ? text.split("|")[0].trim() : text;
-                            if(finalCopyText !== "") {
-                                eksekusiSalinTeks(finalCopyText).then(() => { showToast(`Baris ${rowNum} Disalin! ✨`); });
-                            }
-                        }
-                    };
-                }
-                container.appendChild(rowDiv);
-            });
-        }
-
-        function insertNewRowAfter(currentIndex) {
-            let newLines = [];
-            rawNotesLines.forEach((_, idx) => {
-                const el = document.getElementById(`inp-note-${idx}`);
-                newLines.push(el ? el.value : "");
-            });
-            newLines.splice(currentIndex + 1, 0, "");
-            renderNotesList(newLines.join("\n"));
-            const targetInput = document.getElementById(`inp-note-${currentIndex + 1}`);
-            if(targetInput) targetInput.focus();
-        }
-
-        function packInputsToString() {
-            let lineArray = [];
-            rawNotesLines.forEach((_, idx) => {
-                const el = document.getElementById(`inp-note-${idx}`);
-                lineArray.push(el ? el.value : "");
-            });
-            return lineArray.join("\n");
-        }
-
-        async function autoFetchForEveryone() {
-            const statusLabel = document.getElementById("syncStatus");
-            statusLabel.innerText = "(Memantau Live...)";
-            const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
-            const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
-            const token = document.getElementById("gitToken").value.trim();
-            
-            try {
-                const headers = {};
-                if(token) headers["Authorization"] = `token ${token}`;
-                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, { headers: headers, cache: "no-store" });
-                if(res.ok) {
-                    const data = await res.json();
-                    currentFileSha = data.sha; 
-                    renderNotesList(decodeURIComponent(escape(atob(data.content))));
-                    statusLabel.innerText = "(Mode Pantau Aktif - Instan)";
-                    statusLabel.style.color = "#00ffcc";
-                    return; 
-                }
-                throw new Error();
-            } catch(e) {
-                try {
-                    const resLocal = await fetch(`./catatan_utama.txt?t=${Date.now()}`);
-                    if(resLocal.ok) {
-                        renderNotesList(await resLocal.text());
-                        statusLabel.innerText = "(Mode Pantau Aktif - Delay)";
-                        statusLabel.style.color = "#00ffcc";
-                    } else { renderNotesList(""); statusLabel.innerText = "(Kosong)"; }
-                } catch(err) { statusLabel.innerText = "(Gagal Memuat)"; statusLabel.style.color = "#ff4a4a"; }
-            }
-        }
-
-        async function fetchShaQuietly() {
-            const token = document.getElementById("gitToken").value.trim();
-            const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
-            const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
-            if(!token) return;
-            try {
-                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, { headers: { "Authorization": `token ${token}` } });
-                if(res.ok) { const data = await res.json(); currentFileSha = data.sha; }
-            } catch(e){}
-        }
-
-        async function toggleAdminAccess() {
-            const btnAdmin = document.getElementById("btnAdminAuth");
-            const iconLock = document.getElementById("adminLockIcon");
-            const statusLabel = document.getElementById("syncStatus");
-            const configBox = document.getElementById("adminConfigBox");
-
-            if (!isAdminAuthenticated) {
-                const inputPin = prompt("Masukkan PIN Keamanan Admin:");
-                if (inputPin === ADMIN_PIN) {
-                    isAdminAuthenticated = true;
-                    renderNotesList(rawNotesLines.join("\n"));
-                    configBox.style.display = "grid"; 
-                    btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan &amp; Kunci';
-                    btnAdmin.style.background = "#ff007f";
-                    iconLock.className = "fa-solid fa-lock-open";
-                    showToast("Mode Admin Terbuka! 🔓");
-                } else if (inputPin !== null) { alert("PIN Salah!"); }
-            } else {
-                const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
-                const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
-                const token = document.getElementById("gitToken").value.trim();
-                if(!token) { alert("Isi GITHUB TOKEN terlebih dahulu."); return; }
-
-                statusLabel.innerText = "(Mengupload...)";
-                btnAdmin.disabled = true;
-                const combinedText = packInputsToString();
-                const bodyPayload = { message: "Update catatan", content: btoa(unescape(encodeURIComponent(combinedText))) };
-                await fetchShaQuietly();
-                if(currentFileSha) bodyPayload.sha = currentFileSha;
-
-                try {
-                    const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
-                        method: "PUT", headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-                        body: JSON.stringify(bodyPayload)
-                    });
-                    if(res.ok) {
-                        const resData = await res.json();
-                        currentFileSha = resData.content.sha;
-                        isAdminAuthenticated = false;
-                        configBox.style.display = "none"; 
-                        btnAdmin.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit';
-                        btnAdmin.style.background = "#1a1535";
-                        iconLock.className = "fa-solid fa-lock";
-                        statusLabel.innerText = "(Mode Pantau Aktif)";
-                        showToast("Tersimpan secara Global! ☁️");
-                        renderNotesList(combinedText);
-                    } else { throw new Error(); }
-                } catch(e) {
-                    alert("Gagal memperbarui Cloud.");
-                    statusLabel.innerText = "(Gagal Menyimpan)";
-                } finally { btnAdmin.disabled = false; }
             }
         }
 
