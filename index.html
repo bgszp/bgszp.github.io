@@ -7,105 +7,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
-    <!-- Firebase SDK (Modular v10) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        // Menambahkan 'update' untuk keperluan fitur edit
-        import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        // Konfigurasi Firebase Anda
-        const firebaseConfig = {
-            apiKey: "AIzaSyBYx-nRn5tusVMNSkze4tp-pwbjEyg-y5Y",
-            authDomain: "data-publik.firebaseapp.com",
-            databaseURL: "https://data-publik-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "data-publik",
-            storageBucket: "data-publik.firebasestorage.app",
-            messagingSenderId: "376849069775",
-            appId: "1:376849069775:web:1cf9c6857f71935ed0e9ba"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // Fungsi Global untuk Firebase Publik
-        window.tambahCatatanPublik = function() {
-            const input = document.getElementById("inputCatatanPublik");
-            const teks = input.value.trim();
-            if(!teks) return;
-
-            const dbRef = ref(db, 'catatan_publik');
-            push(dbRef, {
-                pesan: teks,
-                waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date().toLocaleDateString('id-ID')
-            }).then(() => {
-                input.value = "";
-                showToast("Catatan Publik Terkirim! 🚀");
-            });
-        };
-
-        window.hapusCatatanPublik = function(id) {
-            const dbRef = ref(db, 'catatan_publik/' + id);
-            remove(dbRef).then(() => {
-                showToast("Catatan dihapus! 🗑️");
-            });
-        };
-
-        // Pantau Perubahan Realtime
-        const dbRef = ref(db, 'catatan_publik');
-        onValue(dbRef, (snapshot) => {
-            const wadah = document.getElementById("wadahCatatanPublikList");
-            wadah.innerHTML = "";
-            
-            const data = snapshot.val();
-            if (!data) {
-                wadah.innerHTML = '<div style="color:#6e678a; font-size:12px; text-align:center; margin-top:20px;">Belum ada catatan publik. Jadilah yang pertama menulis!</div>';
-                return;
-            }
-
-            Object.keys(data).forEach((key, index) => {
-                const item = data[key];
-                const row = document.createElement("div");
-                row.className = "row-copas-alarm";
-                
-                // Menambahkan teks yang bisa diklik dan tombol edit
-                row.innerHTML = `
-                    <div style="font-size:12px; color:#00ffcc; width:20px; font-weight:bold; margin-top: 5px;">${index + 1}.</div>
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; z-index: 2;">
-                        <div class="teks-publik" style="font-size: 13px; color: #fff; word-break: break-all; white-space: pre-wrap; cursor: pointer;" title="Klik untuk menyalin">${item.pesan} <i class="fa-regular fa-copy copy-hint-icon" style="color: #00ffcc; opacity: 1; margin-left: 5px;"></i></div>
-                        <div style="font-size: 10px; color: #8e85b3;"><i class="fa-regular fa-clock"></i> ${item.waktu || ''}</div>
-                    </div>
-                    <div style="display: flex; gap: 8px; margin-top: -2px;">
-                        <button class="btn-edit-publik btn-hapus-copas" style="color: #f0ad4e; font-size: 14px;" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn-hapus-publik btn-hapus-copas" style="font-size: 14px; color: #ff4a4a;" title="Hapus"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `;
-                
-                // Fungsi Klik untuk Copy
-                row.querySelector('.teks-publik').addEventListener('click', () => {
-                    eksekusiSalinTeks(item.pesan).then(() => showToast("Catatan Publik Disalin! ✨"));
-                });
-                
-                // Fungsi Klik untuk Edit
-                row.querySelector('.btn-edit-publik').addEventListener('click', () => {
-                    const pesanBaru = prompt("Edit catatan publik:", item.pesan);
-                    if (pesanBaru !== null && pesanBaru.trim() !== "" && pesanBaru !== item.pesan) {
-                        const catatanRef = ref(db, 'catatan_publik/' + key);
-                        update(catatanRef, {
-                            pesan: pesanBaru.trim(),
-                            waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date().toLocaleDateString('id-ID') + ' (Diedit)'
-                        }).then(() => showToast("Catatan diedit! ✏️"));
-                    }
-                });
-                
-                // Fungsi Klik untuk Hapus
-                row.querySelector('.btn-hapus-publik').addEventListener('click', () => {
-                    hapusCatatanPublik(key);
-                });
-
-                wadah.appendChild(row);
-            });
-        });
-    </script>
+    <!-- Panggilan Script Firebase Publik yang sudah dipisah -->
+    <script type="module" src="firebase-publik.js"></script>
 
     <style>
         * { box-sizing: border-box; transition: all 0.3s ease; }
@@ -456,8 +359,8 @@
         });
 
         btnCopyScanner.addEventListener('click', () => {
-            eksekusiSalinTeks(hasilScanInput.value).then(() => {
-                showToast("Nomor Hasil Scan Disalin! ✨");
+            window.eksekusiSalinTeks(hasilScanInput.value).then(() => {
+                window.showToast("Nomor Hasil Scan Disalin! ✨");
             });
         });
 
@@ -562,7 +465,8 @@
             localStorage.setItem("git_token", document.getElementById("gitToken").value.trim());
         }
 
-        function eksekusiSalinTeks(teks) {
+        // *** PERUBAHAN PENTING: Ditempelkan ke 'window' agar bisa dipanggil dari file terpisah ***
+        window.eksekusiSalinTeks = function(teks) {
             if (navigator.clipboard && window.isSecureContext) {
                 return navigator.clipboard.writeText(teks);
             } else {
@@ -616,7 +520,7 @@
                         if(text.trim() !== "") {
                             let finalCopyText = text.includes("|") ? text.split("|")[0].trim() : text;
                             if(finalCopyText !== "") {
-                                eksekusiSalinTeks(finalCopyText).then(() => { showToast(`Baris ${rowNum} Disalin! ✨`); });
+                                window.eksekusiSalinTeks(finalCopyText).then(() => { window.showToast(`Baris ${rowNum} Disalin! ✨`); });
                             }
                         }
                     };
@@ -704,7 +608,7 @@
                     btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan &amp; Kunci';
                     btnAdmin.style.background = "#ff007f";
                     iconLock.className = "fa-solid fa-lock-open";
-                    showToast("Mode Admin Terbuka! 🔓");
+                    window.showToast("Mode Admin Terbuka! 🔓");
                 } else if (inputPin !== null) { alert("PIN Salah!"); }
             } else {
                 const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
@@ -733,7 +637,7 @@
                         btnAdmin.style.background = "#1a1535";
                         iconLock.className = "fa-solid fa-lock";
                         statusLabel.innerText = "(Mode Pantau Aktif)";
-                        showToast("Tersimpan secara Global! ☁️");
+                        window.showToast("Tersimpan secara Global! ☁️");
                         renderNotesList(combinedText);
                     } else { throw new Error(); }
                 } catch(e) {
@@ -748,7 +652,7 @@
             const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
             const res = `${item.nama}, ${item.alamat}, ${item.no_hp}`;
             document.getElementById('genNameOutput').value = res;
-            eksekusiSalinTeks(res).then(() => showToast("Berhasil Disalin! ✨"));
+            window.eksekusiSalinTeks(res).then(() => window.showToast("Berhasil Disalin! ✨"));
             tambahKeRiwayat(res);
         };
         
@@ -759,18 +663,25 @@
             if(usernameDasar === "") usernameDasar = "user";
             const res = usernameDasar + (Math.floor(Math.random() * 9999) + 10);
             document.getElementById('genNameOutput').value = res;
-            eksekusiSalinTeks(res).then(() => showToast("Username Disalin! ✨"));
+            window.eksekusiSalinTeks(res).then(() => window.showToast("Username Disalin! ✨"));
             tambahKeRiwayat(res);
         };
 
         function tambahKeRiwayat(t) {
             const list = document.getElementById('historyList'); const item = document.createElement('div');
             item.className = 'history-item'; item.innerText = t; 
-            item.onclick = function() { document.getElementById('genNameOutput').value = t; eksekusiSalinTeks(t).then(() => showToast("Disalin! ✨")); };
+            item.onclick = function() { document.getElementById('genNameOutput').value = t; window.eksekusiSalinTeks(t).then(() => window.showToast("Disalin! ✨")); };
             list.insertBefore(item, list.firstChild);
         }
         function clearHistory() { document.getElementById('historyList').innerHTML = ''; }
-        function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => { t.classList.remove('show'); }, 2000); }
+        
+        // *** PERUBAHAN PENTING: Ditempelkan ke 'window' agar bisa dipanggil dari file terpisah ***
+        window.showToast = function(m) { 
+            const t = document.getElementById('toastNotif'); 
+            t.innerText = m; 
+            t.classList.add('show'); 
+            setTimeout(() => { t.classList.remove('show'); }, 2000); 
+        }
     </script>
 </body>
 </html>
