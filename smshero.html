@@ -122,12 +122,9 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        // =========================================================
-        // URL WORKER SUDAH DIPERBAIKI (MENGGUNAKAN HTTPS)
-        // =========================================================
         const WORKER_URL = "https://herosms-proxy.tiktiksatu001.workers.dev"; 
         
-        const KURS_USD = 16000; 
+        const KURS_USD = 17649; 
         const ID_NEGARA_INDONESIA = "6"; 
         
         let daftarOrderan = []; 
@@ -189,7 +186,7 @@
                 document.getElementById("otpKeyHero").value = savedKey;
                 document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
                 document.getElementById("statusKeyHero").style.color = "#50fa7b";
-                logConsole("Sistem berjalan (Pesanan Baru Diprioritaskan, Lama Diblokir).");
+                logConsole("Sistem berjalan (Nomor BARU Aktif, Nomor LAMA Auto-Batal 2M).");
                 refreshSemuaDataLive();
             } else {
                 logConsole("Silakan masukkan API Key terlebih dahulu.");
@@ -317,8 +314,7 @@
                         harga: hargaProdukTerpilih, 
                         waktu_dibuat: Date.now(), 
                         status: "pending", 
-                        otp: "",
-                        max_wait: 300 // Kembali disamaratakan 5 Menit (300 detik)
+                        otp: ""
                     });
                     renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
                     logConsole(`Berhasil order: ${phone}`);
@@ -372,12 +368,12 @@
         async function mesinCekSmsTerpusat() {
             siklusCek++; 
 
-            // Cari index pesanan TERBARU (paling atas) yang sedang aktif
+            // CARI ORDER TERBARU: Index 0 adalah orderan yang paling baru dibuat
             let activeOrderIndex = -1;
             for (let j = 0; j < daftarOrderan.length; j++) {
                 if (daftarOrderan[j].status === "pending" || daftarOrderan[j].status === "received") {
-                    activeOrderIndex = j;
-                    break; // Ambil yang indeksnya paling kecil (paling atas di daftar)
+                    activeOrderIndex = j; 
+                    break; // Mendapatkan index paling kecil = Nomor Paling Baru
                 }
             }
 
@@ -385,8 +381,7 @@
                 let i = daftarOrderan[index];
                 if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
                 
-                // BLOKIR JIKA BUKAN PESANAN TERBARU
-                // Pesanan yang index-nya lebih besar dari activeOrderIndex (antrian ke-2, ke-3 dst di bawahnya) akan dilewati proses ceknya.
+                // BLOKIR NOMOR LAMA: Jika index pesanan bukan yang terbaru, abaikan pengecekan.
                 if (i.status === "pending" && index !== activeOrderIndex) {
                     continue; 
                 }
@@ -417,7 +412,7 @@
             const containerRiwayat = document.getElementById("containerRiwayat");
             let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
 
-            // Cari index pesanan TERBARU (paling atas) yang sedang aktif untuk UI
+            // CARI ORDER TERBARU UNTUK INDIKATOR UI
             let activeOrderIndex = -1;
             for (let j = 0; j < daftarOrderan.length; j++) {
                 if (daftarOrderan[j].status === "pending" || daftarOrderan[j].status === "received") {
@@ -428,7 +423,12 @@
 
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                let maxWait = item.max_wait || 300; 
+                
+                // PENGATURAN WAKTU MAXIMAL DINAMIS
+                // Jika pesanan ini pending dan bukan yang terbaru, waktu max = 120s (2 menit). 
+                // Jika pesanan utama (aktif), waktu max = 300s (5 menit).
+                let isBlocked = (item.status === "pending" && index !== activeOrderIndex);
+                let maxWait = isBlocked ? 120 : 300; 
                 
                 if (item.status === "pending" && sec >= maxWait) { 
                     item.status = "cancelled"; fetchHeroAPI('setStatus', { status: 8, id: item.order_id }).catch(e=>console.log(e)); 
@@ -458,7 +458,7 @@
                         </div>
                         <div class="box-copy-statik otp-masuk" style="margin-top:6px;">
                             <div>
-                                <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
+                                <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
                                 <div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div>
                             </div>
                             <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button>
@@ -479,12 +479,12 @@
 
                 let textStat = `⚡ Cek OTP... (${sec}s)`; 
                 
-                // Indikator UI: Jika bukan urutan teratas (bukan yang baru dipesan), maka diblokir
-                if (item.status === "pending" && index !== activeOrderIndex) {
-                    textStat = `⏸️ Diblokir (Menunggu Antrian) - Batal otomatis dlm ${sisa}s`;
+                // INDIKATOR UI
+                if (isBlocked) {
+                    textStat = `⏸️ Diblokir (Prioritas nomor baru) - Auto-Batal dlm ${sisa}s`;
                 }
 
-                let colStat = (item.status === "pending" && index !== activeOrderIndex) ? "#ff5555" : "#ffb86c"; 
+                let colStat = isBlocked ? "#ff5555" : "#ffb86c"; 
                 let btnAksi = ""; 
                 let kotakOtp = "";
 
