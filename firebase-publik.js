@@ -39,6 +39,22 @@ window.hapusCatatanPublik = function(id) {
     });
 };
 
+// --- FUNGSI BARU: Fungsi untuk Minimize / Sembunyikan Catatan ---
+window.toggleMinimize = function() {
+    const wadah = document.getElementById("wadahCatatanPublikList");
+    const tombol = document.getElementById("btnMinimize");
+    
+    if (!wadah || !tombol) return;
+
+    if (wadah.style.display === "none") {
+        wadah.style.display = "block";
+        tombol.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Sembunyikan Catatan';
+    } else {
+        wadah.style.display = "none";
+        tombol.innerHTML = '<i class="fa-solid fa-eye"></i> Tampilkan Catatan';
+    }
+};
+
 // Pantau Perubahan Realtime (Fitur Tampil, Copy, Edit, Hapus)
 const dbRef = ref(db, 'catatan_publik');
 onValue(dbRef, (snapshot) => {
@@ -53,7 +69,8 @@ onValue(dbRef, (snapshot) => {
         return;
     }
 
-    Object.keys(data).forEach((key, index) => {
+    // --- MODIFIKASI: Menambahkan .reverse() agar catatan terbaru di paling atas ---
+    Object.keys(data).reverse().forEach((key, index) => {
         const item = data[key];
         const row = document.createElement("div");
         row.className = "row-copas-alarm";
