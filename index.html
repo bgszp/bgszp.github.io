@@ -17,11 +17,7 @@
             background: #0f0c1b; background: linear-gradient(to bottom, #15102a, #0f0c1b);
             margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; color: #fff;
         }
-        .container-card { 
-            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px; padding: 30px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); width: 100%; max-width: 420px; text-align: center; margin-bottom: 20px;
-        }
-        .title { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: #d6c7ff; letter-spacing: 0.5px; }
+        
         .form-input { 
             width: 100%; padding: 16px; margin-bottom: 20px; text-align: center; font-weight: 600; font-size: 15px; 
             border: 2px solid #3d3463; border-radius: 12px; outline: none; background-color: #1a1535; color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);
@@ -32,7 +28,7 @@
             border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
         }
         #btn-username { background: linear-gradient(45deg, #00b4db, #0083b0); box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4); }
-        .history-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; width: 100%; max-width: 420px; max-height: 200px; overflow-y: auto; margin-top: 10px; }
+        .history-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; width: 100%; max-height: 200px; overflow-y: auto; }
         .history-title { font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 10px; display: flex; justify-content: space-between; }
         .history-item { font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; opacity: 0; z-index: 99; }
@@ -56,11 +52,11 @@
         .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
         .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
 
-        /* === STYLING MENU TOMBOL SERVER === */
+        /* === STYLING MENU TOMBOL SERVER (DROPDOWN ALL) === */
         .wrapper-menu-server { width: 100%; max-width: 900px; margin-bottom: 10px; display: flex; flex-direction: row; gap: 15px; }
         .server-col { flex: 1; display: flex; flex-direction: column; }
-        .pemicu-menu-utama { background: #1a1535; border: 1px solid #5f27cd; border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; transition: all 0.2s ease; user-select: none; }
-        .pemicu-menu-utama:hover { background: #251e4a; border-color: #00ffcc; box-shadow: 0 0 8px rgba(0, 255, 204, 0.3); }
+        .pemicu-menu-utama { background: #1a1535; border: 1px solid #5f27cd; border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 14px; color: #fff; transition: all 0.2s ease; user-select: none; }
+        .pemicu-menu-utama:hover { background: #251e4a; box-shadow: 0 0 8px rgba(255, 255, 255, 0.1); }
         .wadah-iframe-server { display: none; width: 100%; border-radius: 8px; border: 1px solid #3d3463; background: #121324; overflow: hidden; margin-bottom: 15px; }
         
         /* === STYLING MENU SCANNER === */
@@ -101,107 +97,149 @@
 </head>
 <body>
 
-<div class="wrapper-menu-server">
-    <div class="server-col">
-        <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP1', 'panahSrv1')">
-            <span>🛠️ Server 1</span>
-            <span id="panahSrv1">▼</span>
-        </div>
-    </div>
-    <div class="server-col">
-        <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahOTP2', 'panahSrv2')" style="border-color: #00e5ff;"> 
-            <span>🔵 Server 2</span>
-            <span id="panahSrv2">▼</span>
-        </div>
-    </div>
-</div>
-
-<div style="width: 100%; max-width: 900px;">
-    <div id="wadahOTP1" class="wadah-iframe-server">
-        <iframe src="smsbower.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
-    </div>
-    <div id="wadahOTP2" class="wadah-iframe-server">
-        <iframe src="smshero.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
-    </div>
-</div>
-
-    <div class="container-card">
-        <div class="title"><i class="fa-solid fa-bolt" style="color: #00ffcc;"></i> Data Generator</div>
-        <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
-        <div class="btn-group">
-            <button class="btn-primary" onclick="generateName()"><i class="fa-solid fa-shuffle"></i> Acak &amp; Salin Data</button>
-            <button class="btn-primary" id="btn-username" onclick="generateUsername()"><i class="fa-solid fa-user"></i> NaPaSi</button>
-        </div>
-    </div>
-
-    <!-- === CATATAN UTAMA & COPAS === -->
-    <div class="container-card" style="max-width: 900px; width: 100%; margin-top: 10px;">
-        <div class="title"><i class="fa-solid fa-cloud-sun" style="color: #00ffcc;"></i> Catatan Multi-Device</div>
-        
-        <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-            <div>
-                <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB USERNAME</label>
-                <input type="text" id="gitUser" class="config-field" placeholder="bgszp" oninput="saveGitConfig()">
-            </div>
-            <div>
-                <label style="font-size:11px; color:#aaa; display:block; text-align:left;">NAMA REPO WEB</label>
-                <input type="text" id="gitRepo" class="config-field" placeholder="bgszp.github.io" oninput="saveGitConfig()">
-            </div>
-            <div>
-                <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB TOKEN (PAT)</label>
-                <input type="password" id="gitToken" class="config-field" placeholder="github_pat_..." oninput="saveGitConfig()">
+    <!-- === 1. MENU SERVERS === -->
+    <div class="wrapper-menu-server">
+        <div class="server-col">
+            <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP1', 'panahSrv1')">
+                <span>🛠️ Server 1</span>
+                <span id="panahSrv1">▼</span>
             </div>
         </div>
+        <div class="server-col">
+            <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP2', 'panahSrv2')" style="border-color: #00e5ff;"> 
+                <span>🔵 Server 2</span>
+                <span id="panahSrv2">▼</span>
+            </div>
+        </div>
+    </div>
+    
+    <div style="width: 100%; max-width: 900px;">
+        <div id="wadahOTP1" class="wadah-iframe-server">
+            <iframe src="smsbower.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+        </div>
+        <div id="wadahOTP2" class="wadah-iframe-server">
+            <iframe src="smshero.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+        </div>
+    </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
-            <div>
-                <div class="notes-header-flex">
-                    <div style="font-size: 13px; font-weight: bold; color: #ff007f; text-align: left;">
-                        <i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA (LIVE)
-                        <span id="syncStatus" style="font-size:10px; color:#aaa; margin-left:5px;">(Membaca...)</span>
-                    </div>
-                    <button type="button" class="btn-refresh-note" onclick="autoFetchForEveryone()">
-                        <i class="fa-solid fa-rotate"></i> Refresh
-                    </button>
+    <!-- === 2. DATA GENERATOR === -->
+    <div class="wrapper-menu-server">
+        <div class="server-col">
+            <div class="pemicu-menu-utama" onclick="togglePanel('wadahDataGen', 'panahDataGen')" style="border-color: #8a2be2;">
+                <span>⚡ Data Generator</span>
+                <span id="panahDataGen">▼</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="width: 100%; max-width: 900px;">
+        <div id="wadahDataGen" class="wadah-iframe-server" style="padding: 20px;">
+            <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
+            <div class="btn-group">
+                <button class="btn-primary" onclick="generateName()"><i class="fa-solid fa-shuffle"></i> Acak &amp; Salin Data</button>
+                <button class="btn-primary" id="btn-username" onclick="generateUsername()"><i class="fa-solid fa-user"></i> NaPaSi</button>
+            </div>
+            
+            <div class="history-card" style="margin-top: 20px; border: 1px solid #3d3463;">
+                <div class="history-title"><span>RIWAYAT GENERATOR</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
+                <div id="historyList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- === 3. CATATAN UTAMA (LIVE) === -->
+    <div class="wrapper-menu-server">
+        <div class="server-col">
+            <div class="pemicu-menu-utama" onclick="togglePanel('wadahUtama', 'panahUtama')" style="border-color: #ff007f;">
+                <span>☁️ Catatan Utama (Live)</span>
+                <span id="panahUtama">▼</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="width: 100%; max-width: 900px;">
+        <div id="wadahUtama" class="wadah-iframe-server" style="padding: 20px;">
+            <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                <div>
+                    <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB USERNAME</label>
+                    <input type="text" id="gitUser" class="config-field" placeholder="bgszp" oninput="saveGitConfig()">
                 </div>
-                <div id="notesContainer" class="notes-list-container"></div>
-                <button type="button" class="btn-admin-control" id="btnAdminAuth" onclick="toggleAdminAccess()">
-                    <i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit
+                <div>
+                    <label style="font-size:11px; color:#aaa; display:block; text-align:left;">NAMA REPO WEB</label>
+                    <input type="text" id="gitRepo" class="config-field" placeholder="bgszp.github.io" oninput="saveGitConfig()">
+                </div>
+                <div>
+                    <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB TOKEN (PAT)</label>
+                    <input type="password" id="gitToken" class="config-field" placeholder="github_pat_..." oninput="saveGitConfig()">
+                </div>
+            </div>
+
+            <div class="notes-header-flex">
+                <div style="font-size: 13px; font-weight: bold; color: #ff007f; text-align: left;">
+                    <i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA
+                    <span id="syncStatus" style="font-size:10px; color:#aaa; margin-left:5px;">(Membaca...)</span>
+                </div>
+                <button type="button" class="btn-refresh-note" onclick="autoFetchForEveryone()">
+                    <i class="fa-solid fa-rotate"></i> Refresh
                 </button>
             </div>
+            <div id="notesContainer" class="notes-list-container"></div>
+            <button type="button" class="btn-admin-control" id="btnAdminAuth" onclick="toggleAdminAccess()">
+                <i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit
+            </button>
+        </div>
+    </div>
             
-            <!-- === TABEL ALARM COPAS === -->
-            <div>
-                <div class="header-copas">
-                    <div style="font-size: 13px; font-weight: bold; color: #aaa; text-align: left;">DATA / COPAS (ALARM)</div>
-                    <button type="button" class="btn-tambah-copas" onclick="tambahDataCopas()">+ Tambah</button>
-                </div>
-                <div id="wadahDataCopas" class="wadah-copas-tabel"></div>
-                <div style="height: 10px;"></div>
-            </div>
-            
-            <!-- === MENU BARU: CATATAN PUBLIK (FIREBASE) === -->
-            <div>
-                <div class="header-copas">
-                    <div style="font-size: 13px; font-weight: bold; color: #00ffcc; text-align: left;"><i class="fa-solid fa-globe"></i> CATATAN PUBLIK</div>
-                </div>
-                <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                    <input type="text" id="inputCatatanPublik" class="input-copas-ket" placeholder="Tulis catatan publik..." style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; border: 1px solid #3d3463;">
-                    <button type="button" class="btn-tambah-copas" onclick="tambahCatatanPublik()">Kirim</button>
-                </div>
-                
-                <div id="wadahCatatanPublikList" class="wadah-copas-tabel">
-                    <!-- Data Publik Realtime Muncul di Sini -->
-                </div>
-                <div style="height: 10px;"></div>
+    <!-- === 4. DATA / COPAS (ALARM) === -->
+    <div class="wrapper-menu-server">
+        <div class="server-col">
+            <div class="pemicu-menu-utama" onclick="togglePanel('wadahAlarm', 'panahAlarm')" style="border-color: #f0ad4e;">
+                <span>⏰ Data / Copas (Alarm)</span>
+                <span id="panahAlarm">▼</span>
             </div>
         </div>
     </div>
 
-    <!-- === MENU DROPDOWN SCANNER === -->
-    <div class="wrapper-menu-server" style="margin-top: 10px;">
+    <div style="width: 100%; max-width: 900px;">
+        <div id="wadahAlarm" class="wadah-iframe-server" style="padding: 20px;">
+            <div class="header-copas">
+                <div style="font-size: 13px; font-weight: bold; color: #f0ad4e; text-align: left;">DATA / COPAS (ALARM)</div>
+                <button type="button" class="btn-tambah-copas" style="background:#f0ad4e; color:#000;" onclick="tambahDataCopas()">+ Tambah</button>
+            </div>
+            <div id="wadahDataCopas" class="wadah-copas-tabel"></div>
+        </div>
+    </div>
+            
+    <!-- === 5. CATATAN PUBLIK === -->
+    <div class="wrapper-menu-server">
         <div class="server-col">
-            <div class="pemicu-menu-utama" onclick="toggleServerPanel('wadahScanner', 'panahScanner')" style="border-color: #00ff00;">
+            <div class="pemicu-menu-utama" onclick="togglePanel('wadahPublik', 'panahPublik')" style="border-color: #00ffcc;">
+                <span>🌐 Catatan Publik</span>
+                <span id="panahPublik">▼</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="width: 100%; max-width: 900px;">
+        <div id="wadahPublik" class="wadah-iframe-server" style="padding: 20px;">
+            <div class="header-copas">
+                <div style="font-size: 13px; font-weight: bold; color: #00ffcc; text-align: left;"><i class="fa-solid fa-globe"></i> CATATAN PUBLIK</div>
+            </div>
+            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                <input type="text" id="inputCatatanPublik" class="input-copas-ket" placeholder="Tulis catatan publik..." style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; border: 1px solid #3d3463;">
+                <button type="button" class="btn-tambah-copas" onclick="tambahCatatanPublik()">Kirim</button>
+            </div>
+            
+            <div id="wadahCatatanPublikList" class="wadah-copas-tabel">
+                <!-- Data Publik Realtime Muncul di Sini -->
+            </div>
+        </div>
+    </div>
+
+    <!-- === 6. MENU SCANNER === -->
+    <div class="wrapper-menu-server">
+        <div class="server-col">
+            <div class="pemicu-menu-utama" onclick="togglePanel('wadahScanner', 'panahScanner')" style="border-color: #00ff00;">
                 <span>📷 Scanner Nomor</span>
                 <span id="panahScanner">▼</span>
             </div>
@@ -226,36 +264,22 @@
         </div>
     </div>
 
-    <div class="history-card" style="width: 100%; max-width: 900px; margin-top: 10px;">
-        <div class="history-title"><span>RIWAYAT GENERATOR DATA</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
-        <div id="historyList"></div>
-    </div>
-
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        function toggleServerPanel(wadahId, panahId) {
+        // Fungsi Toggle Universal (Independen: Membuka satu tidak akan menutup yang lain)
+        function togglePanel(wadahId, panahId) {
             const wadah = document.getElementById(wadahId);
             const panah = document.getElementById(panahId);
             
             if (wadah.style.display === "none" || wadah.style.display === "") {
-                document.getElementById('wadahOTP1').style.display = "none";
-                document.getElementById('wadahOTP2').style.display = "none";
-                document.getElementById('wadahScanner').style.display = "none";
-                document.getElementById('panahSrv1').style.transform = "rotate(0deg)";
-                document.getElementById('panahSrv2').style.transform = "rotate(0deg)";
-                document.getElementById('panahScanner').style.transform = "rotate(0deg)";
-                
                 wadah.style.display = "block";
                 panah.style.transform = "rotate(180deg)";
-
-                if(wadahId === 'wadahScanner') startScannerCamera();
-                else stopScannerCamera();
-                
+                if (wadahId === 'wadahScanner') startScannerCamera();
             } else {
                 wadah.style.display = "none";
                 panah.style.transform = "rotate(0deg)";
-                if(wadahId === 'wadahScanner') stopScannerCamera();
+                if (wadahId === 'wadahScanner') stopScannerCamera();
             }
         }
 
@@ -466,7 +490,6 @@
             localStorage.setItem("git_token", document.getElementById("gitToken").value.trim());
         }
 
-        // *** PERUBAHAN PENTING: Ditempelkan ke 'window' agar bisa dipanggil dari file terpisah ***
         window.eksekusiSalinTeks = function(teks) {
             if (navigator.clipboard && window.isSecureContext) {
                 return navigator.clipboard.writeText(teks);
@@ -676,7 +699,6 @@
         }
         function clearHistory() { document.getElementById('historyList').innerHTML = ''; }
         
-        // *** PERUBAHAN PENTING: Ditempelkan ke 'window' agar bisa dipanggil dari file terpisah ***
         window.showToast = function(m) { 
             const t = document.getElementById('toastNotif'); 
             t.innerText = m; 
