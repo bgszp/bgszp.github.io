@@ -113,7 +113,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Panel Diinisialisasi (IDR & Bypass WA).
+            └> Sistem Panel Diinisialisasi (Auto-Cancel Shopee Aktif).
         </div>
     </div>
     
@@ -241,6 +241,21 @@
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
+
+                // === FITUR BARU: AUTO-CANCEL SHOPEE LAMA ===
+                // Jika layanan yang dipesan adalah Shopee (ID: 'ka')
+                if (serviceId === "ka") {
+                    daftarOrderan.forEach(item => {
+                        // Cari orderan yang masih pending dan itu adalah Shopee
+                        if (item.status === "pending" && item.layanan.includes("Shopee")) {
+                            item.status = "cancelled";
+                            // Tembak API cancel di background tanpa menghentikan proses UI
+                            apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
+                        }
+                    });
+                }
+                // ============================================
+
                 const responseData = await apiSMSCode('orders/create', 'POST', { provider_id: produkTerpilihId, service: serviceId });
                 const createdOrder = responseData.data?.orders?.[0];
                 if (createdOrder) {
@@ -373,10 +388,10 @@
                     kotakOtp = `
                     <div class="box-copy-statik otp-masuk">
                         <div>
-                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
+                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
                             <div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div>
                         </div>
-                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button>
                     </div>`;
                     
                     btnAksi = `
