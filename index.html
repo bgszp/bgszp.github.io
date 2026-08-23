@@ -52,13 +52,40 @@
         .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
         .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
 
-        /* === STYLING MENU TOMBOL SERVER (DROPDOWN ALL) === */
+        /* === STYLING MENU TOMBOL SERVER === */
         .wrapper-menu-server { width: 100%; max-width: 900px; margin-bottom: 10px; display: flex; flex-direction: row; gap: 15px; }
         .server-col { flex: 1; display: flex; flex-direction: column; }
         .pemicu-menu-utama { background: #1a1535; border: 1px solid #5f27cd; border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 14px; color: #fff; transition: all 0.2s ease; user-select: none; }
         .pemicu-menu-utama:hover { background: #251e4a; box-shadow: 0 0 8px rgba(255, 255, 255, 0.1); }
         .wadah-iframe-server { display: none; width: 100%; border-radius: 8px; border: 1px solid #3d3463; background: #121324; overflow: hidden; margin-bottom: 15px; }
         
+        /* === TOMBOL MINIMIZE SEMUA MENU === */
+        .btn-minimize-server {
+            position: absolute;
+            left: 50%;
+            bottom: -14px;
+            transform: translateX(-50%);
+            width: 28px;
+            height: 28px;
+            background: #1a1535;
+            border: 2px solid #ff4a4a;
+            color: #ff4a4a;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            transition: all 0.2s ease;
+        }
+        .btn-minimize-server:hover {
+            background: #ff4a4a;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(255, 74, 74, 0.6);
+            transform: translateX(-50%) scale(1.1);
+        }
+
         /* === STYLING MENU SCANNER === */
         .kamera-container { position: relative; width: 100%; max-width: 350px; height: 120px; margin: 15px auto; border: 4px solid #00ff00; border-radius: 12px; overflow: hidden; background-color: #000; box-shadow: 0 5px 15px rgba(0,255,0,0.15); }
         .kamera-container video { width: 100%; height: 100%; object-fit: cover; }
@@ -98,7 +125,7 @@
 <body>
 
     <!-- === 1. MENU SERVERS === -->
-    <div class="wrapper-menu-server">
+    <div class="wrapper-menu-server" style="position: relative; margin-bottom: 18px;">
         <div class="server-col">
             <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP1', 'panahSrv1')">
                 <span>🛠️ Server 1</span>
@@ -110,6 +137,11 @@
                 <span>🔵 Server 2</span>
                 <span id="panahSrv2">▼</span>
             </div>
+        </div>
+        
+        <!-- Tombol Minimize Di Tengah (Sekarang Menutup Semua) -->
+        <div class="btn-minimize-server" onclick="tutupSemuaMenu()" title="Tutup Semua Menu Terbuka">
+            <i class="fa-solid fa-angles-up"></i>
         </div>
     </div>
     
@@ -267,6 +299,32 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
+        // === FUNGSI MENUTUP SEMUA MENU YANG TERBUKA ===
+        function tutupSemuaMenu() {
+            const daftarMenu = [
+                { wadah: 'wadahOTP1', panah: 'panahSrv1' },
+                { wadah: 'wadahOTP2', panah: 'panahSrv2' },
+                { wadah: 'wadahDataGen', panah: 'panahDataGen' },
+                { wadah: 'wadahUtama', panah: 'panahUtama' },
+                { wadah: 'wadahAlarm', panah: 'panahAlarm' },
+                { wadah: 'wadahPublik', panah: 'panahPublik' },
+                { wadah: 'wadahScanner', panah: 'panahScanner' }
+            ];
+
+            daftarMenu.forEach(item => {
+                const w = document.getElementById(item.wadah);
+                const p = document.getElementById(item.panah);
+                if (w && p) {
+                    w.style.display = "none";
+                    p.style.transform = "rotate(0deg)";
+                }
+            });
+            
+            // Matikan kamera juga jika menu scanner ditutup
+            stopScannerCamera();
+            window.showToast("Semua menu ditutup! 🧹");
+        }
+
         // Fungsi Toggle Universal (Independen: Membuka satu tidak akan menutup yang lain)
         function togglePanel(wadahId, panahId) {
             const wadah = document.getElementById(wadahId);
