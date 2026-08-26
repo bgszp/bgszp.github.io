@@ -51,6 +51,10 @@
         .text-after-pipe { color: #8e85b3; font-style: italic; font-size: 13px; margin-left: 4px; }
         .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
         .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
+        
+        /* === TAMBAHAN: STYLING TOMBOL HAPUS BARIS DI ADMIN MODE === */
+        .btn-hapus-note { background: transparent; border: none; color: #ff4a4a; cursor: pointer; font-size: 16px; padding: 4px; transition: all 0.2s ease; outline: none; flex-shrink: 0; }
+        .btn-hapus-note:hover { color: #ff007f; transform: scale(1.1); }
 
         /* === STYLING MENU TOMBOL SERVER === */
         .wrapper-menu-server { width: 100%; max-width: 900px; margin-bottom: 10px; display: flex; flex-direction: row; gap: 15px; }
@@ -139,7 +143,7 @@
             </div>
         </div>
         
-        <!-- Tombol Minimize Di Tengah (Sekarang Menutup Semua) -->
+        <!-- Tombol Minimize Di Tengah (Menutup Semua) -->
         <div class="btn-minimize-server" onclick="tutupSemuaMenu()" title="Tutup Semua Menu Terbuka">
             <i class="fa-solid fa-angles-up"></i>
         </div>
@@ -563,6 +567,22 @@
             }
         }
 
+        // === TAMBAHAN: FUNGSI UNTUK MENGHAPUS BARIS TERTENTU SAAT MODE ADMIN ===
+        function hapusBarisCatatanUtama(currentIndex) {
+            let newLines = [];
+            // Simpan semua teks yang sedang diketik sebelum menghapus
+            rawNotesLines.forEach((_, idx) => {
+                const el = document.getElementById(`inp-note-${idx}`);
+                if (el) newLines.push(el.value);
+            });
+            
+            // Hapus baris yang diklik
+            newLines.splice(currentIndex, 1);
+            
+            // Render ulang tampilannya
+            renderNotesList(newLines.join("\n"));
+        }
+
         function renderNotesList(fullText) {
             const container = document.getElementById("notesContainer");
             container.innerHTML = "";
@@ -587,6 +607,18 @@
                     inputField.placeholder = "Ketik catatan...";
                     inputField.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); insertNewRowAfter(index); } };
                     rowDiv.appendChild(inputField);
+
+                    // === TAMBAHAN: TOMBOL HAPUS BARIS ===
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.className = "btn-hapus-note";
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                    deleteBtn.title = "Hapus baris ini";
+                    deleteBtn.onclick = function(e) {
+                        e.stopPropagation(); // Mencegah klik ter-trigger ke elemen lain
+                        hapusBarisCatatanUtama(index);
+                    };
+                    rowDiv.appendChild(deleteBtn);
+
                 } else {
                     const displayWrapper = document.createElement("div");
                     displayWrapper.className = "note-display-wrapper";
