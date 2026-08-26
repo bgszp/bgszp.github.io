@@ -567,7 +567,7 @@
             }
         }
 
-        // === TAMBAHAN: FUNGSI UNTUK MENGHAPUS BARIS TERTENTU SAAT MODE ADMIN ===
+        // === TAMBAHAN: FUNGSI UNTUK MENGHAPUS BARIS & PINDAH KE ALARM ===
         function hapusBarisCatatanUtama(currentIndex) {
             let newLines = [];
             // Simpan semua teks yang sedang diketik sebelum menghapus
@@ -576,7 +576,22 @@
                 if (el) newLines.push(el.value);
             });
             
-            // Hapus baris yang diklik
+            // Cek teks yang akan dihapus apakah mengandung tanda "|"
+            const barisDihapus = newLines[currentIndex];
+            if (barisDihapus && barisDihapus.includes('|')) {
+                // Ambil semua teks setelah kemunculan pertama karakter "|"
+                const teksSetelahPipa = barisDihapus.substring(barisDihapus.indexOf('|') + 1).trim();
+                
+                if (teksSetelahPipa !== "") {
+                    // Masukkan teks ke dalam tabel alarm
+                    dataCopasTabel.push({ id: Date.now(), ket: teksSetelahPipa, waktu: "" });
+                    simpanDataCopas();
+                    renderDataCopas();
+                    window.showToast("Catatan dilempar ke Alarm! ⏰");
+                }
+            }
+
+            // Hapus baris yang diklik dari array utama
             newLines.splice(currentIndex, 1);
             
             // Render ulang tampilannya
