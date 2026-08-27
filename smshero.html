@@ -124,7 +124,7 @@
     <script>
         const WORKER_URL = "https://herosms-proxy.tiktiksatu001.workers.dev"; 
         
-        const KURS_USD = 17649; 
+        const KURS_USD = 16000; 
         const ID_NEGARA_INDONESIA = "6"; 
         
         let daftarOrderan = []; 
@@ -134,11 +134,13 @@
         let hargaProdukTerpilih = 0; 
         let siklusCek = 0;
 
+        // PERBAIKAN: Memisahkan XL dan Axis agar terbaca valid oleh server API HeroSMS
         const MASTER_OPERATOR = { 
             "any": "Semua Operator (Random)", 
             "telkomsel": "Telkomsel", 
             "indosat": "Indosat", 
-            "xl": "XL / Axis", 
+            "xl": "XL",
+            "axis": "Axis",
             "three": "Tri (3)", 
             "smartfren": "Smartfren" 
         };
@@ -169,11 +171,11 @@
                 if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");
                 if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor untuk operator ini kosong!");
                 if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
-                if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG")) throw new Error("Layanan/Operator tidak tersedia.");
+                if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG") || textResponse.includes("UNPROCESSABLE_ENTITY")) throw new Error("Layanan/Operator tidak valid di API.");
                 
                 return textResponse; 
             } catch (e) { 
-                if (e.message.includes("Stok") || e.message.includes("Salah") || e.message.includes("Kosong") || e.message.includes("tidak tersedia") || e.message.includes("Diblokir")) {
+                if (e.message.includes("Stok") || e.message.includes("Salah") || e.message.includes("Kosong") || e.message.includes("tidak valid") || e.message.includes("Diblokir")) {
                     throw e;
                 }
                 throw new Error("Koneksi gagal/CORS. Cek Worker URL Anda!"); 
@@ -186,7 +188,7 @@
                 document.getElementById("otpKeyHero").value = savedKey;
                 document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
                 document.getElementById("statusKeyHero").style.color = "#50fa7b";
-                logConsole("Sistem berjalan (Nomor BARU Aktif, Nomor LAMA Auto-Batal 2M).");
+                logConsole("Sistem berjalan (Perbaikan Parameter XL/Axis).");
                 refreshSemuaDataLive();
             } else {
                 logConsole("Silakan masukkan API Key terlebih dahulu.");
@@ -296,11 +298,18 @@
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
-                const resText = await fetchHeroAPI('getNumber', { 
+                
+                // PERBAIKAN: Jika yang dipilih adalah "Semua Operator (Random)", parameter operator DIBUANG sepenuhnya
+                let paramOrder = {
                     service: serviceId, 
-                    country: ID_NEGARA_INDONESIA, 
-                    operator: produkTerpilihId 
-                });
+                    country: ID_NEGARA_INDONESIA 
+                };
+                
+                if (produkTerpilihId !== "any") {
+                    paramOrder.operator = produkTerpilihId;
+                }
+
+                const resText = await fetchHeroAPI('getNumber', paramOrder);
                 
                 if (resText.includes("ACCESS_NUMBER")) {
                     let parts = resText.split(":");
@@ -368,12 +377,12 @@
         async function mesinCekSmsTerpusat() {
             siklusCek++; 
 
-            // CARI ORDER TERBARU: Index 0 adalah orderan yang paling baru dibuat
+            // Cari index pesanan TERBARU (paling atas) yang sedang aktif
             let activeOrderIndex = -1;
             for (let j = 0; j < daftarOrderan.length; j++) {
                 if (daftarOrderan[j].status === "pending" || daftarOrderan[j].status === "received") {
                     activeOrderIndex = j; 
-                    break; // Mendapatkan index paling kecil = Nomor Paling Baru
+                    break;
                 }
             }
 
@@ -381,7 +390,7 @@
                 let i = daftarOrderan[index];
                 if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
                 
-                // BLOKIR NOMOR LAMA: Jika index pesanan bukan yang terbaru, abaikan pengecekan.
+                // BLOKIR JIKA BUKAN PESANAN TERBARU
                 if (i.status === "pending" && index !== activeOrderIndex) {
                     continue; 
                 }
@@ -412,7 +421,7 @@
             const containerRiwayat = document.getElementById("containerRiwayat");
             let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
 
-            // CARI ORDER TERBARU UNTUK INDIKATOR UI
+            // Cari index pesanan TERBARU (paling atas)
             let activeOrderIndex = -1;
             for (let j = 0; j < daftarOrderan.length; j++) {
                 if (daftarOrderan[j].status === "pending" || daftarOrderan[j].status === "received") {
@@ -424,12 +433,13 @@
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
-                // PENGATURAN WAKTU MAXIMAL DINAMIS
-                // Jika pesanan ini pending dan bukan yang terbaru, waktu max = 120s (2 menit). 
-                // Jika pesanan utama (aktif), waktu max = 300s (5 menit).
+                // PENGATURAN WAKTU MAXIMAL
+                // Jika pesanan ini pending dan diblokir (antrian ke-2 dst), max = 120s (2 menit)
+                // Jika pesanan ini adalah prioritas utama (paling atas), max = 300s (5 menit)
                 let isBlocked = (item.status === "pending" && index !== activeOrderIndex);
                 let maxWait = isBlocked ? 120 : 300; 
                 
+                // Batal otomatis
                 if (item.status === "pending" && sec >= maxWait) { 
                     item.status = "cancelled"; fetchHeroAPI('setStatus', { status: 8, id: item.order_id }).catch(e=>console.log(e)); 
                 }
@@ -458,7 +468,7 @@
                         </div>
                         <div class="box-copy-statik otp-masuk" style="margin-top:6px;">
                             <div>
-                                <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
+                                <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
                                 <div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div>
                             </div>
                             <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button>
@@ -479,7 +489,7 @@
 
                 let textStat = `⚡ Cek OTP... (${sec}s)`; 
                 
-                // INDIKATOR UI
+                // INDIKATOR UI UNTUK NOMOR DIBLOKIR
                 if (isBlocked) {
                     textStat = `⏸️ Diblokir (Prioritas nomor baru) - Auto-Batal dlm ${sisa}s`;
                 }
