@@ -45,14 +45,18 @@
         .note-row.admin-mode { cursor: default; background: #1e1233; border-color: #ff007f; }
         .note-num-badge { background: rgba(0, 255, 204, 0.1); color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.3); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; min-width: 38px; text-align: center; flex-shrink: 0; user-select: none; }
         .note-row.admin-mode .note-num-badge { background: rgba(255, 0, 127, 0.15); color: #ff007f; border-color: rgba(255, 0, 127, 0.4); }
-        .note-text-input { flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #ff007f; border-radius: 4px; outline: none; color: #fff; font-size: 14px; padding: 6px 10px; display: block; width: 100%; font-family: inherit; }
+        
         .note-display-wrapper { flex: 1; font-size: 14px; word-break: break-all; display: flex; align-items: center; justify-content: space-between; }
         .text-before-pipe { color: #ffffff; font-weight: 600; }
         .text-after-pipe { color: #8e85b3; font-style: italic; font-size: 13px; margin-left: 4px; }
         .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
         .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
         
-        /* === TAMBAHAN: STYLING TOMBOL HAPUS BARIS DI ADMIN MODE === */
+        /* === TAMBAHAN: STYLING INPUT PATEN ADMIN === */
+        .admin-input-group { display: flex; width: 100%; gap: 6px; align-items: center; }
+        .admin-input-group span { color: #ff007f; font-weight: bold; user-select: none; }
+        .note-text-input-left { flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #ff007f; border-radius: 4px; outline: none; color: #fff; font-size: 14px; padding: 6px 10px; font-family: inherit; width: 100%; }
+        .note-text-input-right { flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #ff007f; border-radius: 4px; outline: none; color: #8e85b3; font-style: italic; font-size: 13px; padding: 6px 10px; font-family: inherit; width: 100%; }
         .btn-hapus-note { background: transparent; border: none; color: #ff4a4a; cursor: pointer; font-size: 16px; padding: 4px; transition: all 0.2s ease; outline: none; flex-shrink: 0; }
         .btn-hapus-note:hover { color: #ff007f; transform: scale(1.1); }
 
@@ -118,6 +122,15 @@
             background: conic-gradient(transparent, #ff007f, #00ffcc, transparent 30%); animation: putarGlow 2s linear infinite;
         }
         .row-copas-alarm.alarm-nyala::after { content: ''; position: absolute; z-index: -1; inset: 2px; background: #141026; border-radius: 6px; }
+        
+        /* === EFEK NYALA CATATAN PUBLIK BARU === */
+        .publik-nyala { border-color: transparent; box-shadow: 0 0 12px rgba(0, 255, 204, 0.5); }
+        .publik-nyala::before {
+            content: ''; position: absolute; z-index: -2; left: -50%; top: -50%; width: 200%; height: 200%;
+            background: conic-gradient(transparent, #00ffcc, #00b4db, transparent 30%); animation: putarGlow 2s linear infinite;
+        }
+        .publik-nyala::after { content: ''; position: absolute; z-index: -1; inset: 2px; background: #141026; border-radius: 6px; }
+
         @keyframes putarGlow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .input-copas-ket { flex: 1; background: transparent; border: none; border-bottom: 1px dashed #6e678a; color: #fff; outline: none; font-size: 13px; font-family: inherit; width: 100%; resize: vertical; min-height: 25px; padding-bottom: 4px; }
@@ -143,7 +156,7 @@
             </div>
         </div>
         
-        <!-- Tombol Minimize Di Tengah (Menutup Semua) -->
+        <!-- Tombol Minimize Di Tengah -->
         <div class="btn-minimize-server" onclick="tutupSemuaMenu()" title="Tutup Semua Menu Terbuka">
             <i class="fa-solid fa-angles-up"></i>
         </div>
@@ -324,12 +337,11 @@
                 }
             });
             
-            // Matikan kamera juga jika menu scanner ditutup
             stopScannerCamera();
             window.showToast("Semua menu ditutup! 🧹");
         }
 
-        // Fungsi Toggle Universal (Independen: Membuka satu tidak akan menutup yang lain)
+        // Fungsi Toggle Universal
         function togglePanel(wadahId, panahId) {
             const wadah = document.getElementById(wadahId);
             const panah = document.getElementById(panahId);
@@ -567,34 +579,39 @@
             }
         }
 
-        // === TAMBAHAN: FUNGSI UNTUK MENGHAPUS BARIS & PINDAH KE ALARM ===
+        // === FUNGSI MENGHAPUS BARIS, PINDAH KE ALARM & AUTO WAKTU LOKAL ===
         function hapusBarisCatatanUtama(currentIndex) {
             let newLines = [];
-            // Simpan semua teks yang sedang diketik sebelum menghapus
+            // Ambil format gabungan dari input kiri dan kanan
             rawNotesLines.forEach((_, idx) => {
-                const el = document.getElementById(`inp-note-${idx}`);
-                if (el) newLines.push(el.value);
+                const elLeft = document.getElementById(`inp-note-left-${idx}`);
+                const elRight = document.getElementById(`inp-note-right-${idx}`);
+                if (elLeft || elRight) {
+                    let l = elLeft ? elLeft.value.trim() : "";
+                    let r = elRight ? elRight.value.trim() : "";
+                    newLines.push(l + " | " + r);
+                }
             });
             
-            // Cek teks yang akan dihapus apakah mengandung tanda "|"
             const barisDihapus = newLines[currentIndex];
             if (barisDihapus && barisDihapus.includes('|')) {
-                // Ambil semua teks setelah kemunculan pertama karakter "|"
                 const teksSetelahPipa = barisDihapus.substring(barisDihapus.indexOf('|') + 1).trim();
                 
                 if (teksSetelahPipa !== "") {
-                    // Masukkan teks ke dalam tabel alarm
-                    dataCopasTabel.push({ id: Date.now(), ket: teksSetelahPipa, waktu: "" });
+                    // Dapatkan Waktu Lokal Saat Ini untuk Format "datetime-local" (YYYY-MM-DDTHH:mm)
+                    const tzOffset = new Date().getTimezoneOffset() * 60000;
+                    const localISOTime = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 16);
+
+                    // Pindahkan ke alarm dengan waktu tercatat otomatis
+                    dataCopasTabel.push({ id: Date.now(), ket: teksSetelahPipa, waktu: localISOTime });
                     simpanDataCopas();
                     renderDataCopas();
                     window.showToast("Catatan dilempar ke Alarm! ⏰");
                 }
             }
 
-            // Hapus baris yang diklik dari array utama
+            // Hapus baris dari daftar utama dan update tampilan
             newLines.splice(currentIndex, 1);
-            
-            // Render ulang tampilannya
             renderNotesList(newLines.join("\n"));
         }
 
@@ -614,24 +631,47 @@
                 rowDiv.appendChild(badge);
 
                 if(isAdminAuthenticated) {
-                    const inputField = document.createElement("input");
-                    inputField.type = "text";
-                    inputField.id = `inp-note-${index}`;
-                    inputField.className = "note-text-input";
-                    inputField.value = text;
-                    inputField.placeholder = "Ketik catatan...";
-                    inputField.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); insertNewRowAfter(index); } };
-                    rowDiv.appendChild(inputField);
+                    // === DESAIN INPUT PATEN (KIRI | KANAN) ===
+                    const group = document.createElement("div");
+                    group.className = "admin-input-group";
+                    
+                    let leftText = text; let rightText = "";
+                    if(text.includes("|")) {
+                        const parts = text.split("|");
+                        leftText = parts[0].trim();
+                        rightText = parts.slice(1).join("|").trim();
+                    }
 
-                    // === TAMBAHAN: TOMBOL HAPUS BARIS ===
+                    const inputLeft = document.createElement("input");
+                    inputLeft.type = "text";
+                    inputLeft.id = `inp-note-left-${index}`;
+                    inputLeft.className = "note-text-input-left";
+                    inputLeft.value = leftText;
+                    inputLeft.placeholder = "Link / Data...";
+                    inputLeft.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); insertNewRowAfter(index); } };
+                    
+                    const separator = document.createElement("span");
+                    separator.innerText = "|";
+
+                    const inputRight = document.createElement("input");
+                    inputRight.type = "text";
+                    inputRight.id = `inp-note-right-${index}`;
+                    inputRight.className = "note-text-input-right";
+                    inputRight.value = rightText;
+                    inputRight.placeholder = "Keterangan / Alarm...";
+                    inputRight.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); insertNewRowAfter(index); } };
+
+                    group.appendChild(inputLeft);
+                    group.appendChild(separator);
+                    group.appendChild(inputRight);
+                    rowDiv.appendChild(group);
+
+                    // Tombol Hapus Baris
                     const deleteBtn = document.createElement("button");
                     deleteBtn.className = "btn-hapus-note";
                     deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
                     deleteBtn.title = "Hapus baris ini";
-                    deleteBtn.onclick = function(e) {
-                        e.stopPropagation(); // Mencegah klik ter-trigger ke elemen lain
-                        hapusBarisCatatanUtama(index);
-                    };
+                    deleteBtn.onclick = function(e) { e.stopPropagation(); hapusBarisCatatanUtama(index); };
                     rowDiv.appendChild(deleteBtn);
 
                 } else {
@@ -661,20 +701,39 @@
         function insertNewRowAfter(currentIndex) {
             let newLines = [];
             rawNotesLines.forEach((_, idx) => {
-                const el = document.getElementById(`inp-note-${idx}`);
-                newLines.push(el ? el.value : "");
+                const elLeft = document.getElementById(`inp-note-left-${idx}`);
+                const elRight = document.getElementById(`inp-note-right-${idx}`);
+                if (elLeft || elRight) {
+                    let l = elLeft ? elLeft.value.trim() : "";
+                    let r = elRight ? elRight.value.trim() : "";
+                    newLines.push(l + " | " + r);
+                } else {
+                    newLines.push("");
+                }
             });
             newLines.splice(currentIndex + 1, 0, "");
             renderNotesList(newLines.join("\n"));
-            const targetInput = document.getElementById(`inp-note-${currentIndex + 1}`);
+            const targetInput = document.getElementById(`inp-note-left-${currentIndex + 1}`);
             if(targetInput) targetInput.focus();
         }
 
         function packInputsToString() {
             let lineArray = [];
             rawNotesLines.forEach((_, idx) => {
-                const el = document.getElementById(`inp-note-${idx}`);
-                lineArray.push(el ? el.value : "");
+                const elLeft = document.getElementById(`inp-note-left-${idx}`);
+                const elRight = document.getElementById(`inp-note-right-${idx}`);
+                if (elLeft || elRight) {
+                    let l = elLeft ? elLeft.value.trim() : "";
+                    let r = elRight ? elRight.value.trim() : "";
+                    // Simpan paten gabungan (walau kosong, pipa akan mengikat)
+                    if (l === "" && r === "") {
+                        lineArray.push("");
+                    } else {
+                        lineArray.push(l + " | " + r);
+                    }
+                } else {
+                    lineArray.push("");
+                }
             });
             return lineArray.join("\n");
         }
