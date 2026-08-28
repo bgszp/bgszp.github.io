@@ -39,11 +39,11 @@ window.hapusCatatanPublik = function(id) {
     });
 };
 
-// Pantau Perubahan Realtime (Fitur Tampil, Copy, Edit, Hapus, dan Minimize)
+// Pantau Perubahan Realtime
 const dbRef = ref(db, 'catatan_publik');
 onValue(dbRef, (snapshot) => {
     const wadah = document.getElementById("wadahCatatanPublikList");
-    if (!wadah) return; // Mencegah error jika elemen belum dimuat
+    if (!wadah) return; 
     
     wadah.innerHTML = "";
     const data = snapshot.val();
@@ -53,45 +53,46 @@ onValue(dbRef, (snapshot) => {
         return;
     }
 
-    // Menggunakan .reverse() agar catatan terbaru berada di urutan pertama
-    Object.keys(data).reverse().forEach((key, index) => {
+    // Ambil data catatan yang sudah pernah di-copy sebelumnya
+    let copiedKeys = JSON.parse(localStorage.getItem('copied_publik_keys') || '[]');
+
+    Object.keys(data).forEach((key, index) => {
         const item = data[key];
         const row = document.createElement("div");
         row.className = "row-copas-alarm";
         
+        // Cek jika ID ini belum pernah di-copy, tambahkan class publik-nyala
+        if (!copiedKeys.includes(key)) {
+            row.classList.add("publik-nyala");
+        }
+        
         row.innerHTML = `
             <div style="font-size:12px; color:#00ffcc; width:20px; font-weight:bold; margin-top: 5px;">${index + 1}.</div>
             <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; z-index: 2;">
-                <div class="teks-publik" style="font-size: 13px; color: #fff; word-break: break-all; white-space: pre-wrap; cursor: pointer; display: block;" title="Klik untuk menyalin">${item.pesan} <i class="fa-regular fa-copy copy-hint-icon" style="color: #00ffcc; opacity: 1; margin-left: 5px;"></i></div>
+                <div class="teks-publik" style="font-size: 13px; color: #fff; word-break: break-all; white-space: pre-wrap; cursor: pointer;" title="Klik untuk menyalin">${item.pesan} <i class="fa-regular fa-copy copy-hint-icon" style="color: #00ffcc; opacity: 1; margin-left: 5px;"></i></div>
                 <div style="font-size: 10px; color: #8e85b3;"><i class="fa-regular fa-clock"></i> ${item.waktu || ''}</div>
             </div>
-            <div style="display: flex; gap: 8px; margin-top: -2px; align-items: flex-start;">
-                <!-- Tombol Minimize per catatan ditambahkan di sini -->
-                <button class="btn-minimize-publik btn-hapus-copas" style="color: #00ffcc; font-size: 14px;" title="Minimize/Maximize"><i class="fa-solid fa-minus"></i></button>
+            <div style="display: flex; gap: 8px; margin-top: -2px;">
                 <button class="btn-edit-publik btn-hapus-copas" style="color: #f0ad4e; font-size: 14px;" title="Edit"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-hapus-publik btn-hapus-copas" style="font-size: 14px; color: #ff4a4a;" title="Hapus"><i class="fa-solid fa-trash"></i></button>
             </div>
         `;
         
-        // Logika Minimize / Maximize Teks Catatan
-        const btnMinimize = row.querySelector('.btn-minimize-publik');
-        const teksKonten = row.querySelector('.teks-publik');
-        
-        btnMinimize.addEventListener('click', () => {
-            if (teksKonten.style.display === "none") {
-                teksKonten.style.display = "block";
-                btnMinimize.innerHTML = '<i class="fa-solid fa-minus"></i>'; // Ubah ikon kembali ke minus
-            } else {
-                teksKonten.style.display = "none";
-                btnMinimize.innerHTML = '<i class="fa-solid fa-plus"></i>'; // Ubah ikon jadi plus saat disembunyikan
-            }
-        });
-
-        // Logika Salin
-        teksKonten.addEventListener('click', () => {
+        // Logika Salin (Sembunyikan efek nyala dan simpan histori ke localStorage)
+        row.querySelector('.teks-publik').addEventListener('click', () => {
             if(window.eksekusiSalinTeks) {
                 window.eksekusiSalinTeks(item.pesan).then(() => {
                     if(window.showToast) window.showToast("Catatan Publik Disalin! ✨");
+                    
+                    // Matikan lampu nyala
+                    row.classList.remove("publik-nyala");
+                    
+                    // Simpan ID agar besok-besok tidak menyala lagi
+                    let currentKeys = JSON.parse(localStorage.getItem('copied_publik_keys') || '[]');
+                    if (!currentKeys.includes(key)) {
+                        currentKeys.push(key);
+                        localStorage.setItem('copied_publik_keys', JSON.stringify(currentKeys));
+                    }
                 });
             }
         });
