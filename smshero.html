@@ -132,7 +132,9 @@
         let produkTerpilihId = null; 
         let namaProdukTerpilih = ""; 
         let hargaProdukTerpilih = 0; 
-        
+        let siklusCek = 0;
+
+        // PERBAIKAN: Menghapus "xl" terpisah. Kita gunakan "axis" tapi tampilannya "XL / Axis"
         const MASTER_OPERATOR = { 
             "any": "Semua Operator (Random)", 
             "telkomsel": "Telkomsel", 
@@ -172,10 +174,10 @@
                 
                 return textResponse; 
             } catch (e) { 
-                if (e.message.includes("Failed to fetch")) {
-                    throw new Error("Koneksi Ditolak Server (Rate Limit/CORS)");
+                if (e.message.includes("Stok") || e.message.includes("Salah") || e.message.includes("Kosong") || e.message.includes("tidak valid") || e.message.includes("Diblokir")) {
+                    throw e;
                 }
-                throw e; // Menampilkan error aslinya agar jelas
+                throw new Error("Koneksi gagal/CORS. Cek Worker URL Anda!"); 
             }
         }
 
@@ -185,7 +187,7 @@
                 document.getElementById("otpKeyHero").value = savedKey;
                 document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
                 document.getElementById("statusKeyHero").style.color = "#50fa7b";
-                logConsole("Sistem berjalan (Pengecekan Aman: 3.5 Detik).");
+                logConsole("Sistem berjalan (Perbaikan Parameter XL/Axis).");
                 refreshSemuaDataLive();
             } else {
                 logConsole("Silakan masukkan API Key terlebih dahulu.");
@@ -196,9 +198,7 @@
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
-            
-            // Diubah menjadi 3.5 detik (sweet spot) agar cepat namun terhindar dari pemblokiran server
-            setInterval(mesinCekSmsTerpusat, 3500); 
+            setInterval(mesinCekSmsTerpusat, 3000);
         });
 
         function toggleRiwayatDropdown() { const w = document.getElementById("wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
@@ -339,11 +339,7 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        // Diberi jeda 1 detik agar request Saldo dan Harga tidak menabrak batas limit server secara serentak
-        function refreshSemuaDataLive() { 
-            ambilSaldoLive(); 
-            setTimeout(() => { inisialisasiLayanan(); }, 1000); 
-        }
+        function refreshSemuaDataLive() { ambilSaldoLive(); inisialisasiLayanan(); }
         
         async function ambilSaldoLive() {
             try {
@@ -377,6 +373,8 @@
         }
 
         async function mesinCekSmsTerpusat() {
+            siklusCek++; 
+
             let activeOrderIndex = -1;
             for (let j = 0; j < daftarOrderan.length; j++) {
                 if (daftarOrderan[j].status === "pending" || daftarOrderan[j].status === "received") {
@@ -392,6 +390,9 @@
                 if (i.status === "pending" && index !== activeOrderIndex) {
                     continue; 
                 }
+
+                let izinkanCek = (siklusCek % 3 === 0);
+                if (!izinkanCek) continue;
                 
                 try {
                     const resText = await fetchHeroAPI('getStatus', { id: i.order_id });
