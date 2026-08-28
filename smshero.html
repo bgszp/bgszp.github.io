@@ -172,10 +172,10 @@
                 
                 return textResponse; 
             } catch (e) { 
-                if (e.message.includes("Stok") || e.message.includes("Salah") || e.message.includes("Kosong") || e.message.includes("tidak valid") || e.message.includes("Diblokir")) {
-                    throw e;
+                if (e.message.includes("Failed to fetch")) {
+                    throw new Error("Koneksi Ditolak Server (Rate Limit/CORS)");
                 }
-                throw new Error("Koneksi gagal/CORS. Cek Worker URL Anda!"); 
+                throw e; // Menampilkan error aslinya agar jelas
             }
         }
 
@@ -185,7 +185,7 @@
                 document.getElementById("otpKeyHero").value = savedKey;
                 document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
                 document.getElementById("statusKeyHero").style.color = "#50fa7b";
-                logConsole("Sistem berjalan (Pengecekan Cepat 2 Detik).");
+                logConsole("Sistem berjalan (Pengecekan Aman: 3.5 Detik).");
                 refreshSemuaDataLive();
             } else {
                 logConsole("Silakan masukkan API Key terlebih dahulu.");
@@ -196,7 +196,9 @@
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
-            setInterval(mesinCekSmsTerpusat, 2000); // Polling lebih cepat
+            
+            // Diubah menjadi 3.5 detik (sweet spot) agar cepat namun terhindar dari pemblokiran server
+            setInterval(mesinCekSmsTerpusat, 3500); 
         });
 
         function toggleRiwayatDropdown() { const w = document.getElementById("wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
@@ -337,7 +339,11 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); inisialisasiLayanan(); }
+        // Diberi jeda 1 detik agar request Saldo dan Harga tidak menabrak batas limit server secara serentak
+        function refreshSemuaDataLive() { 
+            ambilSaldoLive(); 
+            setTimeout(() => { inisialisasiLayanan(); }, 1000); 
+        }
         
         async function ambilSaldoLive() {
             try {
