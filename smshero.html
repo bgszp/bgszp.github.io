@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HeroSMS Webhook Panel</title>
+    <title>HeroSMS Multi Panel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -41,14 +41,16 @@
 </head>
 <body>
     <div class="container">
+        <!-- HEADER SALDO -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Webhook (ID)</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (ID)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
             </div>
         </div>
 
+        <!-- SETTING TOKEN -->
         <div style="margin-bottom: 12px;">
             <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()">
                 <span>🔑 Konfigurasi API Key (HeroSMS)</span>
@@ -64,6 +66,7 @@
             </div>
         </div>
 
+        <!-- AREA PEMESANAN DENGAN MULTI LAYANAN -->
         <div class="dropdown-box-wrapper">
             <label class="form-label">🛒 Setup Layanan Utama (Indonesia)</label>
             <div class="unified-order-box">
@@ -85,6 +88,7 @@
             </button>
         </div>
 
+        <!-- NOMOR AKTIF -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
@@ -95,6 +99,7 @@
             </div>
         </div>
 
+        <!-- RIWAYAT SUKSES -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div class="pemicu-dropdown" onclick="toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
                 <span>📜 Riwayat Sukses (<span id="countRiwayatBadge">0</span>)</span>
@@ -110,7 +115,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> UI Responsif siap digunakan...
+            └> Menunggu sistem berjalan...
         </div>
     </div>
     
@@ -127,7 +132,9 @@
         let produkTerpilihId = null; 
         let namaProdukTerpilih = ""; 
         let hargaProdukTerpilih = 0; 
-        
+        let siklusCek = 0;
+
+        // PERBAIKAN: Menghapus "xl" terpisah. Kita gunakan "axis" tapi tampilannya "XL / Axis"
         const MASTER_OPERATOR = { 
             "any": "Semua Operator (Random)", 
             "telkomsel": "Telkomsel", 
@@ -147,7 +154,6 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // PERBAIKAN: Menambahkan sistem Timeout AbortController agar jika API lemot, panel tidak STUCK
         async function fetchHeroAPI(action, params = {}) {
             const token = localStorage.getItem("otp_key_hero");
             if (!token) throw new Error("API Key belum disetting.");
@@ -155,28 +161,23 @@
             let url = `${WORKER_URL}?api_key=${token}&action=${action}`;
             for (let k in params) url += `&${k}=${params[k]}`;
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 12000); // Batas maksimal tunggu 12 detik
-
             try {
-                const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-                clearTimeout(timeoutId);
-                
+                const res = await fetch(url, { cache: "no-store" });
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 let textResponse = await res.text();
 
                 if(textResponse === "BAD_KEY") throw new Error("API Key HeroSMS Salah!");
                 if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");
-                if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor kosong!");
+                if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor untuk operator ini kosong!");
                 if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
-                if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG") || textResponse.includes("UNPROCESSABLE_ENTITY")) throw new Error("Layanan/Operator tidak valid.");
+                if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG") || textResponse.includes("UNPROCESSABLE_ENTITY")) throw new Error("Layanan/Operator tidak valid di API.");
                 
                 return textResponse; 
             } catch (e) { 
-                clearTimeout(timeoutId);
-                if (e.name === 'AbortError') throw new Error("Timeout: Server HeroSMS sangat lambat");
-                if (e.message.includes("Failed to fetch")) throw new Error("Koneksi Ditolak (Cek Worker)");
-                throw e; 
+                if (e.message.includes("Stok") || e.message.includes("Salah") || e.message.includes("Kosong") || e.message.includes("tidak valid") || e.message.includes("Diblokir")) {
+                    throw e;
+                }
+                throw new Error("Koneksi gagal/CORS. Cek Worker URL Anda!"); 
             }
         }
 
@@ -186,6 +187,7 @@
                 document.getElementById("otpKeyHero").value = savedKey;
                 document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
                 document.getElementById("statusKeyHero").style.color = "#50fa7b";
+                logConsole("Sistem berjalan (Perbaikan Parameter XL/Axis).");
                 refreshSemuaDataLive();
             } else {
                 logConsole("Silakan masukkan API Key terlebih dahulu.");
@@ -196,9 +198,7 @@
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
-            
-            // Pengecekan OTP instan ke Cloudflare KV Store (Webhook)
-            setInterval(mesinCekSmsTerpusat, 1500); 
+            setInterval(mesinCekSmsTerpusat, 3000);
         });
 
         function toggleRiwayatDropdown() { const w = document.getElementById("wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
@@ -216,51 +216,20 @@
             await muatProdukLayanan(false);
         }
 
-        // PERBAIKAN: Menambahkan loading visual yang jelas
-        function refreshSemuaDataLive() { 
-            document.getElementById("txtSaldoLive").innerText = "⏳...";
-            document.getElementById("labelServerTerpilih").innerHTML = `⏳ Menghubungkan...`;
-            document.getElementById("btnPesanAksi").disabled = true;
-            daftarServerTersedia = [];
-            renderDropdownOptions();
-            
-            // Jalankan paralel agar loading lebih cepat
-            ambilSaldoLive(); 
-            inisialisasiLayanan();
-        }
-
-        async function ambilSaldoLive() {
-            try {
-                const res = await fetchHeroAPI('getBalance');
-                if (res.includes("ACCESS_BALANCE")) {
-                    let saldoApi = parseFloat(res.split(":")[1] || 0);
-                    document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoApi * KURS_USD);
-                } else {
-                    document.getElementById("txtSaldoLive").innerText = "Error API";
-                }
-            } catch(e) { 
-                document.getElementById("txtSaldoLive").innerText = "Gagal"; 
-                logConsole("Saldo: " + e.message); 
-            }
-        }
-
         async function muatProdukLayanan(autoOpen = false) {
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
                 let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
 
-                document.getElementById("labelServerTerpilih").innerHTML = `⏳ Mengambil data...`;
-                document.getElementById("btnPesanAksi").disabled = true;
-                daftarServerTersedia = [];
-                renderDropdownOptions();
-
+                if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `Mencari harga...`;
+                
                 const resText = await fetchHeroAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });
                 
                 let data;
                 try {
                     data = JSON.parse(resText);
                 } catch(e) {
-                    throw new Error("Gagal membaca struktur API HeroSMS.");
+                    throw new Error("Gagal mengambil data produk.");
                 }
                 
                 let stockID = 0;
@@ -270,7 +239,7 @@
                     stockID = data[ID_NEGARA_INDONESIA][serviceId].count;
                     priceUSD = data[ID_NEGARA_INDONESIA][serviceId].cost;
                 } else {
-                    throw new Error("Stok layanan sedang kosong.");
+                    throw new Error("Stok layanan ini sedang kosong di Indonesia.");
                 }
                 
                 daftarServerTersedia = [];
@@ -292,24 +261,18 @@
                 
                 document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_USD)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
                 document.getElementById("btnPesanAksi").disabled = false;
-                
                 if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
                 
             } catch (e) {
-                document.getElementById("labelServerTerpilih").innerHTML = `<span style="color:var(--accent-red);">❌ Gagal Memuat</span>`;
-                document.getElementById("btnPesanAksi").disabled = true; 
-                document.getElementById("containerListDropdown").innerHTML = `<div style="padding: 12px; text-align: center; color: var(--accent-red); font-size: 12px; font-weight:bold;">${e.message}</div>`;
-                logConsole("Layanan: " + e.message);
+                document.getElementById("labelServerTerpilih").innerText = "Kosong / Error API";
+                document.getElementById("btnPesanAksi").disabled = true; document.getElementById("containerListDropdown").innerHTML = "";
+                logConsole(e.message);
             }
         }
 
-        // PERBAIKAN: Menambahkan pesan informatif jika dropdown dibuka tapi data belum siap
         function renderDropdownOptions() {
             const container = document.getElementById("containerListDropdown");
-            if(daftarServerTersedia.length === 0) { 
-                container.innerHTML = `<div style="padding: 15px; text-align: center; color: #8b8da9; font-size: 12px; font-style: italic;">⏳ Sedang mengambil data dari server, harap tunggu...</div>`; 
-                return; 
-            }
+            if(daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center;">Kosong</div>`; return; }
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
                 let sel = (produkTerpilihId === srv.id) ? "selected" : "";
@@ -376,10 +339,22 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
+        function refreshSemuaDataLive() { ambilSaldoLive(); inisialisasiLayanan(); }
+        
+        async function ambilSaldoLive() {
+            try {
+                const res = await fetchHeroAPI('getBalance'); 
+                if (res.includes("ACCESS_BALANCE")) {
+                    let saldoApi = parseFloat(res.split(":")[1] || 0);
+                    document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoApi * KURS_USD);
+                }
+            } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; logConsole(e.message); }
+        }
+
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
             try { 
-                await fetchHeroAPI('setStatus', { status: 8, id: item.order_id });
+                await fetchHeroAPI('setStatus', { status: 8, id: item.order_id }); 
                 item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Dibatalkan!"); 
             } catch (e) { logConsole("Gagal batal: " + e.message); }
         }
@@ -392,12 +367,14 @@
         async function eksekusiSelesai(index) {
             const item = daftarOrderan[index];
             try { 
-                await fetchHeroAPI('setStatus', { status: 6, id: item.order_id });
+                await fetchHeroAPI('setStatus', { status: 6, id: item.order_id }); 
                 item.status = "completed"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Selesai!"); 
             } catch(err) {}
         }
 
         async function mesinCekSmsTerpusat() {
+            siklusCek++; 
+
             let activeOrderIndex = -1;
             for (let j = 0; j < daftarOrderan.length; j++) {
                 if (daftarOrderan[j].status === "pending" || daftarOrderan[j].status === "received") {
@@ -413,10 +390,12 @@
                 if (i.status === "pending" && index !== activeOrderIndex) {
                     continue; 
                 }
+
+                let izinkanCek = (siklusCek % 3 === 0);
+                if (!izinkanCek) continue;
                 
                 try {
-                    const res = await fetch(`${WORKER_URL}/check-otp?id=${i.order_id}`);
-                    const resText = await res.text();
+                    const resText = await fetchHeroAPI('getStatus', { id: i.order_id });
                     
                     if (resText.includes("STATUS_OK")) { 
                         let otpCode = resText.split(":")[1];
@@ -426,6 +405,8 @@
                             munculkanPopupNative(i.phone, i.otp, i.layanan); 
                             renderUILayout(); simpanDaftarOrderanKeLokal();
                         }
+                    } else if (resText === "STATUS_CANCEL") { 
+                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); 
                     }
                 } catch (e) {}
             }
@@ -451,7 +432,7 @@
                 let maxWait = isBlocked ? 120 : 300; 
                 
                 if (item.status === "pending" && sec >= maxWait) { 
-                    item.status = "cancelled"; fetchHeroAPI('setStatus', { status: 8, id: item.order_id }).catch(e=>console.log(e));
+                    item.status = "cancelled"; fetchHeroAPI('setStatus', { status: 8, id: item.order_id }).catch(e=>console.log(e)); 
                 }
                 
                 if (item.status === "cancelled") return; 
@@ -497,7 +478,7 @@
                     cool = 0; 
                 }
 
-                let textStat = `⚡ Menunggu Webhook OTP... (${sec}s)`; 
+                let textStat = `⚡ Cek OTP... (${sec}s)`; 
                 
                 if (isBlocked) {
                     textStat = `⏸️ Diblokir (Prioritas nomor baru) - Auto-Batal dlm ${sisa}s`;
@@ -511,7 +492,7 @@
                 let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
 
                 if (item.status === "received") { 
-                    textStat = `🎉 OTP Diterima via Webhook!`; 
+                    textStat = `🎉 Menunggu Tindakan (Aktif)`; 
                     colStat = "#50fa7b"; 
                     kotakOtp = `
                     <div class="box-copy-statik otp-masuk">
