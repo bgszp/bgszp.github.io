@@ -132,9 +132,7 @@
         let produkTerpilihId = null; 
         let namaProdukTerpilih = ""; 
         let hargaProdukTerpilih = 0; 
-        let siklusCek = 0;
-
-        // PERBAIKAN: Menghapus "xl" terpisah. Kita gunakan "axis" tapi tampilannya "XL / Axis"
+        
         const MASTER_OPERATOR = { 
             "any": "Semua Operator (Random)", 
             "telkomsel": "Telkomsel", 
@@ -154,6 +152,7 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
+        // Fungsi fetch ini tetap digunakan untuk order, cek saldo, dan cancel
         async function fetchHeroAPI(action, params = {}) {
             const token = localStorage.getItem("otp_key_hero");
             if (!token) throw new Error("API Key belum disetting.");
@@ -168,16 +167,16 @@
 
                 if(textResponse === "BAD_KEY") throw new Error("API Key HeroSMS Salah!");
                 if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");
-                if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor untuk operator ini kosong!");
+                if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor kosong!");
                 if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
                 if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG") || textResponse.includes("UNPROCESSABLE_ENTITY")) throw new Error("Layanan/Operator tidak valid di API.");
                 
                 return textResponse; 
             } catch (e) { 
-                if (e.message.includes("Stok") || e.message.includes("Salah") || e.message.includes("Kosong") || e.message.includes("tidak valid") || e.message.includes("Diblokir")) {
-                    throw e;
+                if (e.message.includes("Failed to fetch")) {
+                    throw new Error("Koneksi Ditolak Server");
                 }
-                throw new Error("Koneksi gagal/CORS. Cek Worker URL Anda!"); 
+                throw e; 
             }
         }
 
@@ -187,7 +186,7 @@
                 document.getElementById("otpKeyHero").value = savedKey;
                 document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
                 document.getElementById("statusKeyHero").style.color = "#50fa7b";
-                logConsole("Sistem berjalan (Perbaikan Parameter XL/Axis).");
+                logConsole("Sistem Webhook Aktif (Cepat & Anti-Blokir).");
                 refreshSemuaDataLive();
             } else {
                 logConsole("Silakan masukkan API Key terlebih dahulu.");
@@ -198,7 +197,9 @@
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
-            setInterval(mesinCekSmsTerpusat, 3000);
+            
+            // Interval dibuat super cepat (1.5 detik) karena kita mengecek ke Cloudflare sendiri
+            setInterval(mesinCekSmsTerpusat, 1500); 
         });
 
         function toggleRiwayatDropdown() { const w = document.getElementById("wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
@@ -339,7 +340,10 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); inisialisasiLayanan(); }
+        function refreshSemuaDataLive() { 
+            ambilSaldoLive(); 
+            setTimeout(() => { inisialisasiLayanan(); }, 1000); 
+        }
         
         async function ambilSaldoLive() {
             try {
@@ -372,9 +376,8 @@
             } catch(err) {}
         }
 
+        // FUNGSI INI TELAH DIUBAH UNTUK MENGAMBIL OTP DARI CLOUDFLARE WORKER ANDA SENDIRI
         async function mesinCekSmsTerpusat() {
-            siklusCek++; 
-
             let activeOrderIndex = -1;
             for (let j = 0; j < daftarOrderan.length; j++) {
                 if (daftarOrderan[j].status === "pending" || daftarOrderan[j].status === "received") {
@@ -390,12 +393,11 @@
                 if (i.status === "pending" && index !== activeOrderIndex) {
                     continue; 
                 }
-
-                let izinkanCek = (siklusCek % 3 === 0);
-                if (!izinkanCek) continue;
                 
                 try {
-                    const resText = await fetchHeroAPI('getStatus', { id: i.order_id });
+                    // Cek OTP ke Webhook Store Anda sendiri
+                    const res = await fetch(`${WORKER_URL}/check-otp?id=${i.order_id}`);
+                    const resText = await res.text();
                     
                     if (resText.includes("STATUS_OK")) { 
                         let otpCode = resText.split(":")[1];
@@ -405,8 +407,6 @@
                             munculkanPopupNative(i.phone, i.otp, i.layanan); 
                             renderUILayout(); simpanDaftarOrderanKeLokal();
                         }
-                    } else if (resText === "STATUS_CANCEL") { 
-                        i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); 
                     }
                 } catch (e) {}
             }
