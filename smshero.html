@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HeroSMS Multi Panel</title>
+    <title>HeroSMS Webhook Panel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -43,7 +43,7 @@
     <div class="container">
         <!-- HEADER SALDO -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (ID)</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Webhook (ID)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
@@ -66,7 +66,7 @@
             </div>
         </div>
 
-        <!-- AREA PEMESANAN DENGAN MULTI LAYANAN -->
+        <!-- AREA PEMESANAN -->
         <div class="dropdown-box-wrapper">
             <label class="form-label">🛒 Setup Layanan Utama (Indonesia)</label>
             <div class="unified-order-box">
@@ -115,7 +115,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Menunggu sistem berjalan...
+            └> Sistem Webhook siap digunakan...
         </div>
     </div>
     
@@ -152,7 +152,6 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // Fungsi fetch ini tetap digunakan untuk order, cek saldo, dan cancel
         async function fetchHeroAPI(action, params = {}) {
             const token = localStorage.getItem("otp_key_hero");
             if (!token) throw new Error("API Key belum disetting.");
@@ -165,11 +164,11 @@
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 let textResponse = await res.text();
 
-                if(textResponse === "BAD_KEY") throw new Error("API Key HeroSMS Salah!");
-                if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");
-                if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor kosong!");
-                if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
-                if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG") || textResponse.includes("UNPROCESSABLE_ENTITY")) throw new Error("Layanan/Operator tidak valid di API.");
+                if(textResponse === "BAD_KEY") throw new Error("API Key HeroSMS Salah!");[cite: 3]
+                if(textResponse === "NO_BALANCE") throw new Error("Saldo HeroSMS Kosong!");[cite: 3]
+                if(textResponse === "NO_NUMBERS" || textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor kosong!");[cite: 3]
+                if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");[cite: 3]
+                if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG") || textResponse.includes("UNPROCESSABLE_ENTITY")) throw new Error("Layanan/Operator tidak valid.");[cite: 3]
                 
                 return textResponse; 
             } catch (e) { 
@@ -186,7 +185,7 @@
                 document.getElementById("otpKeyHero").value = savedKey;
                 document.getElementById("statusKeyHero").innerText = "✅ Token Aktif."; 
                 document.getElementById("statusKeyHero").style.color = "#50fa7b";
-                logConsole("Sistem Webhook Aktif (Cepat & Anti-Blokir).");
+                logConsole("Sistem Webhook berjalan optimal.");
                 refreshSemuaDataLive();
             } else {
                 logConsole("Silakan masukkan API Key terlebih dahulu.");
@@ -198,7 +197,7 @@
 
             setInterval(mesinWaktuTerpusat, 1000);
             
-            // Interval dibuat super cepat (1.5 detik) karena kita mengecek ke Cloudflare sendiri
+            // Pengecekan OTP instan ke Cloudflare KV Store (Webhook Server milik Anda) setiap 1.5 detik
             setInterval(mesinCekSmsTerpusat, 1500); 
         });
 
@@ -224,7 +223,7 @@
 
                 if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `Mencari harga...`;
                 
-                const resText = await fetchHeroAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });
+                const resText = await fetchHeroAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });[cite: 3]
                 
                 let data;
                 try {
@@ -308,7 +307,7 @@
                     paramOrder.operator = produkTerpilihId;
                 }
 
-                const resText = await fetchHeroAPI('getNumber', paramOrder);
+                const resText = await fetchHeroAPI('getNumber', paramOrder);[cite: 3]
                 
                 if (resText.includes("ACCESS_NUMBER")) {
                     let parts = resText.split(":");
@@ -347,7 +346,7 @@
         
         async function ambilSaldoLive() {
             try {
-                const res = await fetchHeroAPI('getBalance'); 
+                const res = await fetchHeroAPI('getBalance');[cite: 3]
                 if (res.includes("ACCESS_BALANCE")) {
                     let saldoApi = parseFloat(res.split(":")[1] || 0);
                     document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoApi * KURS_USD);
@@ -358,25 +357,24 @@
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
             try { 
-                await fetchHeroAPI('setStatus', { status: 8, id: item.order_id }); 
+                await fetchHeroAPI('setStatus', { status: 8, id: item.order_id });[cite: 3]
                 item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Dibatalkan!"); 
             } catch (e) { logConsole("Gagal batal: " + e.message); }
         }
         
         async function eksekusiResend(index) {
             const item = daftarOrderan[index];
-            try { await fetchHeroAPI('setStatus', { status: 3, id: item.order_id }); showToast("Kirim Ulang diminta."); } catch (e) {}
+            try { await fetchHeroAPI('setStatus', { status: 3, id: item.order_id }); showToast("Kirim Ulang diminta."); } catch (e) {}[cite: 3]
         }
 
         async function eksekusiSelesai(index) {
             const item = daftarOrderan[index];
             try { 
-                await fetchHeroAPI('setStatus', { status: 6, id: item.order_id }); 
+                await fetchHeroAPI('setStatus', { status: 6, id: item.order_id });[cite: 3]
                 item.status = "completed"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Selesai!"); 
             } catch(err) {}
         }
 
-        // FUNGSI INI TELAH DIUBAH UNTUK MENGAMBIL OTP DARI CLOUDFLARE WORKER ANDA SENDIRI
         async function mesinCekSmsTerpusat() {
             let activeOrderIndex = -1;
             for (let j = 0; j < daftarOrderan.length; j++) {
@@ -395,7 +393,6 @@
                 }
                 
                 try {
-                    // Cek OTP ke Webhook Store Anda sendiri
                     const res = await fetch(`${WORKER_URL}/check-otp?id=${i.order_id}`);
                     const resText = await res.text();
                     
@@ -432,7 +429,7 @@
                 let maxWait = isBlocked ? 120 : 300; 
                 
                 if (item.status === "pending" && sec >= maxWait) { 
-                    item.status = "cancelled"; fetchHeroAPI('setStatus', { status: 8, id: item.order_id }).catch(e=>console.log(e)); 
+                    item.status = "cancelled"; fetchHeroAPI('setStatus', { status: 8, id: item.order_id }).catch(e=>console.log(e));[cite: 3]
                 }
                 
                 if (item.status === "cancelled") return; 
@@ -478,7 +475,7 @@
                     cool = 0; 
                 }
 
-                let textStat = `⚡ Cek OTP... (${sec}s)`; 
+                let textStat = `⚡ Menunggu Webhook OTP... (${sec}s)`; 
                 
                 if (isBlocked) {
                     textStat = `⏸️ Diblokir (Prioritas nomor baru) - Auto-Batal dlm ${sisa}s`;
@@ -492,7 +489,7 @@
                 let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
 
                 if (item.status === "received") { 
-                    textStat = `🎉 Menunggu Tindakan (Aktif)`; 
+                    textStat = `🎉 OTP Diterima via Webhook!`; 
                     colStat = "#50fa7b"; 
                     kotakOtp = `
                     <div class="box-copy-statik otp-masuk">
