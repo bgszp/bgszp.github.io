@@ -394,36 +394,40 @@
         }
 
         // OPTIMASI UTAMA: Jangan kirim request sama sekali jika TIDAK ADA orderan berstatus pending!
-        async function mesinCekSmsTerpusat() {
-            let pendingExist = daftarOrderan.some(i => i.status === "pending");
-            if (!pendingExist) return; // Menghemat 100% kuota saat idle / tidak ada order pending
+async function mesinCekSmsTerpusat() {
+    let pendingExist = daftarOrderan.some(i => i.status === "pending");
+    if (!pendingExist) return; 
 
-            let activeOrderIndex = -1;
-            for (let j = 0; j < daftarOrderan.length; j++) {
-                if (daftarOrderan[j].status === "pending") {
-                    activeOrderIndex = j; 
-                    break;
-                }
-            }
-
-            if (activeOrderIndex === -1) return;
-            let i = daftarOrderan[activeOrderIndex];
-                
-            try {
-                const res = await fetch(`${WORKER_URL}/check-otp?id=${i.order_id}`);
-                const resText = await res.text();
-                
-                if (resText.includes("STATUS_OK")) { 
-                    let otpCode = resText.split(":")[1];
-                    if (i.status === "pending" || i.otp !== otpCode) {
-                        i.status = "received"; i.otp = otpCode; 
-                        putarSuaraNotifKeras(); 
-                        munculkanPopupNative(i.phone, i.otp, i.layanan); 
-                        renderUILayout(); simpanDaftarOrderanKeLokal();
-                    }
-                }
-            } catch (e) {}
+    let activeOrderIndex = -1;
+    for (let j = 0; j < daftarOrderan.length; j++) {
+        if (daftarOrderan[j].status === "pending") {
+            activeOrderIndex = j; 
+            break;
         }
+    }
+
+    if (activeOrderIndex === -1) return;
+    let i = daftarOrderan[activeOrderIndex];
+    let token = localStorage.getItem("otp_key_hero") || "";
+        
+    try {
+        // Mengirim ID dan API Key untuk Hybrid Check
+        const res = await fetch(`${WORKER_URL}/check-otp?id=${i.order_id}&api_key=${token}`);
+        const resText = await res.text();
+        
+        if (resText.includes("STATUS_OK")) { 
+            let otpCode = resText.split(":")[1];
+            if (i.status === "pending" || i.otp !== otpCode) {
+                i.status = "received"; 
+                i.otp = otpCode; 
+                putarSuaraNotifKeras(); 
+                munculkanPopupNative(i.phone, i.otp, i.layanan); 
+                renderUILayout(); 
+                simpanDaftarOrderanKeLokal();
+            }
+        }
+    } catch (e) {}
+}
 
         function renderUILayout() {
             const containerAktif = document.getElementById("containerListOrder");
