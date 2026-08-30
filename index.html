@@ -107,6 +107,12 @@
 
     <!-- === 1. MENU SERVERS === -->
     <div class="wrapper-menu-server" style="position: relative; margin-bottom: 18px;">
+        
+        <!-- TAMPILAN IP JARINGAN (Posisi Absolute di Atas Kanan) -->
+        <div id="teks-ip-jaringan" style="position: absolute; right: 0; top: -20px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5;">
+            <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP...
+        </div>
+
         <div class="server-col">
             <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP1', 'panahSrv1')">
                 <span>🛠️ Server 1</span>
@@ -174,7 +180,6 @@
                     <i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA
                     <span id="syncStatus" style="font-size:10px; color:#aaa; margin-left:5px;">(Memuat...)</span>
                 </div>
-                <!-- Tombol Refresh dihapus karena Firebase Realtime sudah menangani otomatis -->
             </div>
             <div id="notesContainer" class="notes-list-container"></div>
             <button type="button" class="btn-admin-control" id="btnAdminAuth" onclick="toggleAdminAccess()">
@@ -385,6 +390,19 @@
         }
         setInterval(cekAlarmCopas, 5000);
 
+        // === FUNGSI DETEKSI IP ADDRESS REALTIME ===
+        async function updateIPAddress() {
+            const ipText = document.getElementById('teks-ip-jaringan');
+            if (!ipText) return;
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #00ffcc;"></i> <span style="color: #00ffcc;">${data.ip}</span>`;
+            } catch (error) {
+                ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #ff4a4a;"></i> <span style="color: #ff4a4a;">Terputus</span>`;
+            }
+        }
+
         let DATA_DUMMY_DATABASE = [];
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
@@ -393,7 +411,18 @@
         document.addEventListener("DOMContentLoaded", function() {
             fetch(`./data_pengguna.json?t=${Date.now()}`).then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
             muatDataCopas();
+            updateIPAddress(); // Muat IP saat pertama kali dibuka
         });
+
+        // Event listener saat jaringan ganti/mati
+        window.addEventListener('online', updateIPAddress);
+        window.addEventListener('offline', () => {
+            const ipText = document.getElementById('teks-ip-jaringan');
+            if (ipText) ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #ff4a4a;"></i> <span style="color: #ff4a4a;">Terputus</span>`;
+        });
+        
+        // Cek berkala setiap 15 detik (untuk menangkap perpindahan WiFi ke Data Seluler yang tersembunyi)
+        setInterval(updateIPAddress, 15000);
 
         window.eksekusiSalinTeks = function(teks) {
             if (navigator.clipboard && window.isSecureContext) { return navigator.clipboard.writeText(teks); } else {
@@ -405,9 +434,8 @@
             }
         }
 
-        // FUNGSI DIPANGGIL OTOMATIS DARI FIREBASE ONVALUE
         window.renderNotesListDariFirebase = function(fullText) {
-            if (isAdminAuthenticated) return; // Jangan timpa form kalau admin lagi ngetik
+            if (isAdminAuthenticated) return;
             const statusLabel = document.getElementById("syncStatus");
             if(statusLabel) {
                 statusLabel.innerText = "(Realtime Aktif 🟢)";
@@ -523,12 +551,9 @@
                 } else if (inputPin !== null) { alert("PIN Salah!"); }
             } else {
                 const combinedText = packInputsToArray().join("\n");
-                
-                // Lempar ke fungsi Firebase untuk menyimpan
                 if (window.simpanCatatanUtamaKeFirebase) {
                     window.simpanCatatanUtamaKeFirebase(combinedText);
                 }
-
                 isAdminAuthenticated = false;
                 btnAdmin.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit';
                 btnAdmin.style.background = "#1a1535";
