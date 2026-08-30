@@ -56,7 +56,10 @@ onValue(dbRef, (snapshot) => {
     // Ambil data catatan yang sudah pernah di-copy sebelumnya
     let copiedKeys = JSON.parse(localStorage.getItem('copied_publik_keys') || '[]');
 
-    Object.keys(data).forEach((key, index) => {
+    // === MEMBALIK URUTAN DATA (TERBARU DI ATAS) ===
+    const reversedKeys = Object.keys(data).reverse();
+
+    reversedKeys.forEach((key, index) => {
         const item = data[key];
         const row = document.createElement("div");
         row.className = "row-copas-alarm";
