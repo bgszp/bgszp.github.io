@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove, update, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 // Konfigurasi Firebase Anda
 const firebaseConfig = {
@@ -15,7 +15,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Fungsi untuk menambah catatan
+// === 1. LOGIKA CATATAN PUBLIK ===
 window.tambahCatatanPublik = function() {
     const input = document.getElementById("inputCatatanPublik");
     const teks = input.value.trim();
@@ -31,7 +31,6 @@ window.tambahCatatanPublik = function() {
     });
 };
 
-// Fungsi untuk menghapus catatan
 window.hapusCatatanPublik = function(id) {
     const dbRef = ref(db, 'catatan_publik/' + id);
     remove(dbRef).then(() => {
@@ -39,9 +38,8 @@ window.hapusCatatanPublik = function(id) {
     });
 };
 
-// Pantau Perubahan Realtime
-const dbRef = ref(db, 'catatan_publik');
-onValue(dbRef, (snapshot) => {
+const dbRefPublik = ref(db, 'catatan_publik');
+onValue(dbRefPublik, (snapshot) => {
     const wadah = document.getElementById("wadahCatatanPublikList");
     if (!wadah) return; 
     
@@ -53,10 +51,7 @@ onValue(dbRef, (snapshot) => {
         return;
     }
 
-    // Ambil data catatan yang sudah pernah di-copy sebelumnya
     let copiedKeys = JSON.parse(localStorage.getItem('copied_publik_keys') || '[]');
-
-    // === MEMBALIK URUTAN DATA (TERBARU DI ATAS) ===
     const reversedKeys = Object.keys(data).reverse();
 
     reversedKeys.forEach((key, index) => {
@@ -64,7 +59,6 @@ onValue(dbRef, (snapshot) => {
         const row = document.createElement("div");
         row.className = "row-copas-alarm";
         
-        // Cek jika ID ini belum pernah di-copy, tambahkan class publik-nyala
         if (!copiedKeys.includes(key)) {
             row.classList.add("publik-nyala");
         }
@@ -81,16 +75,11 @@ onValue(dbRef, (snapshot) => {
             </div>
         `;
         
-        // Logika Salin (Sembunyikan efek nyala dan simpan histori ke localStorage)
         row.querySelector('.teks-publik').addEventListener('click', () => {
             if(window.eksekusiSalinTeks) {
                 window.eksekusiSalinTeks(item.pesan).then(() => {
                     if(window.showToast) window.showToast("Catatan Publik Disalin! ✨");
-                    
-                    // Matikan lampu nyala
                     row.classList.remove("publik-nyala");
-                    
-                    // Simpan ID agar besok-besok tidak menyala lagi
                     let currentKeys = JSON.parse(localStorage.getItem('copied_publik_keys') || '[]');
                     if (!currentKeys.includes(key)) {
                         currentKeys.push(key);
@@ -100,7 +89,6 @@ onValue(dbRef, (snapshot) => {
             }
         });
         
-        // Logika Edit
         row.querySelector('.btn-edit-publik').addEventListener('click', () => {
             const pesanBaru = prompt("Edit catatan publik:", item.pesan);
             if (pesanBaru !== null && pesanBaru.trim() !== "" && pesanBaru !== item.pesan) {
@@ -114,7 +102,6 @@ onValue(dbRef, (snapshot) => {
             }
         });
         
-        // Logika Hapus
         row.querySelector('.btn-hapus-publik').addEventListener('click', () => {
             window.hapusCatatanPublik(key);
         });
@@ -122,3 +109,23 @@ onValue(dbRef, (snapshot) => {
         wadah.appendChild(row);
     });
 });
+
+// === 2. LOGIKA CATATAN UTAMA (LIVE REALTIME) ===
+const refCatatanUtama = ref(db, 'catatan_utama_live');
+onValue(refCatatanUtama, (snapshot) => {
+    const data = snapshot.val();
+    const teks = data ? data.content : "";
+    
+    // Lempar data ke fungsi di index.html jika ada
+    if (window.renderNotesListDariFirebase) {
+        window.renderNotesListDariFirebase(teks);
+    }
+});
+
+window.simpanCatatanUtamaKeFirebase = function(teksUtama) {
+    set(refCatatanUtama, { content: teksUtama }).then(() => {
+        if(window.showToast) window.showToast("Catatan Tersimpan secara Global! ☁️");
+    }).catch(err => {
+        alert("Gagal menyimpan ke Cloud: " + err.message);
+    });
+};
