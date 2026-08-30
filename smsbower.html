@@ -121,7 +121,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Panel Diinisialisasi (Badge Tier Rank Aktif).
+            └> Sistem Panel Diinisialisasi (Filter Provider Khusus Aktif).
         </div>
     </div>
     
@@ -130,6 +130,10 @@
     <script>
         const NILAI_KURS = 17815; 
         
+        // === DAFTAR ID PROVIDER YANG DIIZINKAN ===
+        const ALLOWED_PROVIDERS = [2295, 3160, 3309, 3340, 2738, 3435, 3029, 1329, 3406];
+        // =========================================
+
         let daftarOrderan = []; 
         let daftarServerTersedia = []; 
         let produkTerpilihId = null; 
@@ -201,9 +205,12 @@
                 let arrData = resProd.data;
                 if (!arrData || arrData.length === 0) throw new Error("Stok kosong.");
 
-                // === LOGIKA PENENTUAN RANKING (Gold, Silver, Bronze) ===
-                // Jika API memiliki properti 'rank', kita gunakan. Jika tidak, simulasi kelompok berdasar urutan harga
-                arrData.sort((a, b) => b.price - a.price); // Urutkan dari yang termahal untuk asusmi peringkat
+                // === FILTER BERDASARKAN ID PROVIDER YANG DIIZINKAN ===
+                arrData = arrData.filter(item => ALLOWED_PROVIDERS.includes(parseInt(item.id)));
+                if (arrData.length === 0) throw new Error("Provider pilihan sedang kosong.");
+                // =======================================================
+
+                arrData.sort((a, b) => b.price - a.price); 
                 let totalItems = arrData.length;
                 
                 daftarServerTersedia = arrData.map((item, index) => {
@@ -213,7 +220,6 @@
                     
                     return { id: item.id, stock: item.available, price: item.price, rank: rankCategory };
                 });
-                // =======================================================
 
                 renderDropdownOptions();
                 
@@ -230,7 +236,7 @@
                     if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
                 } 
             } catch (e) {
-                document.getElementById("labelServerTerpilih").innerText = "Stok Kosong / Error";
+                document.getElementById("labelServerTerpilih").innerText = e.message || "Stok Kosong / Error";
                 document.getElementById("btnPesanAksi").disabled = true; document.getElementById("containerListDropdown").innerHTML = "";
             }
         }
@@ -414,10 +420,10 @@
                     kotakOtp = `
                     <div class="box-copy-statik otp-masuk">
                         <div>
-                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
+                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
                             <div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div>
                         </div>
-                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button>
                     </div>`;
                     
                     btnAksi = `
