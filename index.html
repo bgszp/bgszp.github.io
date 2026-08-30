@@ -108,8 +108,8 @@
     <!-- === 1. MENU SERVERS === -->
     <div class="wrapper-menu-server" style="position: relative; margin-bottom: 18px;">
         
-        <!-- TAMPILAN IP & PING JARINGAN (Posisi Absolute di Atas Kanan) -->
-        <div id="teks-ip-jaringan" style="position: absolute; right: 0; top: -20px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap;">
+        <!-- TAMPILAN IP & PING JARINGAN (Bisa Di-klik Untuk Ganti Target Ping) -->
+        <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Shopee / Ipify)" style="position: absolute; right: 0; top: -20px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
             <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
         </div>
 
@@ -390,30 +390,63 @@
         }
         setInterval(cekAlarmCopas, 5000);
 
-        // === FUNGSI DETEKSI IP & PING REALTIME ===
+        // === FITUR DETEKSI IP & PING REALTIME (DUA PILIHAN: SHOPEE / IPIFY) ===
+        let currentIP = "Memuat IP...";
+        let modePingTarget = "shopee"; // Mode bawaan (lebih responsif/kencang)
+
+        // Fungsi ganti mode saat pengguna klik tulisan IP di pojok kanan atas
+        window.gantiTargetPing = function() {
+            modePingTarget = (modePingTarget === "shopee") ? "ipify" : "shopee";
+            updateIPAddress(); 
+            if(window.showToast) window.showToast("Target Ping diubah ke: " + modePingTarget.toUpperCase());
+        }
+
         async function updateIPAddress() {
             const ipText = document.getElementById('teks-ip-jaringan');
             if (!ipText) return;
+            
             try {
-                // Catat waktu mulai
-                const startWaktu = performance.now();
-                
-                // Fetch IP Address
-                const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
-                const data = await res.json();
-                
-                // Hitung total milidetik yang dihabiskan sebagai "Ping"
-                const endWaktu = performance.now();
-                const ping = Math.round(endWaktu - startWaktu);
-                
-                // Logika Warna Ping: Hijau (<150ms), Kuning (150-300ms), Merah (>300ms)
+                // 1. Ambil IP dari ipify (hanya jika IP belum dimuat atau status terputus, agar hemat kuota)
+                if (currentIP === "Memuat IP..." || currentIP === "Terputus") {
+                    const resIP = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
+                    const dataIP = await resIP.json();
+                    currentIP = dataIP.ip;
+                }
+
+                let ping = 0;
+                let labelTarget = "";
+
+                // 2. Jalankan Ping sesuai dengan Mode yang Dipilih
+                if (modePingTarget === "ipify") {
+                    // Ping ke server luar negeri (Ipify)
+                    const startWaktu = performance.now();
+                    await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
+                    ping = Math.round(performance.now() - startWaktu);
+                    labelTarget = "Ipify";
+                } else {
+                    // Ping ke server Shopee dengan mengunduh icon kecil secara sembunyi (no-cors)
+                    // Ditambah 't=Date.now()' agar selalu akurat dan tidak terambil dari cache memory HP
+                    const startWaktu = performance.now();
+                    await fetch('https://shopee.co.id/favicon.ico?t=' + Date.now(), { mode: 'no-cors' });
+                    ping = Math.round(performance.now() - startWaktu);
+                    labelTarget = "Sho";
+                }
+
+                // 3. Render Warna & Teks 
                 let warnaPing = "#00ffcc"; 
                 if (ping > 150) warnaPing = "#f0ad4e"; 
                 if (ping > 300) warnaPing = "#ff4a4a"; 
 
-                // Tampilkan IP disebelah kiri, lalu divider, lalu Ping ms.
-                ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #00ffcc;"></i> <span style="color: #00ffcc;">${data.ip}</span> <span style="color: #6e678a; margin: 0 4px;">|</span> <span style="color: ${warnaPing};">${ping}ms</span>`;
+                ipText.innerHTML = `
+                    <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #00ffcc;"></i> 
+                    <span style="color: #00ffcc;">${currentIP}</span> 
+                    <span style="color: #6e678a; margin: 0 4px;">|</span> 
+                    <span style="color: ${warnaPing};">${ping}ms</span>
+                    <span style="font-size: 9px; color: #8e85b3; margin-left: 3px;">(${labelTarget})</span>
+                `;
+                
             } catch (error) {
+                currentIP = "Terputus";
                 ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #ff4a4a;"></i> <span style="color: #ff4a4a;">Terputus</span>`;
             }
         }
@@ -429,7 +462,7 @@
             updateIPAddress(); 
         });
 
-        // Event listener jaringan dan cek otomatis tiap 10 detik agar ping update berkala
+        // Cek update ping setiap 10 detik
         window.addEventListener('online', updateIPAddress);
         window.addEventListener('offline', () => {
             const ipText = document.getElementById('teks-ip-jaringan');
