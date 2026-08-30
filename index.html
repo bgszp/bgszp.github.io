@@ -7,7 +7,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
-    <!-- Panggilan Script Firebase Publik yang sudah dipisah -->
+    <!-- Panggilan Script Firebase Publik & Utama -->
     <script type="module" src="firebase-publik.js"></script>
 
     <style>
@@ -33,10 +33,8 @@
         .history-item { font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; opacity: 0; z-index: 99; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .config-field { width: 100%; padding: 12px; background: #110d24; border: 1px solid #3d3463; border-radius: 8px; color: #00ffcc; font-family: monospace; font-size: 13px; text-align: center; outline: none; }
         .btn-admin-control { margin-top: 8px; padding: 8px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #3d3463; background: #1a1535; color: #d6c7ff; cursor: pointer; width: 100%; }
         .notes-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .btn-refresh-note { background: #1a1535; border: 1px solid #3d3463; color: #00ffcc; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: bold; }
         .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
         
         .note-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #1a1535; border: 1px solid #3d3463; border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; }
@@ -52,7 +50,6 @@
         .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
         .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
         
-        /* === TAMBAHAN: STYLING INPUT PATEN ADMIN === */
         .admin-input-group { display: flex; width: 100%; gap: 6px; align-items: center; }
         .admin-input-group span { color: #ff007f; font-weight: bold; user-select: none; }
         .note-text-input-left { flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px dashed #ff007f; border-radius: 4px; outline: none; color: #fff; font-size: 14px; padding: 6px 10px; font-family: inherit; width: 100%; }
@@ -60,41 +57,19 @@
         .btn-hapus-note { background: transparent; border: none; color: #ff4a4a; cursor: pointer; font-size: 16px; padding: 4px; transition: all 0.2s ease; outline: none; flex-shrink: 0; }
         .btn-hapus-note:hover { color: #ff007f; transform: scale(1.1); }
 
-        /* === STYLING MENU TOMBOL SERVER === */
         .wrapper-menu-server { width: 100%; max-width: 900px; margin-bottom: 10px; display: flex; flex-direction: row; gap: 15px; }
         .server-col { flex: 1; display: flex; flex-direction: column; }
         .pemicu-menu-utama { background: #1a1535; border: 1px solid #5f27cd; border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 14px; color: #fff; transition: all 0.2s ease; user-select: none; }
         .pemicu-menu-utama:hover { background: #251e4a; box-shadow: 0 0 8px rgba(255, 255, 255, 0.1); }
         .wadah-iframe-server { display: none; width: 100%; border-radius: 8px; border: 1px solid #3d3463; background: #121324; overflow: hidden; margin-bottom: 15px; }
         
-        /* === TOMBOL MINIMIZE SEMUA MENU === */
         .btn-minimize-server {
-            position: absolute;
-            left: 50%;
-            bottom: -14px;
-            transform: translateX(-50%);
-            width: 28px;
-            height: 28px;
-            background: #1a1535;
-            border: 2px solid #ff4a4a;
-            color: #ff4a4a;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 10;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-            transition: all 0.2s ease;
+            position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%); width: 28px; height: 28px;
+            background: #1a1535; border: 2px solid #ff4a4a; color: #ff4a4a; border-radius: 8px; display: flex;
+            align-items: center; justify-content: center; cursor: pointer; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.4); transition: all 0.2s ease;
         }
-        .btn-minimize-server:hover {
-            background: #ff4a4a;
-            color: #fff;
-            box-shadow: 0 0 12px rgba(255, 74, 74, 0.6);
-            transform: translateX(-50%) scale(1.1);
-        }
+        .btn-minimize-server:hover { background: #ff4a4a; color: #fff; box-shadow: 0 0 12px rgba(255, 74, 74, 0.6); transform: translateX(-50%) scale(1.1); }
 
-        /* === STYLING MENU SCANNER === */
         .kamera-container { position: relative; width: 100%; max-width: 350px; height: 120px; margin: 15px auto; border: 4px solid #00ff00; border-radius: 12px; overflow: hidden; background-color: #000; box-shadow: 0 5px 15px rgba(0,255,0,0.15); }
         .kamera-container video { width: 100%; height: 100%; object-fit: cover; }
         .btn-scanner { padding: 12px 15px; font-size: 15px; margin: 5px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
@@ -106,29 +81,18 @@
         #hasil-scan-input { width: 90%; max-width: 350px; height: 45px; font-size: 22px; font-weight: bold; margin: 15px 0; padding: 10px; text-align: center; letter-spacing: 2px; border: 2px solid #3d3463; border-radius: 8px; background-color: #1a1535; color: #00ffcc; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
         #status-scanner { color: #aaa; font-weight: bold; margin-bottom: 10px; min-height: 20px; font-size: 13px; }
 
-        /* === STYLING TABEL ALARM COPAS & PUBLIK === */
         .header-copas { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .btn-tambah-copas { background: #00ffcc; color: #0f0c1b; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; padding: 4px 8px; }
         .btn-tambah-copas:hover { background: #00cca3; }
         .wadah-copas-tabel { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
         
-        .row-copas-alarm { 
-            position: relative; z-index: 1; overflow: hidden; display: flex; gap: 8px; align-items: flex-start; 
-            background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid #3d3463; transition: all 0.3s ease; flex-shrink: 0; 
-        }
+        .row-copas-alarm { position: relative; z-index: 1; overflow: hidden; display: flex; gap: 8px; align-items: flex-start; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid #3d3463; transition: all 0.3s ease; flex-shrink: 0; }
         .row-copas-alarm.alarm-nyala { border-color: transparent; box-shadow: 0 0 12px rgba(255, 0, 127, 0.5); }
-        .row-copas-alarm.alarm-nyala::before {
-            content: ''; position: absolute; z-index: -2; left: -50%; top: -50%; width: 200%; height: 200%;
-            background: conic-gradient(transparent, #ff007f, #00ffcc, transparent 30%); animation: putarGlow 2s linear infinite;
-        }
+        .row-copas-alarm.alarm-nyala::before { content: ''; position: absolute; z-index: -2; left: -50%; top: -50%; width: 200%; height: 200%; background: conic-gradient(transparent, #ff007f, #00ffcc, transparent 30%); animation: putarGlow 2s linear infinite; }
         .row-copas-alarm.alarm-nyala::after { content: ''; position: absolute; z-index: -1; inset: 2px; background: #141026; border-radius: 6px; }
         
-        /* === EFEK NYALA CATATAN PUBLIK BARU === */
         .publik-nyala { border-color: transparent; box-shadow: 0 0 12px rgba(0, 255, 204, 0.5); }
-        .publik-nyala::before {
-            content: ''; position: absolute; z-index: -2; left: -50%; top: -50%; width: 200%; height: 200%;
-            background: conic-gradient(transparent, #00ffcc, #00b4db, transparent 30%); animation: putarGlow 2s linear infinite;
-        }
+        .publik-nyala::before { content: ''; position: absolute; z-index: -2; left: -50%; top: -50%; width: 200%; height: 200%; background: conic-gradient(transparent, #00ffcc, #00b4db, transparent 30%); animation: putarGlow 2s linear infinite; }
         .publik-nyala::after { content: ''; position: absolute; z-index: -1; inset: 2px; background: #141026; border-radius: 6px; }
 
         @keyframes putarGlow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -155,8 +119,6 @@
                 <span id="panahSrv2">▼</span>
             </div>
         </div>
-        
-        <!-- Tombol Minimize Di Tengah -->
         <div class="btn-minimize-server" onclick="tutupSemuaMenu()" title="Tutup Semua Menu Terbuka">
             <i class="fa-solid fa-angles-up"></i>
         </div>
@@ -188,7 +150,6 @@
                 <button class="btn-primary" onclick="generateName()"><i class="fa-solid fa-shuffle"></i> Acak &amp; Salin Data</button>
                 <button class="btn-primary" id="btn-username" onclick="generateUsername()"><i class="fa-solid fa-user"></i> NaPaSi</button>
             </div>
-            
             <div class="history-card" style="margin-top: 20px; border: 1px solid #3d3463;">
                 <div class="history-title"><span>RIWAYAT GENERATOR</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
                 <div id="historyList"></div>
@@ -196,7 +157,7 @@
         </div>
     </div>
 
-    <!-- === 3. CATATAN UTAMA (LIVE) === -->
+    <!-- === 3. CATATAN UTAMA (LIVE REALTIME FIREBASE) === -->
     <div class="wrapper-menu-server">
         <div class="server-col">
             <div class="pemicu-menu-utama" onclick="togglePanel('wadahUtama', 'panahUtama')" style="border-color: #ff007f;">
@@ -208,29 +169,12 @@
 
     <div style="width: 100%; max-width: 900px;">
         <div id="wadahUtama" class="wadah-iframe-server" style="padding: 20px;">
-            <div id="adminConfigBox" style="display: none; background: rgba(255,255,255,0.02); border: 1px dashed #ff007f; padding: 15px; border-radius: 8px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                <div>
-                    <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB USERNAME</label>
-                    <input type="text" id="gitUser" class="config-field" placeholder="bgszp" oninput="saveGitConfig()">
-                </div>
-                <div>
-                    <label style="font-size:11px; color:#aaa; display:block; text-align:left;">NAMA REPO WEB</label>
-                    <input type="text" id="gitRepo" class="config-field" placeholder="bgszp.github.io" oninput="saveGitConfig()">
-                </div>
-                <div>
-                    <label style="font-size:11px; color:#aaa; display:block; text-align:left;">GITHUB TOKEN (PAT)</label>
-                    <input type="password" id="gitToken" class="config-field" placeholder="github_pat_..." oninput="saveGitConfig()">
-                </div>
-            </div>
-
             <div class="notes-header-flex">
                 <div style="font-size: 13px; font-weight: bold; color: #ff007f; text-align: left;">
                     <i class="fa-solid fa-lock" id="adminLockIcon"></i> CATATAN UTAMA
-                    <span id="syncStatus" style="font-size:10px; color:#aaa; margin-left:5px;">(Membaca...)</span>
+                    <span id="syncStatus" style="font-size:10px; color:#aaa; margin-left:5px;">(Memuat...)</span>
                 </div>
-                <button type="button" class="btn-refresh-note" onclick="autoFetchForEveryone()">
-                    <i class="fa-solid fa-rotate"></i> Refresh
-                </button>
+                <!-- Tombol Refresh dihapus karena Firebase Realtime sudah menangani otomatis -->
             </div>
             <div id="notesContainer" class="notes-list-container"></div>
             <button type="button" class="btn-admin-control" id="btnAdminAuth" onclick="toggleAdminAccess()">
@@ -278,10 +222,7 @@
                 <input type="text" id="inputCatatanPublik" class="input-copas-ket" placeholder="Tulis catatan publik..." style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; border: 1px solid #3d3463;">
                 <button type="button" class="btn-tambah-copas" onclick="tambahCatatanPublik()">Kirim</button>
             </div>
-            
-            <div id="wadahCatatanPublikList" class="wadah-copas-tabel">
-                <!-- Data Publik Realtime Muncul di Sini -->
-            </div>
+            <div id="wadahCatatanPublikList" class="wadah-copas-tabel"></div>
         </div>
     </div>
 
@@ -316,7 +257,6 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        // === FUNGSI MENUTUP SEMUA MENU YANG TERBUKA ===
         function tutupSemuaMenu() {
             const daftarMenu = [
                 { wadah: 'wadahOTP1', panah: 'panahSrv1' },
@@ -331,33 +271,24 @@
             daftarMenu.forEach(item => {
                 const w = document.getElementById(item.wadah);
                 const p = document.getElementById(item.panah);
-                if (w && p) {
-                    w.style.display = "none";
-                    p.style.transform = "rotate(0deg)";
-                }
+                if (w && p) { w.style.display = "none"; p.style.transform = "rotate(0deg)"; }
             });
-            
             stopScannerCamera();
             window.showToast("Semua menu ditutup! 🧹");
         }
 
-        // Fungsi Toggle Universal
         function togglePanel(wadahId, panahId) {
             const wadah = document.getElementById(wadahId);
             const panah = document.getElementById(panahId);
-            
             if (wadah.style.display === "none" || wadah.style.display === "") {
-                wadah.style.display = "block";
-                panah.style.transform = "rotate(180deg)";
+                wadah.style.display = "block"; panah.style.transform = "rotate(180deg)";
                 if (wadahId === 'wadahScanner') startScannerCamera();
             } else {
-                wadah.style.display = "none";
-                panah.style.transform = "rotate(0deg)";
+                wadah.style.display = "none"; panah.style.transform = "rotate(0deg)";
                 if (wadahId === 'wadahScanner') stopScannerCamera();
             }
         }
 
-        // === LOGIK SCANNER ===
         const video = document.getElementById('kamera');
         const canvasScanner = document.getElementById('canvasScanner');
         const ctxScanner = canvasScanner.getContext('2d');
@@ -371,125 +302,60 @@
         function startScannerCamera() {
             if (scannerStream) return;
             statusScanner.innerText = "Menyalakan kamera...";
-            navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 }, advanced: [{ focusMode: "continuous" }] } 
-            }).then(stream => {
-                scannerStream = stream;
-                video.srcObject = stream;
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 }, advanced: [{ focusMode: "continuous" }] } })
+            .then(stream => {
+                scannerStream = stream; video.srcObject = stream;
                 video.onloadedmetadata = () => { statusScanner.innerText = "Siap digunakan."; statusScanner.style.color = "#00ffcc"; };
             }).catch(err => {
-                statusScanner.innerText = "Error: Akses kamera ditolak/tidak tersedia.";
-                statusScanner.style.color = "#ff4a4a";
+                statusScanner.innerText = "Error: Akses kamera ditolak/tidak tersedia."; statusScanner.style.color = "#ff4a4a";
             });
         }
 
         function stopScannerCamera() {
             if (scannerStream) {
-                scannerStream.getTracks().forEach(track => track.stop());
-                scannerStream = null;
-                video.srcObject = null;
-                statusScanner.innerText = "Kamera dimatikan (Standby).";
-                statusScanner.style.color = "#aaa";
+                scannerStream.getTracks().forEach(track => track.stop()); scannerStream = null; video.srcObject = null;
+                statusScanner.innerText = "Kamera dimatikan (Standby)."; statusScanner.style.color = "#aaa";
             }
         }
 
         btnScan.addEventListener('click', () => {
             if(!scannerStream) return;
-            video.pause(); 
-            btnScan.style.display = "none";
-            btnUlangi.style.display = "inline-block";
-            btnCopyScanner.disabled = true;
-            hasilScanInput.value = "";
-            statusScanner.innerText = "Menajamkan gambar & memindai...";
-            statusScanner.style.color = "#f0ad4e";
-
-            const vWidth = video.videoWidth;
-            const vHeight = video.videoHeight;
-            const targetRatio = 350 / 120;
-            const videoRatio = vWidth / vHeight;
-            
+            video.pause(); btnScan.style.display = "none"; btnUlangi.style.display = "inline-block"; btnCopyScanner.disabled = true; hasilScanInput.value = "";
+            statusScanner.innerText = "Menajamkan gambar & memindai..."; statusScanner.style.color = "#f0ad4e";
+            const vWidth = video.videoWidth; const vHeight = video.videoHeight; const targetRatio = 350 / 120; const videoRatio = vWidth / vHeight;
             let cropW, cropH;
-            if (videoRatio > targetRatio) {
-                cropH = vHeight;
-                cropW = vHeight * targetRatio;
-            } else {
-                cropW = vWidth;
-                cropH = vWidth / targetRatio;
-            }
-            
-            const safeW = cropW * 0.8;
-            const safeH = cropH * 0.8;
-            const cropX = ((vWidth - cropW) / 2) + (cropW * 0.1);
-            const cropY = ((vHeight - cropH) / 2) + (cropH * 0.1);
-
-            canvasScanner.width = safeW;
-            canvasScanner.height = safeH;
+            if (videoRatio > targetRatio) { cropH = vHeight; cropW = vHeight * targetRatio; } else { cropW = vWidth; cropH = vWidth / targetRatio; }
+            const safeW = cropW * 0.8; const safeH = cropH * 0.8; const cropX = ((vWidth - cropW) / 2) + (cropW * 0.1); const cropY = ((vHeight - cropH) / 2) + (cropH * 0.1);
+            canvasScanner.width = safeW; canvasScanner.height = safeH;
             ctxScanner.filter = 'grayscale(100%) contrast(300%) brightness(120%)';
             ctxScanner.drawImage(video, cropX, cropY, safeW, safeH, 0, 0, safeW, safeH);
-            
             const imageData = canvasScanner.toDataURL('image/jpeg', 0.9);
 
-            Tesseract.recognize(imageData, 'eng')
-            .then(({ data: { text } }) => {
+            Tesseract.recognize(imageData, 'eng').then(({ data: { text } }) => {
                 const hanyaAngka = text.replace(/[^0-9]/g, '');
                 if (hanyaAngka) {
-                    hasilScanInput.value = hanyaAngka;
-                    statusScanner.innerText = "Selesai! Akurasi telah ditingkatkan.";
-                    statusScanner.style.color = "#00ffcc";
-                    btnCopyScanner.disabled = false;
+                    hasilScanInput.value = hanyaAngka; statusScanner.innerText = "Selesai! Akurasi telah ditingkatkan.";
+                    statusScanner.style.color = "#00ffcc"; btnCopyScanner.disabled = false;
                 } else {
-                    statusScanner.innerText = "Nomor tidak terdeteksi. Silakan ulangi.";
-                    statusScanner.style.color = "#d9534f";
+                    statusScanner.innerText = "Nomor tidak terdeteksi. Silakan ulangi."; statusScanner.style.color = "#d9534f";
                 }
-            }).catch(err => {
-                statusScanner.innerText = "Gagal memindai gambar.";
-                statusScanner.style.color = "#ff4a4a";
-            });
+            }).catch(err => { statusScanner.innerText = "Gagal memindai gambar."; statusScanner.style.color = "#ff4a4a"; });
         });
 
         btnUlangi.addEventListener('click', () => {
-            video.play();
-            btnScan.style.display = "inline-block";
-            btnUlangi.style.display = "none";
-            btnCopyScanner.disabled = true;
-            hasilScanInput.value = "";
-            statusScanner.innerText = "Siap digunakan.";
-            statusScanner.style.color = "#00ffcc";
+            video.play(); btnScan.style.display = "inline-block"; btnUlangi.style.display = "none"; btnCopyScanner.disabled = true; hasilScanInput.value = "";
+            statusScanner.innerText = "Siap digunakan."; statusScanner.style.color = "#00ffcc";
         });
+        btnCopyScanner.addEventListener('click', () => { window.eksekusiSalinTeks(hasilScanInput.value).then(() => { window.showToast("Nomor Hasil Scan Disalin! ✨"); }); });
 
-        btnCopyScanner.addEventListener('click', () => {
-            window.eksekusiSalinTeks(hasilScanInput.value).then(() => {
-                window.showToast("Nomor Hasil Scan Disalin! ✨");
-            });
-        });
-
-        // === LOGIK TABEL DATA COPAS (ALARM) ===
         let dataCopasTabel = [];
-
-        function muatDataCopas() {
-            const simpanan = localStorage.getItem("aplikasi_notes_2_tabel");
-            if (simpanan) {
-                dataCopasTabel = JSON.parse(simpanan);
-            }
-            renderDataCopas();
-        }
-
-        function simpanDataCopas() {
-            localStorage.setItem("aplikasi_notes_2_tabel", JSON.stringify(dataCopasTabel));
-            cekAlarmCopas();
-        }
-
+        function muatDataCopas() { const simpanan = localStorage.getItem("aplikasi_notes_2_tabel"); if (simpanan) { dataCopasTabel = JSON.parse(simpanan); } renderDataCopas(); }
+        function simpanDataCopas() { localStorage.setItem("aplikasi_notes_2_tabel", JSON.stringify(dataCopasTabel)); cekAlarmCopas(); }
         function renderDataCopas() {
-            const wadah = document.getElementById("wadahDataCopas");
-            wadah.innerHTML = "";
-            if (dataCopasTabel.length === 0) {
-                wadah.innerHTML = '<div style="color:#6e678a; font-size:12px; text-align:center; margin-top:20px;">Belum ada data. Klik + Tambah.</div>';
-                return;
-            }
+            const wadah = document.getElementById("wadahDataCopas"); wadah.innerHTML = "";
+            if (dataCopasTabel.length === 0) { wadah.innerHTML = '<div style="color:#6e678a; font-size:12px; text-align:center; margin-top:20px;">Belum ada data. Klik + Tambah.</div>'; return; }
             dataCopasTabel.forEach((item, index) => {
-                const row = document.createElement("div");
-                row.className = "row-copas-alarm";
-                row.id = `row-copas-${item.id}`;
+                const row = document.createElement("div"); row.className = "row-copas-alarm"; row.id = `row-copas-${item.id}`;
                 row.innerHTML = `
                     <div style="font-size:12px; color:#aaa; width:20px; font-weight:bold; margin-top: 5px;">${index + 1}.</div>
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; z-index: 2;">
@@ -501,116 +367,68 @@
                             <i class="fa-regular fa-clock" style="color: #6e678a; font-size: 14px;"></i>
                             <input type="datetime-local" class="input-copas-waktu" value="${item.waktu}" onchange="updateDataCopas(${item.id}, 'waktu', this.value)">
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 wadah.appendChild(row);
-            });
-            cekAlarmCopas();
+            }); cekAlarmCopas();
         }
-
-        function tambahDataCopas() {
-            dataCopasTabel.push({ id: Date.now(), ket: "", waktu: "" });
-            simpanDataCopas();
-            renderDataCopas();
-        }
-
-        function updateDataCopas(id, field, value) {
-            const item = dataCopasTabel.find(x => x.id === id);
-            if (item) { item[field] = value; simpanDataCopas(); }
-        }
-
-        function hapusDataCopas(id) {
-            dataCopasTabel = dataCopasTabel.filter(x => x.id !== id);
-            simpanDataCopas();
-            renderDataCopas();
-        }
-
+        function tambahDataCopas() { dataCopasTabel.push({ id: Date.now(), ket: "", waktu: "" }); simpanDataCopas(); renderDataCopas(); }
+        function updateDataCopas(id, field, value) { const item = dataCopasTabel.find(x => x.id === id); if (item) { item[field] = value; simpanDataCopas(); } }
+        function hapusDataCopas(id) { dataCopasTabel = dataCopasTabel.filter(x => x.id !== id); simpanDataCopas(); renderDataCopas(); }
         function cekAlarmCopas() {
             const sekarang = new Date().getTime();
             dataCopasTabel.forEach(item => {
                 const rowEl = document.getElementById(`row-copas-${item.id}`);
                 if (rowEl && item.waktu) {
-                    if (sekarang >= new Date(item.waktu).getTime()) rowEl.classList.add("alarm-nyala");
-                    else rowEl.classList.remove("alarm-nyala");
+                    if (sekarang >= new Date(item.waktu).getTime()) rowEl.classList.add("alarm-nyala"); else rowEl.classList.remove("alarm-nyala");
                 }
             });
         }
         setInterval(cekAlarmCopas, 5000);
 
-        // === LOGIK BAWAAN UTAMA ===
         let DATA_DUMMY_DATABASE = [];
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
-        let currentFileSha = ""; 
         let rawNotesLines = [];
-        const DEFAULT_USER = "bgszp";
-        const DEFAULT_REPO = "bgszp.github.io";
 
         document.addEventListener("DOMContentLoaded", function() {
             fetch(`./data_pengguna.json?t=${Date.now()}`).then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
-            if(!localStorage.getItem("git_user")) document.getElementById("gitUser").value = DEFAULT_USER;
-            else document.getElementById("gitUser").value = localStorage.getItem("git_user");
-            if(!localStorage.getItem("git_repo")) document.getElementById("gitRepo").value = DEFAULT_REPO;
-            else document.getElementById("gitRepo").value = localStorage.getItem("git_repo");
-            if(localStorage.getItem("git_token")) document.getElementById("gitToken").value = localStorage.getItem("git_token");
-            
             muatDataCopas();
-            autoFetchForEveryone();
         });
 
-        function saveGitConfig() {
-            localStorage.setItem("git_user", document.getElementById("gitUser").value.trim());
-            localStorage.setItem("git_repo", document.getElementById("gitRepo").value.trim());
-            localStorage.setItem("git_token", document.getElementById("gitToken").value.trim());
-        }
-
         window.eksekusiSalinTeks = function(teks) {
-            if (navigator.clipboard && window.isSecureContext) {
-                return navigator.clipboard.writeText(teks);
-            } else {
-                const textArea = document.createElement("textarea");
-                textArea.value = teks;
+            if (navigator.clipboard && window.isSecureContext) { return navigator.clipboard.writeText(teks); } else {
+                const textArea = document.createElement("textarea"); textArea.value = teks;
                 textArea.style.position = "fixed"; textArea.style.left = "-999999px"; textArea.style.top = "-999999px";
-                document.body.appendChild(textArea);
-                textArea.focus(); textArea.select();
+                document.body.appendChild(textArea); textArea.focus(); textArea.select();
                 try { document.execCommand('copy'); } catch (err) {}
-                document.body.removeChild(textArea);
-                return Promise.resolve();
+                document.body.removeChild(textArea); return Promise.resolve();
             }
         }
 
-        // === FUNGSI MENGHAPUS BARIS, PINDAH KE ALARM & AUTO WAKTU LOKAL ===
+        // FUNGSI DIPANGGIL OTOMATIS DARI FIREBASE ONVALUE
+        window.renderNotesListDariFirebase = function(fullText) {
+            if (isAdminAuthenticated) return; // Jangan timpa form kalau admin lagi ngetik
+            const statusLabel = document.getElementById("syncStatus");
+            if(statusLabel) {
+                statusLabel.innerText = "(Realtime Aktif 🟢)";
+                statusLabel.style.color = "#00ffcc";
+            }
+            renderNotesList(fullText || "");
+        };
+
         function hapusBarisCatatanUtama(currentIndex) {
-            let newLines = [];
-            // Ambil format gabungan dari input kiri dan kanan
-            rawNotesLines.forEach((_, idx) => {
-                const elLeft = document.getElementById(`inp-note-left-${idx}`);
-                const elRight = document.getElementById(`inp-note-right-${idx}`);
-                if (elLeft || elRight) {
-                    let l = elLeft ? elLeft.value.trim() : "";
-                    let r = elRight ? elRight.value.trim() : "";
-                    newLines.push(l + " | " + r);
-                }
-            });
-            
+            let newLines = packInputsToArray();
             const barisDihapus = newLines[currentIndex];
             if (barisDihapus && barisDihapus.includes('|')) {
                 const teksSetelahPipa = barisDihapus.substring(barisDihapus.indexOf('|') + 1).trim();
-                
                 if (teksSetelahPipa !== "") {
-                    // Dapatkan Waktu Lokal Saat Ini untuk Format "datetime-local" (YYYY-MM-DDTHH:mm)
                     const tzOffset = new Date().getTimezoneOffset() * 60000;
                     const localISOTime = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 16);
-
-                    // Pindahkan ke alarm dengan waktu tercatat otomatis
                     dataCopasTabel.push({ id: Date.now(), ket: teksSetelahPipa, waktu: localISOTime });
-                    simpanDataCopas();
-                    renderDataCopas();
+                    simpanDataCopas(); renderDataCopas();
                     window.showToast("Catatan dilempar ke Alarm! ⏰");
                 }
             }
-
-            // Hapus baris dari daftar utama dan update tampilan
             newLines.splice(currentIndex, 1);
             renderNotesList(newLines.join("\n"));
         }
@@ -625,72 +443,42 @@
                 const rowNum = index + 1;
                 const rowDiv = document.createElement("div");
                 rowDiv.className = isAdminAuthenticated ? "note-row admin-mode" : "note-row";
-                const badge = document.createElement("div");
-                badge.className = "note-num-badge";
-                badge.innerText = `[${rowNum}]`;
-                rowDiv.appendChild(badge);
+                const badge = document.createElement("div"); badge.className = "note-num-badge"; badge.innerText = `[${rowNum}]`; rowDiv.appendChild(badge);
 
                 if(isAdminAuthenticated) {
-                    // === DESAIN INPUT PATEN (KIRI | KANAN) ===
-                    const group = document.createElement("div");
-                    group.className = "admin-input-group";
-                    
+                    const group = document.createElement("div"); group.className = "admin-input-group";
                     let leftText = text; let rightText = "";
                     if(text.includes("|")) {
                         const parts = text.split("|");
-                        leftText = parts[0].trim();
-                        rightText = parts.slice(1).join("|").trim();
+                        leftText = parts[0].trim(); rightText = parts.slice(1).join("|").trim();
                     }
 
-                    const inputLeft = document.createElement("input");
-                    inputLeft.type = "text";
-                    inputLeft.id = `inp-note-left-${index}`;
-                    inputLeft.className = "note-text-input-left";
-                    inputLeft.value = leftText;
-                    inputLeft.placeholder = "Link / Data...";
+                    const inputLeft = document.createElement("input"); inputLeft.type = "text"; inputLeft.id = `inp-note-left-${index}`;
+                    inputLeft.className = "note-text-input-left"; inputLeft.value = leftText; inputLeft.placeholder = "Link / Data...";
                     inputLeft.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); insertNewRowAfter(index); } };
                     
-                    const separator = document.createElement("span");
-                    separator.innerText = "|";
+                    const separator = document.createElement("span"); separator.innerText = "|";
 
-                    const inputRight = document.createElement("input");
-                    inputRight.type = "text";
-                    inputRight.id = `inp-note-right-${index}`;
-                    inputRight.className = "note-text-input-right";
-                    inputRight.value = rightText;
-                    inputRight.placeholder = "Keterangan / Alarm...";
+                    const inputRight = document.createElement("input"); inputRight.type = "text"; inputRight.id = `inp-note-right-${index}`;
+                    inputRight.className = "note-text-input-right"; inputRight.value = rightText; inputRight.placeholder = "Keterangan / Alarm...";
                     inputRight.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); insertNewRowAfter(index); } };
 
-                    group.appendChild(inputLeft);
-                    group.appendChild(separator);
-                    group.appendChild(inputRight);
-                    rowDiv.appendChild(group);
+                    group.appendChild(inputLeft); group.appendChild(separator); group.appendChild(inputRight); rowDiv.appendChild(group);
 
-                    // Tombol Hapus Baris
-                    const deleteBtn = document.createElement("button");
-                    deleteBtn.className = "btn-hapus-note";
-                    deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                    deleteBtn.title = "Hapus baris ini";
-                    deleteBtn.onclick = function(e) { e.stopPropagation(); hapusBarisCatatanUtama(index); };
-                    rowDiv.appendChild(deleteBtn);
-
+                    const deleteBtn = document.createElement("button"); deleteBtn.className = "btn-hapus-note";
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>'; deleteBtn.title = "Hapus baris ini";
+                    deleteBtn.onclick = function(e) { e.stopPropagation(); hapusBarisCatatanUtama(index); }; rowDiv.appendChild(deleteBtn);
                 } else {
-                    const displayWrapper = document.createElement("div");
-                    displayWrapper.className = "note-display-wrapper";
+                    const displayWrapper = document.createElement("div"); displayWrapper.className = "note-display-wrapper";
                     if(text.includes("|")) {
                         const parts = text.split("|");
                         displayWrapper.innerHTML = `<div><span class="text-before-pipe">${parts[0]}</span><span class="text-after-pipe">|${parts.slice(1).join("|")}</span></div>`;
-                    } else {
-                        displayWrapper.innerHTML = `<div><span class="text-before-pipe">${text || '<span style="color:#555;">(Baris Kosong)</span>'}</span></div>`;
-                    }
-                    displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`;
-                    rowDiv.appendChild(displayWrapper);
+                    } else { displayWrapper.innerHTML = `<div><span class="text-before-pipe">${text || '<span style="color:#555;">(Baris Kosong)</span>'}</span></div>`; }
+                    displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`; rowDiv.appendChild(displayWrapper);
                     rowDiv.onclick = function() {
                         if(text.trim() !== "") {
                             let finalCopyText = text.includes("|") ? text.split("|")[0].trim() : text;
-                            if(finalCopyText !== "") {
-                                window.eksekusiSalinTeks(finalCopyText).then(() => { window.showToast(`Baris ${rowNum} Disalin! ✨`); });
-                            }
+                            if(finalCopyText !== "") { window.eksekusiSalinTeks(finalCopyText).then(() => { window.showToast(`Baris ${rowNum} Disalin! ✨`); }); }
                         }
                     };
                 }
@@ -699,139 +487,53 @@
         }
 
         function insertNewRowAfter(currentIndex) {
-            let newLines = [];
-            rawNotesLines.forEach((_, idx) => {
-                const elLeft = document.getElementById(`inp-note-left-${idx}`);
-                const elRight = document.getElementById(`inp-note-right-${idx}`);
-                if (elLeft || elRight) {
-                    let l = elLeft ? elLeft.value.trim() : "";
-                    let r = elRight ? elRight.value.trim() : "";
-                    newLines.push(l + " | " + r);
-                } else {
-                    newLines.push("");
-                }
-            });
+            let newLines = packInputsToArray();
             newLines.splice(currentIndex + 1, 0, "");
             renderNotesList(newLines.join("\n"));
             const targetInput = document.getElementById(`inp-note-left-${currentIndex + 1}`);
             if(targetInput) targetInput.focus();
         }
 
-        function packInputsToString() {
+        function packInputsToArray() {
             let lineArray = [];
             rawNotesLines.forEach((_, idx) => {
                 const elLeft = document.getElementById(`inp-note-left-${idx}`);
                 const elRight = document.getElementById(`inp-note-right-${idx}`);
                 if (elLeft || elRight) {
-                    let l = elLeft ? elLeft.value.trim() : "";
-                    let r = elRight ? elRight.value.trim() : "";
-                    // Simpan paten gabungan (walau kosong, pipa akan mengikat)
-                    if (l === "" && r === "") {
-                        lineArray.push("");
-                    } else {
-                        lineArray.push(l + " | " + r);
-                    }
-                } else {
-                    lineArray.push("");
-                }
+                    let l = elLeft ? elLeft.value.trim() : ""; let r = elRight ? elRight.value.trim() : "";
+                    if (l === "" && r === "") { lineArray.push(""); } else { lineArray.push(l + " | " + r); }
+                } else { lineArray.push(""); }
             });
-            return lineArray.join("\n");
-        }
-
-        async function autoFetchForEveryone() {
-            const statusLabel = document.getElementById("syncStatus");
-            statusLabel.innerText = "(Memantau Live...)";
-            const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
-            const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
-            const token = document.getElementById("gitToken").value.trim();
-            
-            try {
-                const headers = {};
-                if(token) headers["Authorization"] = `token ${token}`;
-                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, { headers: headers, cache: "no-store" });
-                if(res.ok) {
-                    const data = await res.json();
-                    currentFileSha = data.sha; 
-                    renderNotesList(decodeURIComponent(escape(atob(data.content))));
-                    statusLabel.innerText = "(Mode Pantau Aktif - Instan)";
-                    statusLabel.style.color = "#00ffcc";
-                    return; 
-                }
-                throw new Error();
-            } catch(e) {
-                try {
-                    const resLocal = await fetch(`./catatan_utama.txt?t=${Date.now()}`);
-                    if(resLocal.ok) {
-                        renderNotesList(await resLocal.text());
-                        statusLabel.innerText = "(Mode Pantau Aktif - Delay)";
-                        statusLabel.style.color = "#00ffcc";
-                    } else { renderNotesList(""); statusLabel.innerText = "(Kosong)"; }
-                } catch(err) { statusLabel.innerText = "(Gagal Memuat)"; statusLabel.style.color = "#ff4a4a"; }
-            }
-        }
-
-        async function fetchShaQuietly() {
-            const token = document.getElementById("gitToken").value.trim();
-            const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
-            const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
-            if(!token) return;
-            try {
-                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, { headers: { "Authorization": `token ${token}` } });
-                if(res.ok) { const data = await res.json(); currentFileSha = data.sha; }
-            } catch(e){}
+            return lineArray;
         }
 
         async function toggleAdminAccess() {
             const btnAdmin = document.getElementById("btnAdminAuth");
             const iconLock = document.getElementById("adminLockIcon");
-            const statusLabel = document.getElementById("syncStatus");
-            const configBox = document.getElementById("adminConfigBox");
 
             if (!isAdminAuthenticated) {
                 const inputPin = prompt("Masukkan PIN Keamanan Admin:");
                 if (inputPin === ADMIN_PIN) {
                     isAdminAuthenticated = true;
                     renderNotesList(rawNotesLines.join("\n"));
-                    configBox.style.display = "grid"; 
                     btnAdmin.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Simpan Perubahan &amp; Kunci';
                     btnAdmin.style.background = "#ff007f";
                     iconLock.className = "fa-solid fa-lock-open";
                     window.showToast("Mode Admin Terbuka! 🔓");
                 } else if (inputPin !== null) { alert("PIN Salah!"); }
             } else {
-                const user = document.getElementById("gitUser").value.trim() || DEFAULT_USER;
-                const repo = document.getElementById("gitRepo").value.trim() || DEFAULT_REPO;
-                const token = document.getElementById("gitToken").value.trim();
-                if(!token) { alert("Isi GITHUB TOKEN terlebih dahulu."); return; }
+                const combinedText = packInputsToArray().join("\n");
+                
+                // Lempar ke fungsi Firebase untuk menyimpan
+                if (window.simpanCatatanUtamaKeFirebase) {
+                    window.simpanCatatanUtamaKeFirebase(combinedText);
+                }
 
-                statusLabel.innerText = "(Mengupload...)";
-                btnAdmin.disabled = true;
-                const combinedText = packInputsToString();
-                const bodyPayload = { message: "Update catatan", content: btoa(unescape(encodeURIComponent(combinedText))) };
-                await fetchShaQuietly();
-                if(currentFileSha) bodyPayload.sha = currentFileSha;
-
-                try {
-                    const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/catatan_utama.txt`, {
-                        method: "PUT", headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-                        body: JSON.stringify(bodyPayload)
-                    });
-                    if(res.ok) {
-                        const resData = await res.json();
-                        currentFileSha = resData.content.sha;
-                        isAdminAuthenticated = false;
-                        configBox.style.display = "none"; 
-                        btnAdmin.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit';
-                        btnAdmin.style.background = "#1a1535";
-                        iconLock.className = "fa-solid fa-lock";
-                        statusLabel.innerText = "(Mode Pantau Aktif)";
-                        window.showToast("Tersimpan secara Global! ☁️");
-                        renderNotesList(combinedText);
-                    } else { throw new Error(); }
-                } catch(e) {
-                    alert("Gagal memperbarui Cloud.");
-                    statusLabel.innerText = "(Gagal Menyimpan)";
-                } finally { btnAdmin.disabled = false; }
+                isAdminAuthenticated = false;
+                btnAdmin.innerHTML = '<i class="fa-solid fa-key"></i> Unlock Admin &amp; Edit';
+                btnAdmin.style.background = "#1a1535";
+                iconLock.className = "fa-solid fa-lock";
+                renderNotesList(combinedText);
             }
         }
 
@@ -840,8 +542,7 @@
             const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
             const res = `${item.nama}, ${item.alamat}, ${item.no_hp}`;
             document.getElementById('genNameOutput').value = res;
-            window.eksekusiSalinTeks(res).then(() => window.showToast("Berhasil Disalin! ✨"));
-            tambahKeRiwayat(res);
+            window.eksekusiSalinTeks(res).then(() => window.showToast("Berhasil Disalin! ✨")); tambahKeRiwayat(res);
         };
         
         window.generateUsername = function() {
@@ -851,8 +552,7 @@
             if(usernameDasar === "") usernameDasar = "user";
             const res = usernameDasar + (Math.floor(Math.random() * 9999) + 10);
             document.getElementById('genNameOutput').value = res;
-            window.eksekusiSalinTeks(res).then(() => window.showToast("Username Disalin! ✨"));
-            tambahKeRiwayat(res);
+            window.eksekusiSalinTeks(res).then(() => window.showToast("Username Disalin! ✨")); tambahKeRiwayat(res);
         };
 
         function tambahKeRiwayat(t) {
@@ -864,9 +564,7 @@
         function clearHistory() { document.getElementById('historyList').innerHTML = ''; }
         
         window.showToast = function(m) { 
-            const t = document.getElementById('toastNotif'); 
-            t.innerText = m; 
-            t.classList.add('show'); 
+            const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); 
             setTimeout(() => { t.classList.remove('show'); }, 2000); 
         }
     </script>
