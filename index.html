@@ -108,9 +108,9 @@
     <!-- === 1. MENU SERVERS === -->
     <div class="wrapper-menu-server" style="position: relative; margin-bottom: 18px;">
         
-        <!-- TAMPILAN IP JARINGAN (Posisi Absolute di Atas Kanan) -->
-        <div id="teks-ip-jaringan" style="position: absolute; right: 0; top: -20px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5;">
-            <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP...
+        <!-- TAMPILAN IP & PING JARINGAN (Posisi Absolute di Atas Kanan) -->
+        <div id="teks-ip-jaringan" style="position: absolute; right: 0; top: -20px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap;">
+            <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
         </div>
 
         <div class="server-col">
@@ -390,14 +390,29 @@
         }
         setInterval(cekAlarmCopas, 5000);
 
-        // === FUNGSI DETEKSI IP ADDRESS REALTIME ===
+        // === FUNGSI DETEKSI IP & PING REALTIME ===
         async function updateIPAddress() {
             const ipText = document.getElementById('teks-ip-jaringan');
             if (!ipText) return;
             try {
-                const res = await fetch('https://api.ipify.org?format=json');
+                // Catat waktu mulai
+                const startWaktu = performance.now();
+                
+                // Fetch IP Address
+                const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
                 const data = await res.json();
-                ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #00ffcc;"></i> <span style="color: #00ffcc;">${data.ip}</span>`;
+                
+                // Hitung total milidetik yang dihabiskan sebagai "Ping"
+                const endWaktu = performance.now();
+                const ping = Math.round(endWaktu - startWaktu);
+                
+                // Logika Warna Ping: Hijau (<150ms), Kuning (150-300ms), Merah (>300ms)
+                let warnaPing = "#00ffcc"; 
+                if (ping > 150) warnaPing = "#f0ad4e"; 
+                if (ping > 300) warnaPing = "#ff4a4a"; 
+
+                // Tampilkan IP disebelah kiri, lalu divider, lalu Ping ms.
+                ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #00ffcc;"></i> <span style="color: #00ffcc;">${data.ip}</span> <span style="color: #6e678a; margin: 0 4px;">|</span> <span style="color: ${warnaPing};">${ping}ms</span>`;
             } catch (error) {
                 ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #ff4a4a;"></i> <span style="color: #ff4a4a;">Terputus</span>`;
             }
@@ -411,18 +426,16 @@
         document.addEventListener("DOMContentLoaded", function() {
             fetch(`./data_pengguna.json?t=${Date.now()}`).then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
             muatDataCopas();
-            updateIPAddress(); // Muat IP saat pertama kali dibuka
+            updateIPAddress(); 
         });
 
-        // Event listener saat jaringan ganti/mati
+        // Event listener jaringan dan cek otomatis tiap 10 detik agar ping update berkala
         window.addEventListener('online', updateIPAddress);
         window.addEventListener('offline', () => {
             const ipText = document.getElementById('teks-ip-jaringan');
             if (ipText) ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #ff4a4a;"></i> <span style="color: #ff4a4a;">Terputus</span>`;
         });
-        
-        // Cek berkala setiap 15 detik (untuk menangkap perpindahan WiFi ke Data Seluler yang tersembunyi)
-        setInterval(updateIPAddress, 15000);
+        setInterval(updateIPAddress, 10000);
 
         window.eksekusiSalinTeks = function(teks) {
             if (navigator.clipboard && window.isSecureContext) { return navigator.clipboard.writeText(teks); } else {
