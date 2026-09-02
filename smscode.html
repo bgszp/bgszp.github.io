@@ -17,6 +17,7 @@
         .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
         
+        /* GAYA TOMBOL SALIN (UTAMA VS ANTRIAN) */
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
@@ -464,19 +465,17 @@
                     countRiwayat++; return;
                 }
 
-                // Logika Dinamis: Antrian Pertama = 5 Menit (300 detik), Sisanya = 125 detik
                 countAktif++;
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 let batasWaktu = (countAktif === 1) ? 300 : 125;
                 let labelBatas = (countAktif === 1) ? "5m" : "125s";
                 
-                // Trigger Batal Otomatis
                 if (item.status === "pending" && sec >= batasWaktu) { 
                     item.status = "cancelled"; 
                     flagSimpan = true; 
                     apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
                     printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (${labelBatas}).`);
-                    countAktif--; // Kurangi hitungan antrian karena nomor ini hangus
+                    countAktif--; 
                     return; 
                 }
                 
@@ -485,13 +484,20 @@
                 
                 let textStat = `⚡ Cek OTP... (${sec}s / ${batasWaktu}s)`; let colStat = "#ffb86c"; let kotakOtp = ""; let btnAksi = "";
 
-                // Label Antrian Dinamis
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`;
                 let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
 
                 if (item.status === "received") { 
                     textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
-                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div><button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
+                    kotakOtp = `
+                    <div class="box-copy-statik otp-masuk">
+                        <div>
+                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
+                            <div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div>
+                        </div>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
+                    </div>`;
+                    
                     btnAksi = `
                     <div style="display:flex; gap: 8px; margin-top: 10px;">
                         <button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button>
