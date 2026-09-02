@@ -130,7 +130,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
-            └> Sistem Panel Diinisialisasi.
+            └> Sistem Webhook Diinisialisasi.
         </div>
     </div>
     
@@ -402,6 +402,7 @@
             } catch(err) { alert("Gagal menyelesaikan: " + err.message); }
         }
 
+        // FUNGSI CEK OTP WEBHOOK DENGAN POLA SMART POLLING KV
         async function mesinCekSmsTerpusat() {
             siklusCek++;
             let sudahCekTerbaru = false;
@@ -424,8 +425,9 @@
                 if (!izinkanCek) continue;
 
                 try {
-                    const d = await apiSMSCode(`orders/${i.order_id}`, 'GET');
-                    let orderData = d.data; 
+                    // MEMBACA DARI CLOUDFLARE KV (Lebih Cepat dan Aman dari Blokir API)
+                    const d = await fetch(`${WORKER_URL}/check-otp?id=${i.order_id}`);
+                    const orderData = await d.json(); 
                     if(!orderData) continue;
                     
                     let stat = orderData.status;
@@ -527,7 +529,6 @@
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
-                // Menerapkan CSS flexbox untuk tata letak pada elemen kartu
                 htmlAktif += `
                 <div class="card-order">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:10px; color:#aaa; margin-bottom:5px; gap: 10px;">
