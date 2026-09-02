@@ -17,7 +17,6 @@
         .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
         
-        /* GAYA TOMBOL SALIN (UTAMA VS ANTRIAN) */
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
@@ -143,7 +142,6 @@
         let namaProdukTerpilih = "";
         let shopeePlatformId = null; 
 
-        // GANTI DENGAN URL CLOUDFLARE WORKER ANDA
         const WORKER_URL = "https://smscode-proxy.tiktiksatu001.workers.dev";
 
         async function apiSMSCode(endpoint, method = "GET", payload = null) {
@@ -196,7 +194,6 @@
             setInterval(mesinCekSmsTerpusat, 2000); 
         });
 
-        // FUNGSI TOGGLE DROPDOWN RIWAYAT
         function toggleRiwayatDropdown() {
             const w = document.getElementById("wadahRiwayatDropdown");
             const p = document.getElementById("panahRiwayat");
@@ -441,15 +438,6 @@
             let flagSimpan = false; let countAktif = 0; let countRiwayat = 0;
 
             daftarOrderan.forEach((item, index) => {
-                let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                
-                if (item.status === "pending" && sec >= 420) { 
-                    item.status = "cancelled"; 
-                    flagSimpan = true; 
-                    apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
-                    printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (7 Menit).`);
-                }
-                
                 if (item.status === "cancelled") return; 
 
                 if (item.status === "completed" || item.status === "history_received") {
@@ -476,14 +464,28 @@
                     countRiwayat++; return;
                 }
 
-                // Hitung untuk penomoran tombol salin "Antrian ke-X"
+                // Logika Dinamis: Antrian Pertama = 5 Menit (300 detik), Sisanya = 125 detik
                 countAktif++;
-                let sisa = Math.max(0, 420 - sec); 
+                let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
+                let batasWaktu = (countAktif === 1) ? 300 : 125;
+                let labelBatas = (countAktif === 1) ? "5m" : "125s";
+                
+                // Trigger Batal Otomatis
+                if (item.status === "pending" && sec >= batasWaktu) { 
+                    item.status = "cancelled"; 
+                    flagSimpan = true; 
+                    apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
+                    printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (${labelBatas}).`);
+                    countAktif--; // Kurangi hitungan antrian karena nomor ini hangus
+                    return; 
+                }
+                
+                let sisa = Math.max(0, batasWaktu - sec); 
                 let cool = Math.max(0, 120 - sec); 
                 
-                let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let kotakOtp = ""; let btnAksi = "";
+                let textStat = `⚡ Cek OTP... (${sec}s / ${batasWaktu}s)`; let colStat = "#ffb86c"; let kotakOtp = ""; let btnAksi = "";
 
-                // DINAMIKA TOMBOL SALIN (Pembaruan: "Salin Utama" -> "Salin")
+                // Label Antrian Dinamis
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`;
                 let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
 
@@ -499,16 +501,35 @@
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
-                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
+                htmlAktif += `
+                <div class="card-order">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                        <span style="font-size: 11px; color: var(--text-sub); font-weight: bold; flex: 1;">${item.layanan}</span>
+                        <span style="font-size: 10px; color: ${colStat}; font-weight: bold;">${textStat}</span>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; gap: 10px;">
+                        <div>
+                            <div style="font-size:10px; color:var(--text-sub); margin-bottom: 2px;">Nomor HP:</div>
+                            <div style="font-size:20px; font-weight:bold; color:#fff; letter-spacing: 1px;">${item.phone}</div>
+                        </div>
+                        <button onclick="salinTeksToast('${item.phone}')" class="${classSalin}">
+                            <i class="fa-regular fa-copy"></i> ${labelSalin}
+                        </button>
+                    </div>
+                    ${kotakOtp}
+                    ${btnAksi}
+                </div>`;
             });
 
-            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
+            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>`;
             containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
-            badgeRiwayat.innerText = countRiwayat;
+            if(badgeRiwayat) badgeRiwayat.innerText = countRiwayat;
             
             if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
 
+        // --- FUNGSI PEMBANTU (HELPERS) ---
         function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv2_shopee", JSON.stringify(daftarOrderan)); }
         function hapusSemuaRiwayatBawah() { daftarOrderan = daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Riwayat Selesai Dibersihkan!"); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
@@ -520,24 +541,18 @@
             try { 
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
                 let time = audioCtx.currentTime; 
-                const freqs = [987.77, 1318.51, 1567.98, 1975.53]; 
-                for (let r = 0; r < 3; r++) { 
-                    freqs.forEach((freq) => { 
-                        const osc = audioCtx.createOscillator(); 
-                        const gain = audioCtx.createGain(); 
-                        osc.type = "square"; 
-                        osc.frequency.setValueAtTime(freq, time); 
-                        gain.gain.setValueAtTime(0.8, time); 
-                        gain.gain.setTargetAtTime(0.0, time + 0.1, 0.05); 
-                        osc.connect(gain); 
-                        gain.connect(audioCtx.destination); 
-                        osc.start(time); 
-                        osc.stop(time + 0.15); 
-                        time += 0.1; 
-                    }); 
-                    time += 0.2; 
+                for (let r = 0; r < 2; r++) { 
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = "square";
+                    osc.frequency.setValueAtTime(987.77, time); 
+                    gain.gain.setValueAtTime(0.3, time);
+                    gain.gain.setTargetAtTime(0, time + 0.1, 0.1);
+                    osc.connect(gain).connect(audioCtx.destination);
+                    osc.start(time); osc.stop(time + 0.3);
+                    time += 0.45; 
                 } 
-            } catch (e) {}
+            } catch (e) { console.log(e); }
         }
 
         function munculkanPopupNative(nomor, otp, layanan) {
