@@ -142,6 +142,7 @@
         let produkTerpilihId = null;
         let namaProdukTerpilih = "";
         let shopeePlatformId = null; 
+        let siklusCek = 0;
 
         const WORKER_URL = "https://smscode-proxy.tiktiksatu001.workers.dev";
 
@@ -409,7 +410,6 @@
                 
                 if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
                 
-                // BLOKIR ANTRIAN BAWAH: Jika pesanan ini masih pending dan kita sudah menemukan pesanan terbaru (atas), maka lewati/blokir pengecekan server
                 if (i.status === "pending") {
                     if (sudahAdaYangDicek) {
                         continue; 
@@ -418,7 +418,6 @@
                 }
 
                 try {
-                    // Cek melalui Cloudflare KV
                     const d = await fetch(`${WORKER_URL}/check-otp?id=${i.order_id}`);
                     const orderData = await d.json(); 
                     if(!orderData) continue;
@@ -479,17 +478,17 @@
                     countRiwayat++; return;
                 }
 
-                // Logika Dinamis: Antrian Pertama = 5 Menit (300 detik), Sisanya = 125 detik
                 countAktif++;
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 let batasWaktu = (countAktif === 1) ? 300 : 125;
                 let labelBatas = (countAktif === 1) ? "5m" : "125s";
                 
-                // Trigger Batal Otomatis
                 if (item.status === "pending" && sec >= batasWaktu) { 
                     item.status = "cancelled"; 
                     flagSimpan = true; 
-                    apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
+                    apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id })
+                        .then(() => ambilSaldoLive())
+                        .catch(e=>console.log(e));
                     printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (${labelBatas}).`);
                     countAktif--; 
                     return; 
@@ -498,7 +497,6 @@
                 let sisa = Math.max(0, batasWaktu - sec); 
                 let cool = Math.max(0, 120 - sec); 
                 
-                // Visual Text Stat Update: Antrian diblokir akan bertuliskan "⏸️ Antri..."
                 let textStat = countAktif === 1 ? `⚡ Cek OTP... (${sec}s / ${batasWaktu}s)` : `⏸️ Antri... (${sec}s / ${batasWaktu}s)`; 
                 let colStat = countAktif === 1 ? "#ffb86c" : "#6272a4"; 
                 let kotakOtp = ""; let btnAksi = "";
