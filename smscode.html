@@ -142,6 +142,7 @@
         let produkTerpilihId = null;
         let namaProdukTerpilih = "";
         let shopeePlatformId = null; 
+        let siklusCek = 0;
 
         const WORKER_URL = "https://smscode-proxy.tiktiksatu001.workers.dev";
 
@@ -402,12 +403,30 @@
         }
 
         async function mesinCekSmsTerpusat() {
-            daftarOrderan.forEach(async (i) => {
-                if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") return; 
+            siklusCek++;
+            let sudahCekTerbaru = false;
+
+            for (let index = 0; index < daftarOrderan.length; index++) {
+                let i = daftarOrderan[index];
+                
+                if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
+                
+                let izinkanCek = false;
+
+                if (i.status === "pending" && !sudahCekTerbaru) {
+                    izinkanCek = true;
+                    sudahCekTerbaru = true; 
+                } 
+                else if (siklusCek % 10 === 0) {
+                    izinkanCek = true;
+                }
+
+                if (!izinkanCek) continue;
+
                 try {
                     const d = await apiSMSCode(`orders/${i.order_id}`, 'GET');
                     let orderData = d.data; 
-                    if(!orderData) return;
+                    if(!orderData) continue;
                     
                     let stat = orderData.status;
                     let otpCode = orderData.otp_code; 
@@ -427,7 +446,7 @@
                         i.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
                     }
                 } catch (e) {}
-            });
+            }
         }
 
         function renderUILayout() {
@@ -465,11 +484,13 @@
                     countRiwayat++; return;
                 }
 
+                // Logika Dinamis: Antrian Pertama = 5 Menit (300 detik), Sisanya = 125 detik
                 countAktif++;
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 let batasWaktu = (countAktif === 1) ? 300 : 125;
                 let labelBatas = (countAktif === 1) ? "5m" : "125s";
                 
+                // Trigger Batal Otomatis
                 if (item.status === "pending" && sec >= batasWaktu) { 
                     item.status = "cancelled"; 
                     flagSimpan = true; 
@@ -497,7 +518,6 @@
                         </div>
                         <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
                     </div>`;
-                    
                     btnAksi = `
                     <div style="display:flex; gap: 8px; margin-top: 10px;">
                         <button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button>
@@ -507,23 +527,25 @@
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
+                // Menerapkan CSS flexbox untuk tata letak pada elemen kartu
                 htmlAktif += `
                 <div class="card-order">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-                        <span style="font-size: 11px; color: var(--text-sub); font-weight: bold; flex: 1;">${item.layanan}</span>
-                        <span style="font-size: 10px; color: ${colStat}; font-weight: bold;">${textStat}</span>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:10px; color:#aaa; margin-bottom:5px; gap: 10px;">
+                        <span style="flex: 1; word-break: break-word;">${item.layanan}</span>
+                        <span style="white-space: nowrap; flex-shrink: 0;">⏱️ Maks: ${labelBatas}</span>
                     </div>
                     
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; gap: 10px;">
+                    <div class="box-copy-statik">
                         <div>
-                            <div style="font-size:10px; color:var(--text-sub); margin-bottom: 2px;">Nomor HP:</div>
-                            <div style="font-size:20px; font-weight:bold; color:#fff; letter-spacing: 1px;">${item.phone}</div>
+                            <div style="font-size:9px; color:#8b8da9;">Nomor HP:</div>
+                            <div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px; word-break: break-all;">${item.phone}</div>
                         </div>
-                        <button onclick="salinTeksToast('${item.phone}')" class="${classSalin}">
+                        <button onclick="salinTeksToast('${item.phone}')" class="${classSalin}" style="flex-shrink: 0;">
                             <i class="fa-regular fa-copy"></i> ${labelSalin}
                         </button>
                     </div>
                     ${kotakOtp}
+                    <div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>
                     ${btnAksi}
                 </div>`;
             });
@@ -545,20 +567,64 @@
 
         function putarSuaraNotifKeras() {
             try { 
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const audioCtx = new AudioContext(); 
                 let time = audioCtx.currentTime; 
+                
                 for (let r = 0; r < 2; r++) { 
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = "square";
-                    osc.frequency.setValueAtTime(987.77, time); 
-                    gain.gain.setValueAtTime(0.3, time);
-                    gain.gain.setTargetAtTime(0, time + 0.1, 0.1);
-                    osc.connect(gain).connect(audioCtx.destination);
-                    osc.start(time); osc.stop(time + 0.3);
-                    time += 0.45; 
+                    // Nada Dasar (Pemisahan Stereo Kiri & Kanan Ekstrem)
+                    const oscL = audioCtx.createOscillator();
+                    const gainL = audioCtx.createGain();
+                    oscL.type = "square";
+                    oscL.frequency.setValueAtTime(987.77, time); // B5 (kiri)
+                    gainL.gain.setValueAtTime(0.3, time);
+                    gainL.gain.setTargetAtTime(0, time + 0.1, 0.1);
+
+                    const oscR = audioCtx.createOscillator();
+                    const gainR = audioCtx.createGain();
+                    oscR.type = "square";
+                    oscR.frequency.setValueAtTime(991.00, time); // B5 Sedikit dinaikkan (kanan)
+                    gainR.gain.setValueAtTime(0.3, time);
+                    gainR.gain.setTargetAtTime(0, time + 0.1, 0.1);
+
+                    // Terapkan Efek Stereo (Jika Peramban Mendukung)
+                    if (audioCtx.createStereoPanner) {
+                        const panL = audioCtx.createStereoPanner(); panL.pan.value = -1; // Full Kiri
+                        const panR = audioCtx.createStereoPanner(); panR.pan.value = 1;  // Full Kanan
+                        oscL.connect(gainL).connect(panL).connect(audioCtx.destination);
+                        oscR.connect(gainR).connect(panR).connect(audioCtx.destination);
+                    } else {
+                        oscL.connect(gainL).connect(audioCtx.destination);
+                        oscR.connect(gainR).connect(audioCtx.destination);
+                    }
+                    
+                    oscL.start(time); oscL.stop(time + 0.3);
+                    oscR.start(time); oscR.stop(time + 0.3);
+
+                    // Melodi Arpeggio Cepat (Di Tengah)
+                    const arpFreq = [1318.51, 1567.98, 1975.53]; // E6, G6, B6
+                    arpFreq.forEach((f, idx) => {
+                        const oscM = audioCtx.createOscillator();
+                        const gainM = audioCtx.createGain();
+                        oscM.type = "triangle";
+                        
+                        let tOffset = time + (idx * 0.08);
+                        oscM.frequency.setValueAtTime(f, tOffset);
+                        
+                        gainM.gain.setValueAtTime(0.6, tOffset);
+                        gainM.gain.setTargetAtTime(0, tOffset + 0.05, 0.05);
+                        
+                        oscM.connect(gainM).connect(audioCtx.destination);
+                        oscM.start(tOffset);
+                        oscM.stop(tOffset + 0.2);
+                    });
+
+                    time += 0.45; // Jeda sebelum mengulang lagi
                 } 
-            } catch (e) { console.log(e); }
+            } catch (e) { 
+                console.log(e); 
+            }
         }
 
         function munculkanPopupNative(nomor, otp, layanan) {
