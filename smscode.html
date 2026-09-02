@@ -492,11 +492,13 @@
                 let batasWaktu = (countAktif === 1) ? 300 : 125;
                 let labelBatas = (countAktif === 1) ? "5m" : "125s";
                 
-                // Trigger Batal Otomatis
+                // Trigger Batal Otomatis & Auto Refresh Saldo
                 if (item.status === "pending" && sec >= batasWaktu) { 
                     item.status = "cancelled"; 
                     flagSimpan = true; 
-                    apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
+                    apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id })
+                        .then(() => { ambilSaldoLive(); })
+                        .catch(e=>console.log(e));
                     printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (${labelBatas}).`);
                     countAktif--; 
                     return; 
