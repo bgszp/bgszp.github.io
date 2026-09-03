@@ -11,12 +11,10 @@
         body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
         
-        /* === CSS BARU UNTUK KATEGORI RANK === */
         .badge-rank { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; color: #fff; margin-right: 6px; display: inline-block; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
         .badge-gold { background: linear-gradient(135deg, #d4af37, #aa7c11); border: 1px solid #e8c557; }
         .badge-silver { background: linear-gradient(135deg, #b5b5b5, #757575); border: 1px solid #d4d4d4; }
         .badge-bronze { background: linear-gradient(135deg, #cd7f32, #8d5524); border: 1px solid #e09b59; }
-        /* ==================================== */
 
         .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
         .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
@@ -67,10 +65,10 @@
             <div id="wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
                 <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 SMSBower API Key:</label>
                 <div style="display: flex; gap: 6px;">
-                    <input type="password" id="otpKeyV5" placeholder="API Key SMSBower" class="search-input" style="margin-bottom:0;">
+                    <input type="password" id="otpKeyBower" placeholder="API Key SMSBower" class="search-input" style="margin-bottom:0;">
                     <button onclick="simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
                 </div>
-                <small id="statusKeyV5" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
+                <small id="statusKeyBower" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
             </div>
         </div>
 
@@ -121,7 +119,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Panel Diinisialisasi (Filter Provider Khusus Aktif).
+            └> Sistem Panel SMSBower Diinisialisasi (Isolasi Data Aktif).
         </div>
     </div>
     
@@ -147,8 +145,8 @@
             return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
         }
 
-        async function apiSMSCode(endpoint, method = "GET", payload = null) {
-            const token = localStorage.getItem("otp_key_smscode");
+        async function apiSMSBower(endpoint, method = "GET", payload = null) {
+            const token = localStorage.getItem("otp_key_smsbower");
             if (!token) throw new Error("API Key belum disetting.");
             let targetUrl = `${WORKER_URL}/v1/${endpoint}`;
             if (method === "GET") targetUrl += (targetUrl.includes('?') ? '&' : '?') + `nocache=${Date.now()}`; 
@@ -165,14 +163,14 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            const savedKey = localStorage.getItem("otp_key_smscode");
+            const savedKey = localStorage.getItem("otp_key_smsbower");
             if(savedKey) {
-                document.getElementById("otpKeyV5").value = savedKey;
-                document.getElementById("statusKeyV5").innerText = "✅ Token Aktif."; document.getElementById("statusKeyV5").style.color = "#50fa7b";
+                document.getElementById("otpKeyBower").value = savedKey;
+                document.getElementById("statusKeyBower").innerText = "✅ Token Aktif."; document.getElementById("statusKeyBower").style.color = "#50fa7b";
                 refreshSemuaDataLive();
             } else toggleApiKeyDropdown();
 
-            const orderanLokal = localStorage.getItem("daftar_orderan_smsbower_unik");
+            const orderanLokal = localStorage.getItem("daftar_orderan_smsbower");
             if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
 
             setInterval(mesinWaktuTerpusat, 1000);
@@ -201,14 +199,12 @@
                 let prefixLayanan = elemNamaSrv.split(' ')[0]; 
 
                 if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `Mencari harga...`;
-                const resProd = await apiSMSCode(`catalog/products?service=${serviceId}`, 'GET');
+                const resProd = await apiSMSBower(`catalog/products?service=${serviceId}`, 'GET');
                 let arrData = resProd.data;
                 if (!arrData || arrData.length === 0) throw new Error("Stok kosong.");
 
-                // === FILTER BERDASARKAN ID PROVIDER YANG DIIZINKAN ===
                 arrData = arrData.filter(item => ALLOWED_PROVIDERS.includes(parseInt(item.id)));
                 if (arrData.length === 0) throw new Error("Provider pilihan sedang kosong.");
-                // =======================================================
 
                 arrData.sort((a, b) => b.price - a.price); 
                 let totalItems = arrData.length;
@@ -285,12 +281,12 @@
                     daftarOrderan.forEach(item => {
                         if (item.status === "pending" && item.layanan.includes("Shopee")) {
                             item.status = "cancelled";
-                            apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
+                            apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e));
                         }
                     });
                 }
 
-                const responseData = await apiSMSCode('orders/create', 'POST', { provider_id: produkTerpilihId, service: serviceId });
+                const responseData = await apiSMSBower('orders/create', 'POST', { provider_id: produkTerpilihId, service: serviceId });
                 const createdOrder = responseData.data?.orders?.[0];
                 if (createdOrder) {
                     daftarOrderan.unshift({ order_id: createdOrder.id, phone: createdOrder.phone_number, layanan: namaProdukTerpilih, harga: hargaProdukTerpilih, waktu_dibuat: Date.now(), status: "pending", otp: "" });
@@ -300,17 +296,17 @@
         }
 
         function simpanKonfigurasi() {
-            const key = document.getElementById("otpKeyV5").value.trim();
+            const key = document.getElementById("otpKeyBower").value.trim();
             if(!key) return alert("Masukkan Token!");
-            localStorage.setItem("otp_key_smscode", key);
-            document.getElementById("statusKeyV5").innerText = "✅ Token Disimpan!";
+            localStorage.setItem("otp_key_smsbower", key);
+            document.getElementById("statusKeyBower").innerText = "✅ Token Disimpan!";
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
         function refreshSemuaDataLive() { ambilSaldoLive(); inisialisasiLayanan(); }
         async function ambilSaldoLive() {
             try {
-                const d = await apiSMSCode('balance', 'GET'); 
+                const d = await apiSMSBower('balance', 'GET'); 
                 let saldoApi = parseFloat(d.data?.balance || 0);
                 document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoApi * NILAI_KURS);
             } catch(e) { document.getElementById("txtSaldoLive").innerText = "Error"; }
@@ -318,15 +314,15 @@
 
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
-            try { await apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }); item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Dibatalkan!"); } catch (e) {}
+            try { await apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }); item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Dibatalkan!"); } catch (e) {}
         }
         async function eksekusiResend(index) {
             const item = daftarOrderan[index];
-            try { await apiSMSCode('orders/resend', 'POST', { id: item.order_id }); showToast("Resend Berhasil Diminta!"); } catch (e) {}
+            try { await apiSMSBower('orders/resend', 'POST', { id: item.order_id }); showToast("Resend Berhasil Diminta!"); } catch (e) {}
         }
         async function eksekusiSelesai(index) {
             const item = daftarOrderan[index];
-            try { await apiSMSCode(`orders/finish`, 'POST', { id: item.order_id }); item.status = "completed"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Selesai!"); } catch(err) {}
+            try { await apiSMSBower(`orders/finish`, 'POST', { id: item.order_id }); item.status = "completed"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Selesai!"); } catch(err) {}
         }
 
         async function mesinCekSmsTerpusat() {
@@ -337,7 +333,7 @@
                 let izinkanCek = (i.status === "pending" && !sudahCekTerbaru) ? (sudahCekTerbaru = true) : (siklusCek % 10 === 0);
                 if (!izinkanCek) continue;
                 try {
-                    const d = await apiSMSCode(`orders/${i.order_id}`, 'GET');
+                    const d = await apiSMSBower(`orders/${i.order_id}`, 'GET');
                     let stat = d.data?.status; let otpCode = d.data?.otp_code; 
                     if (stat === "COMPLETED") { 
                         i.status = "completed"; if(otpCode) i.otp = otpCode; renderUILayout(); simpanDaftarOrderanKeLokal(); 
@@ -362,7 +358,7 @@
 
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e)); }
+                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>console.log(e)); }
                 if (item.status === "cancelled") return; 
 
                 let d = new Date(item.waktu_dibuat);
@@ -420,10 +416,10 @@
                     kotakOtp = `
                     <div class="box-copy-statik otp-masuk">
                         <div>
-                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div>
+                            <div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div>
                             <div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div>
                         </div>
-                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
+                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button>
                     </div>`;
                     
                     btnAksi = `
@@ -459,7 +455,7 @@
             document.getElementById("countRiwayatBadge").innerText = countRiwayat;
         }
 
-        function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_smsbower_unik", JSON.stringify(daftarOrderan)); }
+        function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_smsbower", JSON.stringify(daftarOrderan)); }
         function hapusSemuaRiwayatBawah() { daftarOrderan = daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); renderUILayout(); simpanDaftarOrderanKeLokal(); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
         function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
