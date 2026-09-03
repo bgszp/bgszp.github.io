@@ -17,7 +17,6 @@
         .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
         
-        /* GAYA TOMBOL SALIN (UTAMA VS ANTRIAN) */
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
@@ -55,7 +54,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- HEADER SALDO -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
             <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis Shopee ID</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
@@ -64,7 +62,6 @@
             </div>
         </div>
 
-        <!-- SETTING TOKEN -->
         <div style="margin-bottom: 12px;">
             <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()">
                 <span>🔑 Konfigurasi API Key</span>
@@ -80,29 +77,23 @@
             </div>
         </div>
 
-        <!-- AREA PEMESANAN TERPADU -->
         <div class="dropdown-box-wrapper">
             <label class="form-label">🛒 Setup Layanan</label>
-            
             <div class="unified-order-box">
                 <select id="dropdownOperator" class="unified-select-op" onchange="muatProdukShopee(true)">
                     <option value="">Memuat Operator...</option>
                 </select>
-
                 <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
                     <span id="labelServerTerpilih" style="color: #fff;">Pilih Operator Terlebih Dahulu...</span>
                     <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Tier</span>
                 </div>
             </div>
-
             <div id="containerListDropdown" class="dropdown-list-options"></div>
-
             <button class="btn-pesan-sekarang" id="btnPesanAksi" onclick="eksekusiBeliTerpilih()" disabled>
                 <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
             </button>
         </div>
 
-        <!-- NOMOR AKTIF -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
@@ -113,7 +104,6 @@
             </div>
         </div>
 
-        <!-- RIWAYAT SUKSES (DROPDOWN) -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div class="pemicu-dropdown" onclick="toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
                 <span>📜 Riwayat Sukses (<span id="countRiwayatBadge">0</span>)</span>
@@ -130,7 +120,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
-            └> Sistem Webhook Diinisialisasi.
+            └> Sistem Diinisialisasi.
         </div>
     </div>
     
@@ -142,6 +132,7 @@
         let produkTerpilihId = null;
         let namaProdukTerpilih = "";
         let shopeePlatformId = null; 
+        
         let siklusCek = 0;
 
         const WORKER_URL = "https://smscode-proxy.tiktiksatu001.workers.dev";
@@ -152,11 +143,12 @@
 
             let targetUrl = `${WORKER_URL}/v1/${endpoint}`;
             if (method === "GET") { 
-                targetUrl += (targetUrl.includes('?') ? '&' : '?') + `nocache=${Date.now()}`; 
+                targetUrl += (targetUrl.includes('?') ? '&' : '?') + `nocache=${Date.now()}&_R=${Math.random()}`; 
             }
             
             let headers = { "Authorization": `Bearer ${token.trim()}`, "Content-Type": "application/json", "Accept": "application/json" };
-            let options = { method: method, headers: headers };
+            // FIX: Tambahkan cache: "no-store" agar browser dan cloudflare tidak pernah nge-cache status pesanan
+            let options = { method: method, headers: headers, cache: "no-store" };
             if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
             try {
@@ -200,11 +192,9 @@
             const w = document.getElementById("wadahRiwayatDropdown");
             const p = document.getElementById("panahRiwayat");
             if (w.style.display === "none" || w.style.display === "") {
-                w.style.display = "block";
-                p.innerText = "▲";
+                w.style.display = "block"; p.innerText = "▲";
             } else {
-                w.style.display = "none";
-                p.innerText = "▼";
+                w.style.display = "none"; p.innerText = "▼";
             }
         }
 
@@ -216,7 +206,6 @@
                     pindah = true;
                 }
             });
-            
             if (pindah) { renderUILayout(); simpanDaftarOrderanKeLokal(); }
             refreshSemuaDataLive();
             showToast("Dibersihkan & Katalog Diperbarui!");
@@ -248,7 +237,6 @@
                         dropdownOp.appendChild(opt);
                     });
                 }
-                
                 await muatProdukShopee(false);
             } catch (e) {
                 printLog(`⚠️ Error Inisialisasi: ${e.message}`);
@@ -291,8 +279,7 @@
                     } else {
                         document.getElementById("containerListDropdown").classList.remove("active");
                     }
-                } 
-                else { 
+                } else { 
                     document.getElementById("labelServerTerpilih").innerText = "Tidak ada tier tersedia"; 
                     document.getElementById("btnPesanAksi").disabled = true; 
                     document.getElementById("containerListDropdown").classList.remove("active");
@@ -374,7 +361,11 @@
             try {
                 await apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id });
                 item.status = "cancelled"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Dibatalkan!"); 
-            } catch (e) { alert("Gagal membatalkan. Tunggu 2 menit."); }
+            } catch (e) { 
+                alert("Gagal membatalkan: " + (e.message || "Tunggu 2 menit.")); 
+                // Jika gagal batal, pancing cek OTP secara manual, siapa tahu OTP sebenarnya sudah masuk
+                mesinCekSmsTerpusat();
+            }
         }
 
         async function eksekusiResend(index) {
@@ -403,34 +394,44 @@
         }
 
         async function mesinCekSmsTerpusat() {
-            let sudahAdaYangDicek = false;
+            siklusCek++;
+            let sudahCekTerbaru = false;
 
             for (let index = 0; index < daftarOrderan.length; index++) {
                 let i = daftarOrderan[index];
                 
                 if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
                 
-                if (i.status === "pending") {
-                    if (sudahAdaYangDicek) {
-                        continue; 
-                    }
-                    sudahAdaYangDicek = true; 
+                let izinkanCek = false;
+
+                // FIX: "Smart Polling" - Antrian 1 dicek setiap saat (2 detik). Antrian 2 dst dicek setiap 10 detik.
+                // Ini mencegah nomor di bawah "buta" tidak mendapat update OTP
+                if (i.status === "pending" && !sudahCekTerbaru) {
+                    izinkanCek = true;
+                    sudahCekTerbaru = true; 
+                } 
+                else if (siklusCek % 5 === 0) {
+                    izinkanCek = true;
                 }
 
+                if (!izinkanCek) continue;
+
                 try {
-                    const d = await fetch(`${WORKER_URL}/check-otp?id=${i.order_id}`);
-                    const orderData = await d.json(); 
+                    const d = await apiSMSCode(`orders/${i.order_id}`, 'GET');
+                    
+                    // FIX: Lebih kebal dalam membaca data dari SMSCode jika struktur responsnya bervariasi
+                    let orderData = (d.data && d.data.orders) ? d.data.orders[0] : d.data; 
                     if(!orderData) continue;
                     
-                    let stat = orderData.status;
-                    let otpCode = orderData.otp_code; 
+                    let stat = orderData.status ? orderData.status.toUpperCase() : "";
+                    let otpCode = orderData.otp_code || orderData.otp_message || orderData.sms; 
 
-                    if (stat === "COMPLETED") {
+                    if (stat === "COMPLETED" || stat === "SUCCESS" || stat === "FINISHED") {
                         if (i.status !== "completed") {
                             i.status = "completed"; if(otpCode) i.otp = otpCode;
                             renderUILayout(); simpanDaftarOrderanKeLokal();
                         }
-                    } else if (stat === "OTP_RECEIVED" || otpCode) {
+                    } else if (stat === "OTP_RECEIVED" || stat === "RECEIVED" || otpCode) {
                         if (i.status === "pending" || i.otp !== otpCode) {
                             i.status = "received"; i.otp = otpCode; 
                             putarSuaraNotifKeras(); munculkanPopupNative(i.phone, i.otp, i.layanan);
@@ -452,8 +453,25 @@
             let flagSimpan = false; let countAktif = 0; let countRiwayat = 0;
 
             daftarOrderan.forEach((item, index) => {
+                let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
+                let isTopQueue = (countAktif === 0 && item.status !== "completed" && item.status !== "history_received" && item.status !== "cancelled");
+                let batasWaktu = isTopQueue ? 300 : 125;
+                let labelBatas = isTopQueue ? "5m" : "125s";
+                
+                // Batalkan otomatis jika lewat waktu
+                if (item.status === "pending" && sec >= batasWaktu) { 
+                    item.status = "cancelled"; 
+                    flagSimpan = true; 
+                    apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id })
+                        .then(() => ambilSaldoLive())
+                        .catch(e=>console.log(e));
+                    printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (${labelBatas}).`);
+                    return; // Skip ke item selanjutnya
+                }
+                
                 if (item.status === "cancelled") return; 
 
+                // Bagian Riwayat Sukses
                 if (item.status === "completed" || item.status === "history_received") {
                     let btnKirimUlang = "";
                     if (item.status === "history_received") {
@@ -478,28 +496,15 @@
                     countRiwayat++; return;
                 }
 
+                // Bagian Aktif
                 countAktif++;
-                let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                let batasWaktu = (countAktif === 1) ? 300 : 125;
-                let labelBatas = (countAktif === 1) ? "5m" : "125s";
-                
-                if (item.status === "pending" && sec >= batasWaktu) { 
-                    item.status = "cancelled"; 
-                    flagSimpan = true; 
-                    apiSMSCode(`orders/cancel`, 'POST', { id: item.order_id })
-                        .then(() => ambilSaldoLive())
-                        .catch(e=>console.log(e));
-                    printLog(`⏰ Pesanan ${item.phone} dibatalkan otomatis (${labelBatas}).`);
-                    countAktif--; 
-                    return; 
-                }
-                
                 let sisa = Math.max(0, batasWaktu - sec); 
                 let cool = Math.max(0, 120 - sec); 
                 
-                let textStat = countAktif === 1 ? `⚡ Cek OTP... (${sec}s / ${batasWaktu}s)` : `⏸️ Antri... (${sec}s / ${batasWaktu}s)`; 
-                let colStat = countAktif === 1 ? "#ffb86c" : "#6272a4"; 
-                let kotakOtp = ""; let btnAksi = "";
+                let textStat = `⚡ Cek OTP... (${sec}s / ${batasWaktu}s)`; 
+                let colStat = "#ffb86c"; 
+                let kotakOtp = ""; 
+                let btnAksi = "";
 
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`;
                 let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
@@ -545,7 +550,7 @@
                 </div>`;
             });
 
-            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>`;
+            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
             containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
             if(badgeRiwayat) badgeRiwayat.innerText = countRiwayat;
             
@@ -568,25 +573,23 @@
                 let time = audioCtx.currentTime; 
                 
                 for (let r = 0; r < 2; r++) { 
-                    // Nada Dasar (Pemisahan Stereo Kiri & Kanan Ekstrem)
                     const oscL = audioCtx.createOscillator();
                     const gainL = audioCtx.createGain();
                     oscL.type = "square";
-                    oscL.frequency.setValueAtTime(987.77, time); // B5 (kiri)
+                    oscL.frequency.setValueAtTime(987.77, time); 
                     gainL.gain.setValueAtTime(0.3, time);
                     gainL.gain.setTargetAtTime(0, time + 0.1, 0.1);
 
                     const oscR = audioCtx.createOscillator();
                     const gainR = audioCtx.createGain();
                     oscR.type = "square";
-                    oscR.frequency.setValueAtTime(991.00, time); // B5 Sedikit dinaikkan (kanan)
+                    oscR.frequency.setValueAtTime(991.00, time); 
                     gainR.gain.setValueAtTime(0.3, time);
                     gainR.gain.setTargetAtTime(0, time + 0.1, 0.1);
 
-                    // Terapkan Efek Stereo (Jika Peramban Mendukung)
                     if (audioCtx.createStereoPanner) {
-                        const panL = audioCtx.createStereoPanner(); panL.pan.value = -1; // Full Kiri
-                        const panR = audioCtx.createStereoPanner(); panR.pan.value = 1;  // Full Kanan
+                        const panL = audioCtx.createStereoPanner(); panL.pan.value = -1; 
+                        const panR = audioCtx.createStereoPanner(); panR.pan.value = 1;  
                         oscL.connect(gainL).connect(panL).connect(audioCtx.destination);
                         oscR.connect(gainR).connect(panR).connect(audioCtx.destination);
                     } else {
@@ -597,8 +600,7 @@
                     oscL.start(time); oscL.stop(time + 0.3);
                     oscR.start(time); oscR.stop(time + 0.3);
 
-                    // Melodi Arpeggio Cepat (Di Tengah)
-                    const arpFreq = [1318.51, 1567.98, 1975.53]; // E6, G6, B6
+                    const arpFreq = [1318.51, 1567.98, 1975.53]; 
                     arpFreq.forEach((f, idx) => {
                         const oscM = audioCtx.createOscillator();
                         const gainM = audioCtx.createGain();
@@ -615,11 +617,9 @@
                         oscM.stop(tOffset + 0.2);
                     });
 
-                    time += 0.45; // Jeda sebelum mengulang lagi
+                    time += 0.45; 
                 } 
-            } catch (e) { 
-                console.log(e); 
-            }
+            } catch (e) { console.log(e); }
         }
 
         function munculkanPopupNative(nomor, otp, layanan) {
