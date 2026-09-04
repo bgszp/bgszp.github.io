@@ -367,19 +367,13 @@
             try { await apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }); item.status = "cancelled"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Dibatalkan!"); } catch (e) {}
         }
         
-        // === FUNGSI BLOKIR MANUAL ===
         window.bower_blokirManual = async function(index) {
             const item = bower_daftarOrderan[index];
             if (!confirm(`Blokir nomor ${item.phone} agar tidak muncul lagi selama 24 jam? Pesanan akan dibatalkan otomatis.`)) return;
             
             try {
-                // 1. Simpan ke Firebase agar tak muncul lagi 24 Jam
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
-                
-                // 2. Batalkan pesanan dari SMSBower
                 await apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id });
-                
-                // 3. Update UI dan Saldo
                 item.status = "cancelled"; 
                 bower_renderUILayout(); 
                 bower_simpanDaftarOrderanKeLokal(); 
@@ -389,7 +383,6 @@
                 alert("Gagal memblokir: " + e.message);
             }
         }
-        // ============================
 
         window.bower_eksekusiResend = async function(index) {
             const item = bower_daftarOrderan[index];
@@ -415,9 +408,7 @@
                     } else if (stat === "OTP_RECEIVED" || otpCode) {
                         if (i.status === "pending" || i.otp !== otpCode) {
                             i.status = "received"; i.otp = otpCode; 
-
                             set(ref(db, 'blocklist/' + i.phone), { timestamp: Date.now() }).catch(err => console.log(err));
-
                             bower_putarSuaraNotifKeras(); bower_munculkanPopupNative(i.phone, i.otp, i.layanan); bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal();
                         }
                     } else if (stat === "CANCELED") { 
@@ -454,14 +445,20 @@
                     </div>`; countRiwayat++; return;
                 }
 
-                countAktif++; let sisa = Math.max(0, 300 - sec); let cool = Math.max(0, 120 - sec); 
+                countAktif++; 
+                let sisa = Math.max(0, 300 - sec); // Hitung mundur 5 menit
+                let cool = Math.max(0, 120 - sec); 
+                let sisaMax = Math.max(0, 1500 - sec); // Hitung mundur 25 Menit (1500 detik)
+                
                 if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) { cool = 0; }
 
                 let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`; let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
                 
-                // === TOMBOL BLOKIR MANUAL (Ditambahkan di samping nama layanan) ===
                 let btnBlokirManual = item.status === "pending" ? `<button onclick="bower_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir 24 Jam"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
+                
+                // === BADGE WAKTU MAKSIMAL 25 MENIT ===
+                let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal SMSBower"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
 
                 if (item.status === "received") { 
                     textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
@@ -471,7 +468,8 @@
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="bower_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
-                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span style="display:flex; align-items:center;">${item.layanan} ${labelWarning} ${btnBlokirManual}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
+                // badgeMaxTime disisipkan ke dalam flex container utama (samping Blokir)
+                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span style="display:flex; align-items:center;">${item.layanan} ${labelWarning} ${btnBlokirManual} ${badgeMaxTime}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
             });
 
             containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
@@ -481,7 +479,7 @@
 
         function bower_simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_smsbower", JSON.stringify(bower_daftarOrderan)); }
         window.bower_hapusSemuaRiwayatBawah = function() { bower_daftarOrderan = bower_daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); }
-        window.bower_mesinWaktuTerpusat = function() { if (bower_daftarOrderan.some(i => i.status === "pending")) bower_renderUILayout(); }
+        window.bower_mesinWaktuTerpusat = function() { if (bower_daftarOrderan.some(i => i.status === "pending" || i.status === "received")) bower_renderUILayout(); }
         
         window.bower_showToast = function(m) { const t = document.getElementById('bower_toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         window.bower_salinTeksToast = function(txt) { navigator.clipboard.writeText(txt); bower_showToast("Disalin!"); }
