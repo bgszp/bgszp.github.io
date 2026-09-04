@@ -46,372 +46,443 @@
     </style>
 </head>
 <body>
-
-
-<div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-        <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (Shopee & WA)</h3>
-        <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
-            👛 <span id="bower_txtSaldoLive">Rp 0</span>
-            <span onclick="bower_refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
-        </div>
-    </div>
-
-    <div style="margin-bottom: 12px;">
-        <div class="pemicu-dropdown" onclick="bower_toggleApiKeyDropdown()">
-            <span>🔑 Konfigurasi API Key (SMSBower)</span>
-            <span id="bower_panahApiKey" style="font-size: 10px;">▼</span>
-        </div>
-        <div id="bower_wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
-            <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 SMSBower API Key:</label>
-            <div style="display: flex; gap: 6px;">
-                <input type="password" id="bower_otpKey" placeholder="API Key SMSBower" class="search-input" style="margin-bottom:0;">
-                <button onclick="bower_simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
-            </div>
-            <small id="bower_statusKey" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
-        </div>
-    </div>
-
-    <div class="dropdown-box-wrapper">
-        <label class="form-label">🛒 Setup Layanan Utama</label>
-        <div class="unified-order-box">
-            <select id="bower_dropdownLayanan" class="unified-select-op" onchange="bower_muatProdukLayanan(true)">
-                <option value="ka" selected>Shopee (Indonesia)</option>
-                <option value="wa">WhatsApp (Indonesia)</option>
-            </select>
-            
-            <div class="dropdown-selected-bar" onclick="bower_toggleDropdownList()">
-                <span id="bower_labelServerTerpilih" style="color: #fff;">Pilih Provider / Tier...</span>
-                <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Tier</span>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (Shopee & WA)</h3>
+            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
+                👛 <span id="bower_txtSaldoLive">Rp 0</span>
+                <span onclick="bower_refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
             </div>
         </div>
-        <div id="bower_containerListDropdown" class="dropdown-list-options"></div>
-        <button class="btn-pesan-sekarang" id="bower_btnPesanAksi" onclick="bower_eksekusiBeliTerpilih()" disabled>
-            <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
-        </button>
-    </div>
 
-    <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
-        <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <span>📱 Nomor & OTP Aktif:</span>
-            <button onclick="bower_bersihkanAktif()" style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer;">🧹 Bersihkan</button>
-        </div>
-        <div id="bower_containerListOrder">
-            <div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
-        </div>
-    </div>
-
-    <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
-        <div class="pemicu-dropdown" onclick="bower_toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
-            <span>📜 Riwayat Sukses (<span id="bower_countRiwayatBadge">0</span>)</span>
-            <span id="bower_panahRiwayat" style="font-size: 10px;">▼</span>
-        </div>
-        <div id="bower_wadahRiwayatDropdown" style="display: none; background: #0b0c16; padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
-            <div style="text-align: right; margin-bottom: 10px;">
-                <span onclick="bower_hapusSemuaRiwayatBawah()" style="cursor: pointer; font-size: 10px; color: var(--accent-red); font-weight: bold;">🗑️ Hapus Riwayat</span>
+        <div style="margin-bottom: 12px;">
+            <div class="pemicu-dropdown" onclick="bower_toggleApiKeyDropdown()">
+                <span>🔑 Konfigurasi API Key (SMSBower)</span>
+                <span id="bower_panahApiKey" style="font-size: 10px;">▼</span>
             </div>
-            <div id="bower_containerRiwayat">
-                <div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>
+            <div id="bower_wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 SMSBower API Key:</label>
+                <div style="display: flex; gap: 6px;">
+                    <input type="password" id="bower_otpKey" placeholder="API Key SMSBower" class="search-input" style="margin-bottom:0;">
+                    <button onclick="bower_simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
+                </div>
+                <small id="bower_statusKey" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
             </div>
         </div>
+
+        <div class="dropdown-box-wrapper">
+            <label class="form-label">🛒 Setup Layanan Utama</label>
+            <div class="unified-order-box">
+                <select id="bower_dropdownLayanan" class="unified-select-op" onchange="bower_muatProdukLayanan(true)">
+                    <option value="ka" selected>Shopee (Indonesia)</option>
+                    <option value="wa">WhatsApp (Indonesia)</option>
+                </select>
+                
+                <div class="dropdown-selected-bar" onclick="bower_toggleDropdownList()">
+                    <span id="bower_labelServerTerpilih" style="color: #fff;">Pilih Provider / Tier...</span>
+                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Tier</span>
+                </div>
+            </div>
+            <div id="bower_containerListDropdown" class="dropdown-list-options"></div>
+            <button class="btn-pesan-sekarang" id="bower_btnPesanAksi" onclick="bower_eksekusiBeliTerpilih()" disabled>
+                <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
+            </button>
+        </div>
+
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📱 Nomor & OTP Aktif:</span>
+                <button onclick="bower_bersihkanAktif()" style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer;">🧹 Bersihkan</button>
+            </div>
+            <div id="bower_containerListOrder">
+                <div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div class="pemicu-dropdown" onclick="bower_toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
+                <span>📜 Riwayat Sukses (<span id="bower_countRiwayatBadge">0</span>)</span>
+                <span id="bower_panahRiwayat" style="font-size: 10px;">▼</span>
+            </div>
+            <div id="bower_wadahRiwayatDropdown" style="display: none; background: #0b0c16; padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <div style="text-align: right; margin-bottom: 10px;">
+                    <span onclick="bower_hapusSemuaRiwayatBawah()" style="cursor: pointer; font-size: 10px; color: var(--accent-red); font-weight: bold;">🗑️ Hapus Riwayat</span>
+                </div>
+                <div id="bower_containerRiwayat">
+                    <div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
+            └> Sistem Panel SMSBower Diinisialisasi.<br>
+            └> Auto-Blokir 24 Jam Aktif (Memory Lokal).
+        </div>
     </div>
-    <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-        └> Sistem Panel SMSBower Diinisialisasi (Isolasi Total).
-    </div>
-</div>
+    
+    <div class="toast" id="bower_toastNotif">Berhasil! ✨</div>
 
-<div class="toast" id="bower_toastNotif">Berhasil! ✨</div>
+    <script>
+        // Membungkus seluruh script dalam IIFE agar terisolasi dari panel lain
+        (function() {
+            const BOWER_NILAI_KURS = 17815; 
+            const BOWER_ALLOWED_PROVIDERS = [2295, 3160, 3309, 3340, 2738, 3435, 3029, 1329, 3406];
 
-<script>
-    // Membungkus seluruh script dalam IIFE agar variabel tidak bocor ke luar
-    (function() {
-        const BOWER_NILAI_KURS = 17815; 
-        const BOWER_ALLOWED_PROVIDERS = [2295, 3160, 3309, 3340, 2738, 3435, 3029, 1329, 3406];
+            let bower_daftarOrderan = []; 
+            let bower_daftarServerTersedia = []; 
+            let bower_produkTerpilihId = null; 
+            let bower_namaProdukTerpilih = ""; 
+            let bower_hargaProdukTerpilih = 0; 
+            let bower_siklusCek = 0;
 
-        let bower_daftarOrderan = []; 
-        let bower_daftarServerTersedia = []; 
-        let bower_produkTerpilihId = null; 
-        let bower_namaProdukTerpilih = ""; 
-        let bower_hargaProdukTerpilih = 0; 
-        let bower_siklusCek = 0;
+            const BOWER_WORKER_URL = "https://smsbower.tiktiksatu001.workers.dev"; 
 
-        const BOWER_WORKER_URL = "https://smsbower.tiktiksatu001.workers.dev"; 
+            function bower_formatRupiah(angka) {
+                return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
+            }
 
-        function bower_formatRupiah(angka) {
-            return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
-        }
+            async function apiSMSBower(endpoint, method = "GET", payload = null) {
+                const token = localStorage.getItem("otp_key_smsbower");
+                if (!token) throw new Error("API Key belum disetting.");
+                let targetUrl = `${BOWER_WORKER_URL}/v1/${endpoint}`;
+                if (method === "GET") targetUrl += (targetUrl.includes('?') ? '&' : '?') + `nocache=${Date.now()}`; 
+                
+                let options = { method: method, headers: { "Authorization": `Bearer ${token.trim()}`, "Content-Type": "application/json" } };
+                if (payload && method !== "GET") options.body = JSON.stringify(payload);
 
-        async function apiSMSBower(endpoint, method = "GET", payload = null) {
-            const token = localStorage.getItem("otp_key_smsbower");
-            if (!token) throw new Error("API Key belum disetting.");
-            let targetUrl = `${BOWER_WORKER_URL}/v1/${endpoint}`;
-            if (method === "GET") targetUrl += (targetUrl.includes('?') ? '&' : '?') + `nocache=${Date.now()}`; 
-            
-            let options = { method: method, headers: { "Authorization": `Bearer ${token.trim()}`, "Content-Type": "application/json" } };
-            if (payload && method !== "GET") options.body = JSON.stringify(payload);
+                try {
+                    const res = await fetch(targetUrl, options);
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+                    return data; 
+                } catch (e) { throw new Error(e.message || "Gagal terhubung ke proxy."); }
+            }
 
-            try {
-                const res = await fetch(targetUrl, options);
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
-                return data; 
-            } catch (e) { throw new Error(e.message || "Gagal terhubung ke proxy."); }
-        }
+            document.addEventListener("DOMContentLoaded", function() {
+                const savedKey = localStorage.getItem("otp_key_smsbower");
+                if(savedKey) {
+                    document.getElementById("bower_otpKey").value = savedKey;
+                    document.getElementById("bower_statusKey").innerText = "✅ Token Aktif."; document.getElementById("bower_statusKey").style.color = "#50fa7b";
+                    window.bower_refreshSemuaDataLive();
+                } else window.bower_toggleApiKeyDropdown();
 
-        document.addEventListener("DOMContentLoaded", function() {
-            const savedKey = localStorage.getItem("otp_key_smsbower");
-            if(savedKey) {
-                document.getElementById("bower_otpKey").value = savedKey;
-                document.getElementById("bower_statusKey").innerText = "✅ Token Aktif."; document.getElementById("bower_statusKey").style.color = "#50fa7b";
-                window.bower_refreshSemuaDataLive();
-            } else window.bower_toggleApiKeyDropdown();
+                const orderanLokal = localStorage.getItem("daftar_orderan_smsbower");
+                if (orderanLokal) { bower_daftarOrderan = JSON.parse(orderanLokal); bower_renderUILayout(); }
 
-            const orderanLokal = localStorage.getItem("daftar_orderan_smsbower");
-            if (orderanLokal) { bower_daftarOrderan = JSON.parse(orderanLokal); bower_renderUILayout(); }
+                setInterval(window.bower_mesinWaktuTerpusat, 1000);
+                setInterval(window.bower_mesinCekSmsTerpusat, 2000); 
+            });
 
-            setInterval(window.bower_mesinWaktuTerpusat, 1000);
-            setInterval(window.bower_mesinCekSmsTerpusat, 2000); 
-        });
+            window.bower_toggleRiwayatDropdown = function() { const w = document.getElementById("bower_wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
+            window.bower_toggleApiKeyDropdown = function() { const w = document.getElementById("bower_wadahApiKeyDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
+            window.bower_toggleDropdownList = function() { document.getElementById("bower_containerListDropdown").classList.toggle("active"); }
 
-        window.bower_toggleRiwayatDropdown = function() { const w = document.getElementById("bower_wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
-        window.bower_toggleApiKeyDropdown = function() { const w = document.getElementById("bower_wadahApiKeyDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
-        window.bower_toggleDropdownList = function() { document.getElementById("bower_containerListDropdown").classList.toggle("active"); }
+            window.bower_bersihkanAktif = function() {
+                let pindah = false;
+                bower_daftarOrderan.forEach(item => { if (item.status === "received") { item.status = "history_received"; pindah = true; } });
+                if (pindah) { bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); }
+                window.bower_refreshSemuaDataLive(); bower_showToast("Dibersihkan!");
+            }
 
-        window.bower_bersihkanAktif = function() {
-            let pindah = false;
-            bower_daftarOrderan.forEach(item => { if (item.status === "received") { item.status = "history_received"; pindah = true; } });
-            if (pindah) { bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); }
-            window.bower_refreshSemuaDataLive(); bower_showToast("Dibersihkan!");
-        }
+            window.bower_muatProdukLayanan = async function(autoOpen = false) {
+                try {
+                    let serviceId = document.getElementById("bower_dropdownLayanan").value;
+                    let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
+                    let prefixLayanan = elemNamaSrv.split(' ')[0]; 
 
-        window.bower_muatProdukLayanan = async function(autoOpen = false) {
-            try {
-                let serviceId = document.getElementById("bower_dropdownLayanan").value;
+                    if(autoOpen) document.getElementById("bower_labelServerTerpilih").innerHTML = `Mencari harga...`;
+                    const resProd = await apiSMSBower(`catalog/products?service=${serviceId}`, 'GET');
+                    let arrData = resProd.data;
+                    if (!arrData || arrData.length === 0) throw new Error("Stok kosong.");
+
+                    arrData = arrData.filter(item => BOWER_ALLOWED_PROVIDERS.includes(parseInt(item.id)));
+                    if (arrData.length === 0) throw new Error("Provider pilihan kosong.");
+
+                    arrData.sort((a, b) => b.price - a.price); 
+                    let totalItems = arrData.length;
+                    
+                    bower_daftarServerTersedia = arrData.map((item, index) => {
+                        let rankCategory = item.rank ? item.rank : 
+                                           (index < totalItems * 0.33 ? "Gold" : 
+                                           (index < totalItems * 0.66 ? "Silver" : "Bronze"));
+                        return { id: item.id, stock: item.available, price: item.price, rank: rankCategory };
+                    });
+
+                    bower_renderDropdownOptions();
+                    
+                    if (bower_daftarServerTersedia.length > 0) { 
+                        const srv = bower_daftarServerTersedia[0]; 
+                        bower_produkTerpilihId = srv.id;
+                        bower_namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
+                        bower_hargaProdukTerpilih = srv.price; 
+                        
+                        let badgeClass = srv.rank === 'Gold' ? 'badge-gold' : (srv.rank === 'Silver' ? 'badge-silver' : 'badge-bronze');
+                        document.getElementById("bower_labelServerTerpilih").innerHTML = `<span class="badge-rank ${badgeClass}">${srv.rank}</span> ${bower_formatRupiah(srv.price * BOWER_NILAI_KURS)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+                        document.getElementById("bower_btnPesanAksi").disabled = false;
+                        if(autoOpen) document.getElementById("bower_containerListDropdown").classList.add("active");
+                    } 
+                } catch (e) {
+                    document.getElementById("bower_labelServerTerpilih").innerText = e.message || "Stok Kosong";
+                    document.getElementById("bower_btnPesanAksi").disabled = true; document.getElementById("bower_containerListDropdown").innerHTML = "";
+                }
+            }
+
+            function bower_renderDropdownOptions() {
+                const container = document.getElementById("bower_containerListDropdown");
+                if(bower_daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center;">Kosong</div>`; return; }
+                let html = "";
+                bower_daftarServerTersedia.forEach((srv, index) => {
+                    let sel = (bower_produkTerpilihId === srv.id) ? "selected" : "";
+                    let badgeClass = srv.rank === 'Gold' ? 'badge-gold' : (srv.rank === 'Silver' ? 'badge-silver' : 'badge-bronze');
+                    html += `<div class="dropdown-item-row ${sel}" onclick="bower_pilihServerDropdown(${index})">
+                                <span><span class="badge-rank ${badgeClass}">${srv.rank}</span> Provider ${srv.id} <span style="font-size:10px; color:#aaa;">(${srv.stock} pcs)</span></span>
+                                <span style="color:var(--accent-cyan); font-weight:bold;">${bower_formatRupiah(srv.price * BOWER_NILAI_KURS)}</span>
+                            </div>`;
+                });
+                container.innerHTML = html;
+            }
+
+            window.bower_pilihServerDropdown = function(index) {
                 let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
                 let prefixLayanan = elemNamaSrv.split(' ')[0]; 
-
-                if(autoOpen) document.getElementById("bower_labelServerTerpilih").innerHTML = `Mencari harga...`;
-                const resProd = await apiSMSBower(`catalog/products?service=${serviceId}`, 'GET');
-                let arrData = resProd.data;
-                if (!arrData || arrData.length === 0) throw new Error("Stok kosong.");
-
-                arrData = arrData.filter(item => BOWER_ALLOWED_PROVIDERS.includes(parseInt(item.id)));
-                if (arrData.length === 0) throw new Error("Provider pilihan kosong.");
-
-                arrData.sort((a, b) => b.price - a.price); 
-                let totalItems = arrData.length;
+                const srv = bower_daftarServerTersedia[index];
+                bower_produkTerpilihId = srv.id; 
+                bower_namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
+                bower_hargaProdukTerpilih = srv.price; 
                 
-                bower_daftarServerTersedia = arrData.map((item, index) => {
-                    let rankCategory = item.rank ? item.rank : 
-                                       (index < totalItems * 0.33 ? "Gold" : 
-                                       (index < totalItems * 0.66 ? "Silver" : "Bronze"));
-                    return { id: item.id, stock: item.available, price: item.price, rank: rankCategory };
-                });
-
-                bower_renderDropdownOptions();
-                
-                if (bower_daftarServerTersedia.length > 0) { 
-                    const srv = bower_daftarServerTersedia[0]; 
-                    bower_produkTerpilihId = srv.id;
-                    bower_namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
-                    bower_hargaProdukTerpilih = srv.price; 
-                    
-                    let badgeClass = srv.rank === 'Gold' ? 'badge-gold' : (srv.rank === 'Silver' ? 'badge-silver' : 'badge-bronze');
-                    document.getElementById("bower_labelServerTerpilih").innerHTML = `<span class="badge-rank ${badgeClass}">${srv.rank}</span> ${bower_formatRupiah(srv.price * BOWER_NILAI_KURS)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
-                    document.getElementById("bower_btnPesanAksi").disabled = false;
-                    if(autoOpen) document.getElementById("bower_containerListDropdown").classList.add("active");
-                } 
-            } catch (e) {
-                document.getElementById("bower_labelServerTerpilih").innerText = e.message || "Stok Kosong";
-                document.getElementById("bower_btnPesanAksi").disabled = true; document.getElementById("bower_containerListDropdown").innerHTML = "";
-            }
-        }
-
-        function bower_renderDropdownOptions() {
-            const container = document.getElementById("bower_containerListDropdown");
-            if(bower_daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center;">Kosong</div>`; return; }
-            let html = "";
-            bower_daftarServerTersedia.forEach((srv, index) => {
-                let sel = (bower_produkTerpilihId === srv.id) ? "selected" : "";
                 let badgeClass = srv.rank === 'Gold' ? 'badge-gold' : (srv.rank === 'Silver' ? 'badge-silver' : 'badge-bronze');
-                html += `<div class="dropdown-item-row ${sel}" onclick="bower_pilihServerDropdown(${index})">
-                            <span><span class="badge-rank ${badgeClass}">${srv.rank}</span> Provider ${srv.id} <span style="font-size:10px; color:#aaa;">(${srv.stock} pcs)</span></span>
-                            <span style="color:var(--accent-cyan); font-weight:bold;">${bower_formatRupiah(srv.price * BOWER_NILAI_KURS)}</span>
-                        </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        window.bower_pilihServerDropdown = function(index) {
-            let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
-            let prefixLayanan = elemNamaSrv.split(' ')[0]; 
-            const srv = bower_daftarServerTersedia[index];
-            bower_produkTerpilihId = srv.id; 
-            bower_namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
-            bower_hargaProdukTerpilih = srv.price; 
-            
-            let badgeClass = srv.rank === 'Gold' ? 'badge-gold' : (srv.rank === 'Silver' ? 'badge-silver' : 'badge-bronze');
-            document.getElementById("bower_labelServerTerpilih").innerHTML = `<span class="badge-rank ${badgeClass}">${srv.rank}</span> ${bower_formatRupiah(srv.price * BOWER_NILAI_KURS)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
-            document.getElementById("bower_containerListDropdown").classList.remove("active");
-            document.getElementById("bower_btnPesanAksi").disabled = false; bower_renderDropdownOptions();
-        }
-
-        window.bower_eksekusiBeliTerpilih = async function() {
-            const btn = document.getElementById("bower_btnPesanAksi"); const teksAsli = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
-            try {
-                let serviceId = document.getElementById("bower_dropdownLayanan").value;
-                if (serviceId === "ka") {
-                    bower_daftarOrderan.forEach(item => {
-                        if (item.status === "pending" && item.layanan.includes("Shopee")) {
-                            item.status = "cancelled"; apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>{});
-                        }
-                    });
-                }
-                const responseData = await apiSMSBower('orders/create', 'POST', { provider_id: bower_produkTerpilihId, service: serviceId });
-                const createdOrder = responseData.data?.orders?.[0];
-                if (createdOrder) {
-                    bower_daftarOrderan.unshift({ order_id: createdOrder.id, phone: createdOrder.phone_number, layanan: bower_namaProdukTerpilih, harga: bower_hargaProdukTerpilih, waktu_dibuat: Date.now(), status: "pending", otp: "" });
-                    bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive();
-                }
-            } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
-        }
-
-        window.bower_simpanKonfigurasi = function() {
-            const key = document.getElementById("bower_otpKey").value.trim();
-            if(!key) return alert("Masukkan Token!");
-            localStorage.setItem("otp_key_smsbower", key);
-            document.getElementById("bower_statusKey").innerText = "✅ Token Disimpan!";
-            window.bower_refreshSemuaDataLive(); window.bower_toggleApiKeyDropdown();
-        }
-
-        window.bower_refreshSemuaDataLive = function() { window.bower_ambilSaldoLive(); window.bower_muatProdukLayanan(false); }
-        
-        window.bower_ambilSaldoLive = async function() {
-            try {
-                const d = await apiSMSBower('balance', 'GET'); 
-                let saldoApi = parseFloat(d.data?.balance || 0);
-                document.getElementById("bower_txtSaldoLive").innerText = bower_formatRupiah(saldoApi * BOWER_NILAI_KURS);
-            } catch(e) { document.getElementById("bower_txtSaldoLive").innerText = "Error"; }
-        }
-
-        window.bower_eksekusiBatalkanServer = async function(index) {
-            const item = bower_daftarOrderan[index];
-            try { await apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }); item.status = "cancelled"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Dibatalkan!"); } catch (e) {}
-        }
-        window.bower_eksekusiResend = async function(index) {
-            const item = bower_daftarOrderan[index];
-            try { await apiSMSBower('orders/resend', 'POST', { id: item.order_id }); bower_showToast("Resend Diminta!"); } catch (e) {}
-        }
-        window.bower_eksekusiSelesai = async function(index) {
-            const item = bower_daftarOrderan[index];
-            try { await apiSMSBower(`orders/finish`, 'POST', { id: item.order_id }); item.status = "completed"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Selesai!"); } catch(err) {}
-        }
-
-        window.bower_mesinCekSmsTerpusat = async function() {
-            bower_siklusCek++; let sudahCekTerbaru = false;
-            for (let index = 0; index < bower_daftarOrderan.length; index++) {
-                let i = bower_daftarOrderan[index];
-                if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
-                let izinkanCek = (i.status === "pending" && !sudahCekTerbaru) ? (sudahCekTerbaru = true) : (bower_siklusCek % 10 === 0);
-                if (!izinkanCek) continue;
-                try {
-                    const d = await apiSMSBower(`orders/${i.order_id}`, 'GET');
-                    let stat = d.data?.status; let otpCode = d.data?.otp_code; 
-                    if (stat === "COMPLETED") { 
-                        i.status = "completed"; if(otpCode) i.otp = otpCode; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); 
-                    } else if (stat === "OTP_RECEIVED" || otpCode) {
-                        if (i.status === "pending" || i.otp !== otpCode) {
-                            i.status = "received"; i.otp = otpCode; bower_putarSuaraNotifKeras(); bower_munculkanPopupNative(i.phone, i.otp, i.layanan); bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal();
-                        }
-                    } else if (stat === "CANCELED") { 
-                        i.status = "cancelled"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); 
-                    }
-                } catch (e) {}
+                document.getElementById("bower_labelServerTerpilih").innerHTML = `<span class="badge-rank ${badgeClass}">${srv.rank}</span> ${bower_formatRupiah(srv.price * BOWER_NILAI_KURS)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+                document.getElementById("bower_containerListDropdown").classList.remove("active");
+                document.getElementById("bower_btnPesanAksi").disabled = false; bower_renderDropdownOptions();
             }
-        }
 
-        function bower_renderUILayout() {
-            const containerAktif = document.getElementById("bower_containerListOrder");
-            const containerRiwayat = document.getElementById("bower_containerRiwayat");
-            let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
-
-            bower_daftarOrderan.forEach((item, index) => {
-                let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>{}); }
-                if (item.status === "cancelled") return; 
-
-                let d = new Date(item.waktu_dibuat);
-                let timeStr = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + " " + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-
-                if (item.status === "completed" || item.status === "history_received") {
-                    let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="bower_eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="bower_eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
-                    let teksHargaHistory = item.harga ? bower_formatRupiah(item.harga * BOWER_NILAI_KURS) : '-';
-                    htmlRiwayat += `
-                    <div class="history-card">
-                        <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;"><span>${item.layanan} • ${teksHargaHistory}</span><span>⏱️ ${timeStr}</span></div>
-                        <div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:14px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>
-                        <div class="box-copy-statik otp-masuk" style="margin-top:6px;"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button></div>
-                        ${btnKirimUlang}
-                    </div>`; countRiwayat++; return;
-                }
-
-                countAktif++; let sisa = Math.max(0, 300 - sec); let cool = Math.max(0, 120 - sec); 
-                if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) { cool = 0; }
-
-                let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
-                let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`; let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
-
-                if (item.status === "received") { 
-                    textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
-                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
-                    btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="bower_eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button><button onclick="bower_eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button></div>`;
-                } else if (item.status === "pending") {
-                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="bower_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
-                }
+            // === LOGIKA AUTO-CANCEL JIKA NOMOR SUDAH PERNAH DIGUNAKAN ===
+            window.bower_eksekusiBeliTerpilih = async function() {
+                const btn = document.getElementById("bower_btnPesanAksi"); 
+                const teksAsli = btn.innerHTML;
+                btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
                 
-                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
-            });
+                try {
+                    let serviceId = document.getElementById("bower_dropdownLayanan").value;
+                    
+                    // Auto-cancel Shopee yang masih ngegantung
+                    if (serviceId === "ka") {
+                        bower_daftarOrderan.forEach(item => {
+                            if (item.status === "pending" && item.layanan.includes("Shopee")) {
+                                item.status = "cancelled"; apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>{});
+                            }
+                        });
+                    }
 
-            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
-            containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
-            document.getElementById("bower_countRiwayatBadge").innerText = countRiwayat;
-        }
+                    let maxRetries = 5; // Batas maksimal auto-retry agar tidak di-banned
+                    let attempt = 0;
+                    let finalOrder = null;
+                    let isRecycled = false;
 
-        function bower_simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_smsbower", JSON.stringify(bower_daftarOrderan)); }
-        window.bower_hapusSemuaRiwayatBawah = function() { bower_daftarOrderan = bower_daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); }
-        window.bower_mesinWaktuTerpusat = function() { if (bower_daftarOrderan.some(i => i.status === "pending")) bower_renderUILayout(); }
-        
-        window.bower_showToast = function(m) { const t = document.getElementById('bower_toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
-        window.bower_salinTeksToast = function(txt) { navigator.clipboard.writeText(txt); bower_showToast("Disalin!"); }
+                    // Ambil blocklist dari penyimpanan lokal HP
+                    let blocklist = JSON.parse(localStorage.getItem("bower_blocklist") || "[]");
 
-        window.bower_putarSuaraNotifKeras = function() {
-            try { 
-                const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return;
-                const audioCtx = new AudioContext(); let time = audioCtx.currentTime; 
-                const sequence = [523.25, 659.25, 783.99, 1046.50]; 
-                sequence.forEach((freq, idx) => {
-                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-                    osc.type = idx % 2 === 0 ? "sine" : "sawtooth"; let startTime = time + (idx * 0.09);
-                    osc.frequency.setValueAtTime(freq, startTime); gain.gain.setValueAtTime(0.4, startTime); gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
-                    if (audioCtx.createStereoPanner) { const pan = audioCtx.createStereoPanner(); pan.pan.value = idx < 2 ? -0.5 : 0.5; osc.connect(gain).connect(pan).connect(audioCtx.destination); } else { osc.connect(gain).connect(audioCtx.destination); }
-                    osc.start(startTime); osc.stop(startTime + 0.4);
+                    while (attempt < maxRetries) {
+                        attempt++;
+                        if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
+                        
+                        const responseData = await apiSMSBower('orders/create', 'POST', { provider_id: bower_produkTerpilihId, service: serviceId });
+                        const createdOrder = responseData.data?.orders?.[0];
+                        
+                        if (createdOrder) {
+                            let phone = createdOrder.phone_number;
+                            let foundInBlocklist = blocklist.find(x => x.phone === phone);
+
+                            if (foundInBlocklist) {
+                                let ageMs = Date.now() - foundInBlocklist.timestamp;
+                                let ageHours = ageMs / (1000 * 60 * 60);
+
+                                if (ageHours < 24) {
+                                    // Nomor bekas < 24 jam! Segera Cancel & Cari lagi
+                                    btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
+                                    await apiSMSBower(`orders/cancel`, 'POST', { id: createdOrder.id }).catch(e=>{});
+                                    await new Promise(r => setTimeout(r, 1500)); // Jeda 1.5 detik agar API tidak marah
+                                    continue; // Ulangi loop
+                                } else {
+                                    // Lebih dari 24 jam, terima pesanan tapi beri tanda "Daur Ulang"
+                                    finalOrder = createdOrder;
+                                    isRecycled = true;
+                                    break;
+                                }
+                            } else {
+                                // Nomor bersih (belum pernah dapat sebelumnya)
+                                finalOrder = createdOrder;
+                                break;
+                            }
+                        } else {
+                            throw new Error("Gagal mendapatkan nomor dari API");
+                        }
+                    }
+
+                    if (finalOrder) {
+                        bower_daftarOrderan.unshift({ 
+                            order_id: finalOrder.id, 
+                            phone: finalOrder.phone_number, 
+                            layanan: bower_namaProdukTerpilih, 
+                            harga: bower_hargaProdukTerpilih, 
+                            waktu_dibuat: Date.now(), 
+                            status: "pending", 
+                            otp: "",
+                            is_recycled: isRecycled // Tambah flag daur ulang
+                        });
+                        bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive();
+                    } else {
+                        alert("Sistem membatalkan orderan 5x berturut-turut karena selalu dapat nomor bekas (Daur Ulang). Silakan coba pilih Provider / Tier yang berbeda.");
+                    }
+
+                } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
+            }
+            // =============================================================
+
+            window.bower_simpanKonfigurasi = function() {
+                const key = document.getElementById("bower_otpKey").value.trim();
+                if(!key) return alert("Masukkan Token!");
+                localStorage.setItem("otp_key_smsbower", key);
+                document.getElementById("bower_statusKey").innerText = "✅ Token Disimpan!";
+                window.bower_refreshSemuaDataLive(); window.bower_toggleApiKeyDropdown();
+            }
+
+            window.bower_refreshSemuaDataLive = function() { window.bower_ambilSaldoLive(); window.bower_muatProdukLayanan(false); }
+            
+            window.bower_ambilSaldoLive = async function() {
+                try {
+                    const d = await apiSMSBower('balance', 'GET'); 
+                    let saldoApi = parseFloat(d.data?.balance || 0);
+                    document.getElementById("bower_txtSaldoLive").innerText = bower_formatRupiah(saldoApi * BOWER_NILAI_KURS);
+                } catch(e) { document.getElementById("bower_txtSaldoLive").innerText = "Error"; }
+            }
+
+            window.bower_eksekusiBatalkanServer = async function(index) {
+                const item = bower_daftarOrderan[index];
+                try { await apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }); item.status = "cancelled"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Dibatalkan!"); } catch (e) {}
+            }
+            window.bower_eksekusiResend = async function(index) {
+                const item = bower_daftarOrderan[index];
+                try { await apiSMSBower('orders/resend', 'POST', { id: item.order_id }); bower_showToast("Resend Diminta!"); } catch (e) {}
+            }
+            window.bower_eksekusiSelesai = async function(index) {
+                const item = bower_daftarOrderan[index];
+                try { await apiSMSBower(`orders/finish`, 'POST', { id: item.order_id }); item.status = "completed"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Selesai!"); } catch(err) {}
+            }
+
+            window.bower_mesinCekSmsTerpusat = async function() {
+                bower_siklusCek++; let sudahCekTerbaru = false;
+                for (let index = 0; index < bower_daftarOrderan.length; index++) {
+                    let i = bower_daftarOrderan[index];
+                    if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
+                    let izinkanCek = (i.status === "pending" && !sudahCekTerbaru) ? (sudahCekTerbaru = true) : (bower_siklusCek % 10 === 0);
+                    if (!izinkanCek) continue;
+                    try {
+                        const d = await apiSMSBower(`orders/${i.order_id}`, 'GET');
+                        let stat = d.data?.status; let otpCode = d.data?.otp_code; 
+                        if (stat === "COMPLETED") { 
+                            i.status = "completed"; if(otpCode) i.otp = otpCode; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); 
+                        } else if (stat === "OTP_RECEIVED" || otpCode) {
+                            if (i.status === "pending" || i.otp !== otpCode) {
+                                i.status = "received"; i.otp = otpCode; 
+
+                                // === MENCATAT NOMOR KE DALAM BLOCKLIST 24 JAM ===
+                                let blocklist = JSON.parse(localStorage.getItem("bower_blocklist") || "[]");
+                                // Bersihkan data memori lokal yang umurnya lebih dari 14 hari agar memori HP tidak penuh
+                                blocklist = blocklist.filter(x => (Date.now() - x.timestamp) < (14 * 24 * 60 * 60 * 1000));
+                                
+                                let existingIndex = blocklist.findIndex(x => x.phone === i.phone);
+                                if (existingIndex > -1) { blocklist[existingIndex].timestamp = Date.now(); } // Perbarui waktu jika nomor dipesan lagi
+                                else { blocklist.push({ phone: i.phone, timestamp: Date.now() }); }
+                                localStorage.setItem("bower_blocklist", JSON.stringify(blocklist));
+                                // ================================================
+
+                                bower_putarSuaraNotifKeras(); bower_munculkanPopupNative(i.phone, i.otp, i.layanan); bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal();
+                            }
+                        } else if (stat === "CANCELED") { 
+                            i.status = "cancelled"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); 
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            function bower_renderUILayout() {
+                const containerAktif = document.getElementById("bower_containerListOrder");
+                const containerRiwayat = document.getElementById("bower_containerRiwayat");
+                let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
+
+                bower_daftarOrderan.forEach((item, index) => {
+                    let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
+                    if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>{}); }
+                    if (item.status === "cancelled") return; 
+
+                    let d = new Date(item.waktu_dibuat);
+                    let timeStr = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + " " + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
+                    // Label Peringatan jika nomor adalah hasil daur ulang (lebih dari 24 jam)
+                    let labelWarning = item.is_recycled ? `<span style="color:#ff5555; font-size:9px; border:1px solid #ff5555; padding:2px 4px; border-radius:4px; margin-left:4px;">⚠️ Pernah Dipakai</span>` : "";
+
+                    if (item.status === "completed" || item.status === "history_received") {
+                        let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="bower_eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="bower_eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
+                        let teksHargaHistory = item.harga ? bower_formatRupiah(item.harga * BOWER_NILAI_KURS) : '-';
+                        htmlRiwayat += `
+                        <div class="history-card">
+                            <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;"><span>${item.layanan} ${labelWarning} • ${teksHargaHistory}</span><span>⏱️ ${timeStr}</span></div>
+                            <div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:14px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>
+                            <div class="box-copy-statik otp-masuk" style="margin-top:6px;"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button></div>
+                            ${btnKirimUlang}
+                        </div>`; countRiwayat++; return;
+                    }
+
+                    countAktif++; let sisa = Math.max(0, 300 - sec); let cool = Math.max(0, 120 - sec); 
+                    if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) { cool = 0; }
+
+                    let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
+                    let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`; let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
+
+                    if (item.status === "received") { 
+                        textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
+                        kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
+                        btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="bower_eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button><button onclick="bower_eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button></div>`;
+                    } else if (item.status === "pending") {
+                        btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="bower_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
+                    }
+                    
+                    htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span>${item.layanan} ${labelWarning}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
                 });
-            } catch (e) { console.log(e); }
-        }
 
-        window.bower_munculkanPopupNative = function(nomor, otp, layanan) {
-            if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
-            } 
-        }
-    })();
-</script>
+                containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
+                containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
+                document.getElementById("bower_countRiwayatBadge").innerText = countRiwayat;
+            }
 
+            function bower_simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_smsbower", JSON.stringify(bower_daftarOrderan)); }
+            window.bower_hapusSemuaRiwayatBawah = function() { bower_daftarOrderan = bower_daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); }
+            window.bower_mesinWaktuTerpusat = function() { if (bower_daftarOrderan.some(i => i.status === "pending")) bower_renderUILayout(); }
+            
+            window.bower_showToast = function(m) { const t = document.getElementById('bower_toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
+            window.bower_salinTeksToast = function(txt) { navigator.clipboard.writeText(txt); bower_showToast("Disalin!"); }
 
+            window.bower_putarSuaraNotifKeras = function() {
+                try { 
+                    const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return;
+                    const audioCtx = new AudioContext(); let time = audioCtx.currentTime; 
+                    const sequence = [523.25, 659.25, 783.99, 1046.50]; 
+                    sequence.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                        osc.type = idx % 2 === 0 ? "sine" : "sawtooth"; let startTime = time + (idx * 0.09);
+                        osc.frequency.setValueAtTime(freq, startTime); gain.gain.setValueAtTime(0.4, startTime); gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+                        if (audioCtx.createStereoPanner) { const pan = audioCtx.createStereoPanner(); pan.pan.value = idx < 2 ? -0.5 : 0.5; osc.connect(gain).connect(pan).connect(audioCtx.destination); } else { osc.connect(gain).connect(audioCtx.destination); }
+                        osc.start(startTime); osc.stop(startTime + 0.4);
+                    });
+                } catch (e) { console.log(e); }
+            }
 
-
-
-    
+            window.bower_munculkanPopupNative = function(nomor, otp, layanan) {
+                if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+                    cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
+                } 
+            }
+        })();
+    </script>
 </body>
 </html>
