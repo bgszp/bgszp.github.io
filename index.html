@@ -27,6 +27,7 @@
             width: 100%; padding: 15px; background: linear-gradient(45deg, #8a2be2, #4a00e0); color: white; 
             border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
         }
+        .btn-primary:disabled { background: #3d3463 !important; cursor: not-allowed; box-shadow: none; color: #aaa; }
         #btn-username { background: linear-gradient(45deg, #00b4db, #0083b0); box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4); }
         .history-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; width: 100%; max-height: 200px; overflow-y: auto; }
         .history-title { font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 10px; display: flex; justify-content: space-between; }
@@ -107,8 +108,6 @@
 
     <!-- === 1. MENU SERVERS === -->
     <div class="wrapper-menu-server" style="position: relative; margin-bottom: 18px;">
-        
-        <!-- TAMPILAN IP & PING JARINGAN -->
         <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Shopee / Ipify)" style="position: absolute; right: 0; top: -20px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
             <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
         </div>
@@ -153,12 +152,11 @@
         <div id="wadahDataGen" class="wadah-iframe-server" style="padding: 20px;">
             <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
             <div class="btn-group">
-                <button class="btn-primary" onclick="generateName()"><i class="fa-solid fa-shuffle"></i> Acak &amp; Salin Data</button>
+                <button class="btn-primary" id="btn-acak-data" onclick="generateName()"><i class="fa-solid fa-shuffle"></i> Acak &amp; Salin Data</button>
                 <button class="btn-primary" id="btn-username" onclick="generateUsername()"><i class="fa-solid fa-user"></i> NaPaSi</button>
             </div>
             <div class="history-card" style="margin-top: 20px; border: 1px solid #3d3463;">
                 <div class="history-title"><span>RIWAYAT GENERATOR</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()" title="Hapus Riwayat & Reset Batas 24 Jam">Hapus</span></div>
-                <!-- ID historyList sekarang di-handle oleh Firebase -->
                 <div id="historyList"></div>
             </div>
         </div>
@@ -403,17 +401,14 @@
         async function updateIPAddress() {
             const ipText = document.getElementById('teks-ip-jaringan');
             if (!ipText) return;
-            
             try {
                 if (currentIP === "Memuat IP..." || currentIP === "Terputus") {
                     const resIP = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
                     const dataIP = await resIP.json();
                     currentIP = dataIP.ip;
                 }
-
                 let ping = 0;
                 let labelTarget = "";
-
                 if (modePingTarget === "ipify") {
                     const startWaktu = performance.now();
                     await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
@@ -425,7 +420,6 @@
                     ping = Math.round(performance.now() - startWaktu);
                     labelTarget = "Sho";
                 }
-
                 let warnaPing = "#00ffcc"; 
                 if (ping > 150) warnaPing = "#f0ad4e"; 
                 if (ping > 300) warnaPing = "#ff4a4a"; 
@@ -437,7 +431,6 @@
                     <span style="color: ${warnaPing};">${ping}ms</span>
                     <span style="font-size: 9px; color: #8e85b3; margin-left: 3px;">(${labelTarget})</span>
                 `;
-                
             } catch (error) {
                 currentIP = "Terputus";
                 ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #ff4a4a;"></i> <span style="color: #ff4a4a;">Terputus</span>`;
@@ -609,120 +602,124 @@
             }
         }
 
-        function dapatkanAlamatAcak() {
+        // === CACHE UNTUK MENYIMPAN DATA JALAN OSM AGAR TIDAK LAG ===
+        window.CACHE_JALAN_OSM = {};
+
+        // === FUNGSI MENGAMBIL ALAMAT & NAMA JALAN ASLI DARI OSM ===
+        async function dapatkanAlamatAcak() {
             if (Object.keys(DATA_KOTA_JAWA).length === 0) return "Alamat Tidak Tersedia (Memuat...)";
-// === CACHE UNTUK MENYIMPAN DATA JALAN OSM AGAR TIDAK LAG ===
-window.CACHE_JALAN_OSM = {};
-
-// === FUNGSI MENGAMBIL ALAMAT & NAMA JALAN ASLI DARI OSM ===
-async function dapatkanAlamatAcak() {
-    if (Object.keys(DATA_KOTA_JAWA).length === 0) return "Alamat Tidak Tersedia (Memuat...)";
-    
-    // 1. Acak Wilayah Dasar
-    const listProvinsi = Object.keys(DATA_KOTA_JAWA);
-    const prov = listProvinsi[Math.floor(Math.random() * listProvinsi.length)];
-    const listKabupaten = Object.keys(DATA_KOTA_JAWA[prov]);
-    const kab = listKabupaten[Math.floor(Math.random() * listKabupaten.length)];
-    const listKecamatan = Object.keys(DATA_KOTA_JAWA[prov][kab]);
-    const kec = listKecamatan[Math.floor(Math.random() * listKecamatan.length)];
-    const listKelurahan = Object.keys(DATA_KOTA_JAWA[prov][kab][kec]);
-    const kel = listKelurahan[Math.floor(Math.random() * listKelurahan.length)];
-    const kodePos = DATA_KOTA_JAWA[prov][kab][kec][kel];
-    
-    // 2. Format Nama Kabupaten untuk Pencarian OSM
-    let formatKab = kab;
-    let namaKabBersih = kab;
-    if(kab.includes(", Kota")) {
-        formatKab = "Kota " + kab.replace(", Kota", "");
-        namaKabBersih = kab.replace(", Kota", "").trim();
-    }
-    if(kab.includes(", Kabupaten")) {
-        formatKab = "Kab. " + kab.replace(", Kabupaten", "");
-        namaKabBersih = kab.replace(", Kabupaten", "").trim();
-    }
-    
-    let namaJalanLengkap = "Jl. Raya " + kel; // Fallback darurat
-    
-    try {
-        // 3. Cek apakah jalan di kota ini sudah pernah di-download dari OSM
-        let listJalan = window.CACHE_JALAN_OSM[namaKabBersih];
-        
-        if (!listJalan) {
-            // Fetch ke server OpenStreetMap (Overpass API)
-            // Mencari 30 nama jalan (primary/residential dll) di kota terpilih
-            const queryOSM = `[out:json][timeout:10];area[name="${namaKabBersih}"]->.searchArea;way(area.searchArea)[highway~"primary|secondary|tertiary|residential"][name];out 30;`;
             
-            const response = await fetch("https://overpass-api.de/api/interpreter", {
-                method: "POST",
-                body: "data=" + encodeURIComponent(queryOSM)
-            });
-            const dataOSM = await response.json();
+            const listProvinsi = Object.keys(DATA_KOTA_JAWA);
+            const prov = listProvinsi[Math.floor(Math.random() * listProvinsi.length)];
+            const listKabupaten = Object.keys(DATA_KOTA_JAWA[prov]);
+            const kab = listKabupaten[Math.floor(Math.random() * listKabupaten.length)];
+            const listKecamatan = Object.keys(DATA_KOTA_JAWA[prov][kab]);
+            const kec = listKecamatan[Math.floor(Math.random() * listKecamatan.length)];
+            const listKelurahan = Object.keys(DATA_KOTA_JAWA[prov][kab][kec]);
+            const kel = listKelurahan[Math.floor(Math.random() * listKelurahan.length)];
+            const kodePos = DATA_KOTA_JAWA[prov][kab][kec][kel];
             
-            if (dataOSM && dataOSM.elements && dataOSM.elements.length > 0) {
-                // Saring agar hanya mengambil atribut nama jalan yang tidak duplikat
-                listJalan = [...new Set(dataOSM.elements.map(el => el.tags.name).filter(n => n))];
-                window.CACHE_JALAN_OSM[namaKabBersih] = listJalan; // Simpan ke Cache
+            let formatKab = kab;
+            let namaKabBersih = kab;
+            if(kab.includes(", Kota")) {
+                formatKab = "Kota " + kab.replace(", Kota", "");
+                namaKabBersih = kab.replace(", Kota", "").trim();
             }
+            if(kab.includes(", Kabupaten")) {
+                formatKab = "Kab. " + kab.replace(", Kabupaten", "");
+                namaKabBersih = kab.replace(", Kabupaten", "").trim();
+            }
+            
+            let namaJalanLengkap = "Jl. Raya " + kel; // Fallback darurat
+            
+            try {
+                let listJalan = window.CACHE_JALAN_OSM[namaKabBersih];
+                
+                if (!listJalan) {
+                    const queryOSM = `[out:json][timeout:10];area[name="${namaKabBersih}"]->.searchArea;way(area.searchArea)[highway~"primary|secondary|tertiary|residential"][name];out 30;`;
+                    
+                    const response = await fetch("https://overpass-api.de/api/interpreter", {
+                        method: "POST",
+                        body: "data=" + encodeURIComponent(queryOSM)
+                    });
+                    const dataOSM = await response.json();
+                    
+                    if (dataOSM && dataOSM.elements && dataOSM.elements.length > 0) {
+                        listJalan = [...new Set(dataOSM.elements.map(el => el.tags.name).filter(n => n))];
+                        window.CACHE_JALAN_OSM[namaKabBersih] = listJalan; 
+                    }
+                }
+                
+                if (listJalan && listJalan.length > 0) {
+                    const jalanAcak = listJalan[Math.floor(Math.random() * listJalan.length)];
+                    const listFormatNo = ["No.", "Blok A No.", "Blok B No.", "Blok C No.", "Kav."];
+                    const formatNoAcak = listFormatNo[Math.floor(Math.random() * listFormatNo.length)];
+                    const noRumahAcak = Math.floor(Math.random() * 150) + 1;
+                    const prefixJalan = jalanAcak.toLowerCase().startsWith("jl") || jalanAcak.toLowerCase().startsWith("jalan") ? "" : "Jl. ";
+                    namaJalanLengkap = `${prefixJalan}${jalanAcak} ${formatNoAcak} ${noRumahAcak}`;
+                }
+            } catch (error) {
+                console.log("Koneksi ke OSM gagal/limit, menggunakan jalan bawaan.");
+                const listDarurat = ["Jl. Merdeka", "Jl. Sudirman", "Jl. Melati", "Jl. Diponegoro"];
+                namaJalanLengkap = listDarurat[Math.floor(Math.random() * listDarurat.length)] + " No. " + (Math.floor(Math.random() * 100) + 1);
+            }
+            
+            return `${namaJalanLengkap}, Kel. ${kel}, Kec. ${kec}, ${formatKab}, ${prov} ${kodePos}`;
         }
+
+        // === FUNGSI FILTER DATA TERSEDIA MENGGUNAKAN FIREBASE ===
+        function dapatkanDataTersedia() {
+            let dataTerpakai = window.DATA_TERPAKAI_FIREBASE || {};
+            let tersedia = DATA_DUMMY_DATABASE.filter(item => !dataTerpakai[item.no_hp]);
+            return tersedia;
+        }
+
+        // === MODIFIKASI FUNGSI GENERATE (ASYNCHRONOUS UNTUK OSM) ===
+        window.generateName = async function() {
+            if (DATA_DUMMY_DATABASE.length === 0) return;
+            
+            let dataTersedia = dapatkanDataTersedia();
+            if (dataTersedia.length === 0) {
+                alert("Semua data pengguna telah habis digunakan hari ini. Silakan tunggu 24 jam atau klik 'Hapus' pada Riwayat Generator.");
+                return;
+            }
+
+            const btnGen = document.getElementById("btn-acak-data");
+            const teksAsli = btnGen.innerHTML;
+            btnGen.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat OSM...';
+            btnGen.disabled = true;
+
+            const item = dataTersedia[Math.floor(Math.random() * dataTersedia.length)];
+            const alamatAcak = await dapatkanAlamatAcak();
+            const res = `${item.nama}, ${alamatAcak}, ${item.no_hp}`;
+            
+            btnGen.innerHTML = teksAsli;
+            btnGen.disabled = false;
+            
+            document.getElementById('genNameOutput').value = res;
+            window.eksekusiSalinTeks(res).then(() => window.showToast("Berhasil Disalin! ✨")); 
+            
+            if(window.tambahKeRiwayatFirebase) {
+                window.tambahKeRiwayatFirebase(res, item.no_hp);
+            }
+        };
         
-        // 4. Jika data jalan berhasil didapat, acak dan beri nomor
-        if (listJalan && listJalan.length > 0) {
-            const jalanAcak = listJalan[Math.floor(Math.random() * listJalan.length)];
-            const listFormatNo = ["No.", "Blok A No.", "Blok B No.", "Blok C No.", "Kav."];
-            const formatNoAcak = listFormatNo[Math.floor(Math.random() * listFormatNo.length)];
-            const noRumahAcak = Math.floor(Math.random() * 150) + 1;
-            // Pastikan jika dari OSM tidak ada kata "Jl.", kita tambahkan
-            const prefixJalan = jalanAcak.toLowerCase().startsWith("jl") || jalanAcak.toLowerCase().startsWith("jalan") ? "" : "Jl. ";
-            namaJalanLengkap = `${prefixJalan}${jalanAcak} ${formatNoAcak} ${noRumahAcak}`;
-        }
-    } catch (error) {
-        console.log("Koneksi ke OSM gagal/limit, menggunakan jalan bawaan.");
-        // Jika server OSM sedang sibuk, kembali gunakan data darurat
-        const listDarurat = ["Jl. Merdeka", "Jl. Sudirman", "Jl. Melati", "Jl. Diponegoro"];
-        namaJalanLengkap = listDarurat[Math.floor(Math.random() * listDarurat.length)] + " No. " + (Math.floor(Math.random() * 100) + 1);
-    }
-    
-    // 5. Gabungkan Jalan Asli OSM dengan Kelurahan
-    return `${namaJalanLengkap}, Kel. ${kel}, Kec. ${kec}, ${formatKab}, ${prov} ${kodePos}`;
-}
-
-// === MODIFIKASI FUNGSI GENERATE (MENJADI ASYNC UNTUK MENUNGGU DATA OSM) ===
-window.generateName = async function() {
-    if (DATA_DUMMY_DATABASE.length === 0) return;
-    
-    let dataTersedia = dapatkanDataTersedia();
-    if (dataTersedia.length === 0) {
-        alert("Semua data pengguna telah habis digunakan hari ini. Silakan tunggu 24 jam atau klik 'Hapus' pada Riwayat Generator.");
-        return;
-    }
-
-    // Ubah status tombol jadi loading agar pengguna tahu sistem sedang mengambil data
-    const btnGen = document.querySelector('button[onclick="generateName()"]');
-    const teksAsli = btnGen.innerHTML;
-    btnGen.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghubungi Server OSM...';
-    btnGen.disabled = true;
-
-    const item = dataTersedia[Math.floor(Math.random() * dataTersedia.length)];
-    
-    // Tunggu proses download OSM selesai
-    const alamatAcak = await dapatkanAlamatAcak();
-    const res = `${item.nama}, ${alamatAcak}, ${item.no_hp}`;
-    
-    // Kembalikan tombol ke keadaan semula
-    btnGen.innerHTML = teksAsli;
-    btnGen.disabled = false;
-    
-    tandaiDataTerpakai(item.no_hp);
-    document.getElementById('genNameOutput').value = res;
-    window.eksekusiSalinTeks(res).then(() => window.showToast("Berhasil Disalin! ✨")); 
-    
-    if(window.tambahKeRiwayatFirebase) {
-        window.tambahKeRiwayatFirebase(res, item.no_hp);
-    }
-};
+        window.generateUsername = function() {
+            let val = document.getElementById('genNameOutput').value;
+            let namaAsli = (!val || val.trim() === "") ? (DATA_DUMMY_DATABASE.length > 0 ? DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)].nama : "user") : val.split(',')[0].trim();
+            let usernameDasar = namaAsli.replace(/\s+/g, '_').toLowerCase();
+            if(usernameDasar === "") usernameDasar = "user";
+            const res = usernameDasar + (Math.floor(Math.random() * 9999) + 10);
+            
+            document.getElementById('genNameOutput').value = res;
+            window.eksekusiSalinTeks(res).then(() => window.showToast("Username Disalin! ✨")); 
+            
+            if(window.tambahKeRiwayatFirebase) {
+                window.tambahKeRiwayatFirebase(res, null);
+            }
+        };
 
         function clearHistory() { 
-            // Menghapus data riwayat langsung dari Database Firebase
             if(window.hapusRiwayatFirebase) {
                 window.hapusRiwayatFirebase();
             }
