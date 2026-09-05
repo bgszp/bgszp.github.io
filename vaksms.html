@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vak-SMS Webhook Panel</title>
+    <title>Vak-SMS Webhook Panel (Pro)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -19,7 +19,7 @@
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
-        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
         .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
@@ -115,7 +115,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Webhook Vak-SMS Type 2 aktif...
+            └> Sistem Webhook Vak-SMS Type 2 aktif (Fitur Instan Batal & Ban Tersedia)...
         </div>
     </div>
     
@@ -132,13 +132,16 @@
         let namaProdukTerpilih = ""; 
         let hargaProdukTerpilih = 0; 
         
+        // DAFTAR OPERATOR DIPERLUAS UNTUK VAK-SMS
         const MASTER_OPERATOR = { 
             "any": "Semua Operator (Random)", 
             "telkomsel": "Telkomsel", 
             "indosat": "Indosat", 
-            "axis": "XL / Axis",
+            "xl": "XL Axiata",
+            "axis": "Axis",
             "three": "Tri (3)", 
-            "smartfren": "Smartfren" 
+            "smartfren": "Smartfren",
+            "byu": "By.U"
         };
 
         function formatRupiah(angka) {
@@ -322,18 +325,19 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        async function eksekusiBatalkanServer(index) {
+        // FUNGSI BATAL DINAMIS (8 = Batal Biasa, 9 = Ban Nomor)
+        async function eksekusiBatalkanServer(index, statusTipe) {
             const item = daftarOrderan[index];
             item.is_cancelling = true; renderUILayout();
             
             try { 
-                await fetchVakAPI('setStatus', { status: 8, id: item.order_id });
+                await fetchVakAPI('setStatus', { status: statusTipe, id: item.order_id });
                 item.status = "cancelled"; 
                 item.is_cancelling = false;
                 renderUILayout(); 
                 simpanDaftarOrderanKeLokal(); 
                 ambilSaldoLive(); 
-                showToast("Dibatalkan!"); 
+                showToast(statusTipe === 9 ? "Dibatalkan & Diblokir!" : "Dibatalkan!"); 
             } catch (e) { 
                 item.is_cancelling = false;
                 logConsole("Gagal membatalkan ke server. Akan dicoba lagi.");
@@ -369,7 +373,6 @@
             let i = daftarOrderan[activeOrderIndex];
                 
             try {
-                // Mengecek langsung status OTP ke server Vak-SMS 
                 const resText = await fetchVakAPI('getStatus', { id: i.order_id });
                 
                 if (resText.includes("STATUS_OK")) { 
@@ -405,8 +408,9 @@
                 let isBlocked = (item.status === "pending" && index !== activeOrderIndex);
                 let maxWait = isBlocked ? 120 : 300; 
                 
+                // AUTO CANCEL JIKA MELEWATI 5 MENIT (Status 8)
                 if (item.status === "pending" && sec >= maxWait && !item.is_cancelling) { 
-                    eksekusiBatalkanServer(index);
+                    eksekusiBatalkanServer(index, 8);
                 }
 
                 let d = new Date(item.waktu_dibuat);
@@ -434,8 +438,6 @@
 
                 countAktif++; 
                 let sisa = Math.max(0, maxWait - sec); 
-                let cool = Math.max(0, 120 - sec); 
-                if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) cool = 0; 
 
                 let textStat = `⚡ Menunggu Webhook OTP... (${sec}s)`; 
                 let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
@@ -457,7 +459,12 @@
                     </div>`;
                     btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai (Simpan)</button></div>`;
                 } else if (item.status === "pending" && !item.is_cancelling) {
-                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu Cancel (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
+                    // TOMBOL BATAL INSTAN & BAN
+                    btnAksi = `
+                    <div style="display:flex; gap: 8px; margin-top: 10px;">
+                        <button class="btn-action-half" style="background:#ff5555; color:#fff;" onclick="eksekusiBatalkanServer(${index}, 8)">❌ Batal</button>
+                        <button class="btn-action-half" style="background:#5a2e8c; color:#fff;" onclick="eksekusiBatalkanServer(${index}, 9)">🚫 Batal & Ban</button>
+                    </div>`;
                 }
                 
                 htmlAktif += `
