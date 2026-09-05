@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vak-SMS Webhook Panel (Standard Operator)</title>
+    <title>Vak-SMS Webhook Panel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -19,7 +19,7 @@
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
         .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
-        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
         .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
@@ -59,16 +59,16 @@
             <div id="wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
                 <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Vak-SMS (API Type 2) Key:</label>
                 <div style="display: flex; gap: 6px;">
-                    <input type="password" id="otpKeyVak" placeholder="Masukkan API Key" class="search-input" style="margin-bottom:0;">
+                    <input type="password" id="otpKeyVak" placeholder="Masukkan API Key Vak-SMS" class="search-input" style="margin-bottom:0;">
                     <button onclick="simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
                 </div>
-                <small id="statusKeyVak" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Gunakan API Type 2.</small>
+                <small id="statusKeyVak" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
             </div>
         </div>
 
         <!-- AREA PEMESANAN -->
         <div class="dropdown-box-wrapper">
-            <label class="form-label">🛒 Setup Layanan & Operator Indonesia</label>
+            <label class="form-label">🛒 Setup Layanan Utama (Indonesia)</label>
             <div class="unified-order-box">
                 <select id="dropdownLayanan" class="unified-select-op" onchange="muatProdukLayanan(true)">
                     <option value="ka" selected>Shopee</option>
@@ -115,7 +115,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem API Type 2 Vak-SMS (Standard Operator Mode) aktif...
+            └> Sistem Webhook Vak-SMS Type 2 aktif...
         </div>
     </div>
     
@@ -132,16 +132,13 @@
         let namaProdukTerpilih = ""; 
         let hargaProdukTerpilih = 0; 
         
-        // DAFTAR OPERATOR STANDAR
         const MASTER_OPERATOR = { 
             "any": "Semua Operator (Random)", 
             "telkomsel": "Telkomsel", 
             "indosat": "Indosat", 
-            "xl": "XL Axiata",
-            "axis": "Axis",
+            "axis": "XL / Axis",
             "three": "Tri (3)", 
-            "smartfren": "Smartfren",
-            "byu": "By.U"
+            "smartfren": "Smartfren" 
         };
 
         function formatRupiah(angka) {
@@ -177,6 +174,7 @@
                 if(textResponse === "NO_BALANCE") throw new Error("Saldo Kosong!");
                 if(textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor kosong!");
                 if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
+                if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG") || textResponse.includes("UNPROCESSABLE_ENTITY")) throw new Error("Layanan tidak valid.");
                 
                 return textResponse; 
             } catch (e) { 
@@ -191,9 +189,11 @@
             const savedKey = localStorage.getItem("otp_key_vak");
             if(savedKey) {
                 document.getElementById("otpKeyVak").value = savedKey;
+                document.getElementById("statusKeyVak").innerText = "✅ Token Aktif."; 
+                document.getElementById("statusKeyVak").style.color = "#50fa7b";
                 refreshSemuaDataLive();
             } else {
-                logConsole("Silakan masukkan API Key Type 2.");
+                logConsole("Silakan masukkan API Key terlebih dahulu.");
                 toggleApiKeyDropdown();
             }
 
@@ -242,7 +242,7 @@
                 let serviceId = document.getElementById("dropdownLayanan").value;
                 let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
 
-                document.getElementById("labelServerTerpilih").innerHTML = `⏳ Mengambil operator...`;
+                document.getElementById("labelServerTerpilih").innerHTML = `⏳ Mengambil data...`;
                 document.getElementById("btnPesanAksi").disabled = true;
 
                 const resText = await fetchVakAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });
@@ -250,9 +250,9 @@
                 
                 let stockID = 0; let priceUSD = 0;
                 if (data[ID_NEGARA_INDONESIA] && data[ID_NEGARA_INDONESIA][serviceId]) {
-                    stockID = data[ID_NEGARA_INDONESIA][serviceId].count || 100;
-                    priceUSD = data[ID_NEGARA_INDONESIA][serviceId].cost || 0.01;
-                }
+                    stockID = data[ID_NEGARA_INDONESIA][serviceId].count;
+                    priceUSD = data[ID_NEGARA_INDONESIA][serviceId].cost;
+                } else { throw new Error("Stok kosong."); }
                 
                 daftarServerTersedia = [];
                 for (let opId in MASTER_OPERATOR) {
@@ -263,19 +263,13 @@
                 const srv = daftarServerTersedia[0]; 
                 produkTerpilihId = srv.id; namaProdukTerpilih = `${elemNamaSrv} (${srv.nama})`; hargaProdukTerpilih = srv.price; 
                 
-                document.getElementById("labelServerTerpilih").innerHTML = `${srv.nama} <span style="font-size:11px;">(${formatRupiah(srv.price * KURS_USD)})</span>`;
+                document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_USD)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
                 document.getElementById("btnPesanAksi").disabled = false;
                 if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
                 
             } catch (e) {
-                // Fallback aman jika getPrices gagal total
-                daftarServerTersedia = [];
-                for (let opId in MASTER_OPERATOR) {
-                    daftarServerTersedia.push({ id: opId, nama: MASTER_OPERATOR[opId], stock: "~", price: 0.01 });
-                }
-                renderDropdownOptions();
-                pilihServerDropdown(0, false);
-                document.getElementById("btnPesanAksi").disabled = false;
+                document.getElementById("labelServerTerpilih").innerHTML = `<span style="color:var(--accent-red);">❌ Gagal Memuat</span>`;
+                document.getElementById("btnPesanAksi").disabled = true; 
             }
         }
 
@@ -285,22 +279,18 @@
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
                 let sel = (produkTerpilihId === srv.id) ? "selected" : "";
-                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index}, true)">
-                    <span>${srv.nama}</span>
-                    <span style="color:var(--accent-cyan); font-weight:bold;">${srv.price > 0 ? formatRupiah(srv.price * KURS_USD) : ''}</span>
-                </div>`;
+                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>${srv.nama} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.price * KURS_USD)}</span></div>`;
             });
             container.innerHTML = html;
         }
 
-        function pilihServerDropdown(index, closeDropdown = true) {
+        function pilihServerDropdown(index) {
             let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
             const srv = daftarServerTersedia[index];
             produkTerpilihId = srv.id; namaProdukTerpilih = `${elemNamaSrv} (${srv.nama})`; hargaProdukTerpilih = srv.price; 
-            document.getElementById("labelServerTerpilih").innerHTML = `${srv.nama} <span style="font-size:11px;">(${srv.price > 0 ? formatRupiah(srv.price * KURS_USD) : 'Tarif Live'})</span>`;
-            if(closeDropdown) document.getElementById("containerListDropdown").classList.remove("active");
-            document.getElementById("btnPesanAksi").disabled = false; 
-            renderDropdownOptions();
+            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_USD)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+            document.getElementById("containerListDropdown").classList.remove("active");
+            document.getElementById("btnPesanAksi").disabled = false; renderDropdownOptions();
         }
 
         async function eksekusiBeliTerpilih() {
@@ -311,14 +301,7 @@
                 let paramOrder = { service: serviceId, country: ID_NEGARA_INDONESIA };
                 if (produkTerpilihId !== "any") paramOrder.operator = produkTerpilihId;
 
-                let resText = await fetchVakAPI('getNumber', paramOrder);
-                
-                // Auto-retry untuk shopee jika 'ka' gagal
-                if ((resText.includes("BAD_SERVICE") || resText.includes("WRONG")) && serviceId === 'ka') {
-                    paramOrder.service = 'sh';
-                    resText = await fetchVakAPI('getNumber', paramOrder);
-                }
-
+                const resText = await fetchVakAPI('getNumber', paramOrder);
                 if (resText.includes("ACCESS_NUMBER")) {
                     let parts = resText.split(":");
                     daftarOrderan.unshift({ 
@@ -339,21 +322,21 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        async function eksekusiBatalkanServer(index, statusTipe) {
+        async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
             item.is_cancelling = true; renderUILayout();
             
             try { 
-                await fetchVakAPI('setStatus', { status: statusTipe, id: item.order_id });
+                await fetchVakAPI('setStatus', { status: 8, id: item.order_id });
                 item.status = "cancelled"; 
                 item.is_cancelling = false;
                 renderUILayout(); 
                 simpanDaftarOrderanKeLokal(); 
                 ambilSaldoLive(); 
-                showToast(statusTipe === 9 ? "Dibatalkan & Diblokir!" : "Dibatalkan!"); 
+                showToast("Dibatalkan!"); 
             } catch (e) { 
                 item.is_cancelling = false;
-                logConsole("Gagal membatalkan ke server.");
+                logConsole("Gagal membatalkan ke server. Akan dicoba lagi.");
                 renderUILayout();
             }
         }
@@ -386,6 +369,7 @@
             let i = daftarOrderan[activeOrderIndex];
                 
             try {
+                // Mengecek langsung status OTP ke server Vak-SMS 
                 const resText = await fetchVakAPI('getStatus', { id: i.order_id });
                 
                 if (resText.includes("STATUS_OK")) { 
@@ -422,7 +406,7 @@
                 let maxWait = isBlocked ? 120 : 300; 
                 
                 if (item.status === "pending" && sec >= maxWait && !item.is_cancelling) { 
-                    eksekusiBatalkanServer(index, 8);
+                    eksekusiBatalkanServer(index);
                 }
 
                 let d = new Date(item.waktu_dibuat);
@@ -450,6 +434,8 @@
 
                 countAktif++; 
                 let sisa = Math.max(0, maxWait - sec); 
+                let cool = Math.max(0, 120 - sec); 
+                if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) cool = 0; 
 
                 let textStat = `⚡ Menunggu Webhook OTP... (${sec}s)`; 
                 let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
@@ -471,11 +457,7 @@
                     </div>`;
                     btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai (Simpan)</button></div>`;
                 } else if (item.status === "pending" && !item.is_cancelling) {
-                    btnAksi = `
-                    <div style="display:flex; gap: 8px; margin-top: 10px;">
-                        <button class="btn-action-half" style="background:#ff5555; color:#fff;" onclick="eksekusiBatalkanServer(${index}, 8)">❌ Batal</button>
-                        <button class="btn-action-half" style="background:#5a2e8c; color:#fff;" onclick="eksekusiBatalkanServer(${index}, 9)">🚫 Batal & Ban</button>
-                    </div>`;
+                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu Cancel (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
                 htmlAktif += `
@@ -520,7 +502,7 @@
         }
         function munculkanPopupNative(nomor, otp, layanan) {
             if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK`, text: `${layanan} - OTP: ${otp}`, foreground: true, vibrate: true, priority: 2, wakeup: true });
+                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
             } 
         }
     </script>
