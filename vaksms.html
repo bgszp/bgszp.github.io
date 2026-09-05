@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vak-SMS Panel (Live Operator Tiers)</title>
+    <title>Vak-SMS Panel (Anti-Crash Version)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -115,7 +115,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem API Type 2 Vak-SMS (Auto-Fetch Operator Real-Time) aktif...
+            └> Sistem API Type 2 Vak-SMS (Anti-Crash Fallback) aktif...
         </div>
     </div>
     
@@ -165,7 +165,6 @@
                 if(textResponse === "NO_BALANCE") throw new Error("Saldo Kosong!");
                 if(textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor kosong!");
                 if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
-                if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG") || textResponse.includes("UNPROCESSABLE_ENTITY")) throw new Error("Layanan tidak valid.");
                 
                 return textResponse; 
             } catch (e) { 
@@ -228,58 +227,60 @@
             } catch(e) {}
         }
 
-        // SISTEM MAP OPERATOR DINAMIS (Anti noNumber)
+        // SISTEM ANTI-CRASH (FALLBACK OPERATOR LIST)
         async function muatProdukLayanan(autoOpen = false) {
+            let serviceId = document.getElementById("dropdownLayanan").value;
+            let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
+
+            document.getElementById("labelServerTerpilih").innerHTML = `⏳ Menarik data live...`;
+            document.getElementById("btnPesanAksi").disabled = true;
+            
+            let opData = null;
+
             try {
-                let serviceId = document.getElementById("dropdownLayanan").value;
-                let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
-
-                document.getElementById("labelServerTerpilih").innerHTML = `⏳ Menarik data live...`;
-                document.getElementById("btnPesanAksi").disabled = true;
-
                 const resText = await fetchVakAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });
                 let data = JSON.parse(resText);
                 
-                if (!data[ID_NEGARA_INDONESIA] || !data[ID_NEGARA_INDONESIA][serviceId]) {
-                    throw new Error("Stok layanan kosong.");
+                if (data[ID_NEGARA_INDONESIA]) {
+                    opData = data[ID_NEGARA_INDONESIA][serviceId] || data[ID_NEGARA_INDONESIA]['sh'] || data[ID_NEGARA_INDONESIA]['any'];
                 }
-                
-                let operatorData = data[ID_NEGARA_INDONESIA][serviceId];
-                daftarServerTersedia = [];
-                
-                // Urutkan berdasarkan harga tertinggi (Premium di atas)
-                let opKeys = Object.keys(operatorData).sort((a, b) => operatorData[b].cost - operatorData[a].cost);
-                
+            } catch (e) {
+                logConsole("Sistem getPrices diblokir server. Mengaktifkan Fallback Mode...");
+            }
+
+            daftarServerTersedia = [];
+
+            if (opData && typeof opData === 'object') {
+                let opKeys = Object.keys(opData).sort((a, b) => opData[b].cost - opData[a].cost);
                 opKeys.forEach(opKey => {
-                    let opNameFormatted = opKey.charAt(0).toUpperCase() + opKey.slice(1);
-                    if (opKey === "any") opNameFormatted = "Server Campur (Random/Termurah)";
-                    else if (opKey === "telkomsel" || opKey === "indosat") opNameFormatted = "Server Premium (" + opNameFormatted + ")";
-                    else opNameFormatted = "Server Promo (" + opNameFormatted + ")";
-                    
-                    let stockCount = operatorData[opKey].count;
-                    let priceUSD = operatorData[opKey].cost;
-                    
+                    let stockCount = opData[opKey].count;
+                    let priceUSD = opData[opKey].cost;
                     if (stockCount > 0) {
-                        daftarServerTersedia.push({ 
-                            id: opKey, 
-                            nama: opNameFormatted, 
-                            stock: stockCount, 
-                            price: priceUSD 
-                        });
+                        let opNameFormatted = opKey === "any" ? "Server Random (Termurah)" : `Server ${opKey.toUpperCase()}`;
+                        daftarServerTersedia.push({ id: opKey, nama: opNameFormatted, stock: stockCount, price: priceUSD });
                     }
                 });
-
-                if (daftarServerTersedia.length === 0) throw new Error("Stok operator habis.");
-
-                renderDropdownOptions();
-                pilihServerDropdown(0, false); 
-                
-                if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
-                
-            } catch (e) {
-                document.getElementById("labelServerTerpilih").innerHTML = `<span style="color:var(--accent-red);">❌ Gagal Memuat Server</span>`;
-                document.getElementById("btnPesanAksi").disabled = true; 
+            } else {
+                // FALLBACK LIST JIKA SERVER MENOLAK PARSING HARGA
+                daftarServerTersedia = [
+                    { id: "any", nama: "Server Random (Termurah)", stock: "~", price: 0 },
+                    { id: "telkomsel", nama: "Server Premium (Telkomsel)", stock: "~", price: 0 },
+                    { id: "indosat", nama: "Server Fast (Indosat)", stock: "~", price: 0 },
+                    { id: "xl", nama: "Server Promo (XL Axiata)", stock: "~", price: 0 },
+                    { id: "three", nama: "Server Promo (Tri)", stock: "~", price: 0 },
+                    { id: "smartfren", nama: "Server Promo (Smartfren)", stock: "~", price: 0 }
+                ];
             }
+
+            if (daftarServerTersedia.length === 0) {
+                document.getElementById("labelServerTerpilih").innerHTML = `<span style="color:var(--accent-red);">❌ Stok habis.</span>`;
+                return;
+            }
+
+            renderDropdownOptions();
+            pilihServerDropdown(0, false); 
+            
+            if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
         }
 
         function renderDropdownOptions() {
@@ -288,9 +289,10 @@
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
                 let sel = (produkTerpilihId === srv.id) ? "selected" : "";
+                let textHarga = srv.price > 0 ? formatRupiah(srv.price * KURS_USD) : "Live Tariff";
                 html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index}, true)">
                     <span>${srv.nama} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span>
-                    <span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.price * KURS_USD)}</span>
+                    <span style="color:var(--accent-cyan); font-weight:bold;">${textHarga}</span>
                 </div>`;
             });
             container.innerHTML = html;
@@ -303,7 +305,9 @@
             hargaProdukTerpilih = srv.price; 
             namaProdukTerpilih = `${elemNamaSrv} - ${srv.id.toUpperCase()}`; 
             
-            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_USD)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+            let displayHarga = srv.price > 0 ? formatRupiah(srv.price * KURS_USD) : "Tarif Auto";
+            document.getElementById("labelServerTerpilih").innerHTML = `${displayHarga} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+            
             if(closeDropdown) document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false; 
             renderDropdownOptions();
@@ -315,11 +319,17 @@
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
                 let paramOrder = { service: serviceId, country: ID_NEGARA_INDONESIA };
-                
-                // MENGIRIMKAN OPERATOR YANG BENAR KE SERVER
                 if (produkTerpilihId !== "any") paramOrder.operator = produkTerpilihId;
 
-                const resText = await fetchVakAPI('getNumber', paramOrder);
+                let resText = await fetchVakAPI('getNumber', paramOrder);
+                
+                // AUTO RETRY JIKA KODE SHOPEE 'ka' DITOLAK
+                if ((resText.includes("BAD_SERVICE") || resText.includes("WRONG")) && serviceId === 'ka') {
+                    logConsole("Kode 'ka' ditolak, mencoba kode 'sh' untuk Shopee...");
+                    paramOrder.service = 'sh';
+                    resText = await fetchVakAPI('getNumber', paramOrder);
+                }
+
                 if (resText.includes("ACCESS_NUMBER")) {
                     let parts = resText.split(":");
                     daftarOrderan.unshift({ 
@@ -422,7 +432,6 @@
                 let isBlocked = (item.status === "pending" && index !== activeOrderIndex);
                 let maxWait = isBlocked ? 120 : 300; 
                 
-                // AUTO CANCEL
                 if (item.status === "pending" && sec >= maxWait && !item.is_cancelling) { 
                     eksekusiBatalkanServer(index, 8);
                 }
