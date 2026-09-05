@@ -647,10 +647,15 @@
             const item = dataTersedia[Math.floor(Math.random() * dataTersedia.length)];
             const wilayahAcak = dapatkanAlamatAcak();
             
-            // Mengambil jalan/patokan asli dari data_pengguna.json
-            const jalanPatokan = item.alamat ? item.alamat.trim() : "";
+            // Mengambil alamat asli
+            let jalanPatokan = item.alamat ? item.alamat.trim() : "";
             
-            // Menggabungkan Nama, Jalan/Patokan, Wilayah Acak, dan No HP
+            // MEMOTONG bagian Kelurahan, Kecamatan, Kota, Kabupaten, atau Desa dari data asli
+            jalanPatokan = jalanPatokan.split(/,?\s*(?:Kel\.|Kec\.|Desa\b|Kab\.|Kota\b)/i)[0].trim();
+            // Hapus koma di akhir kalimat jika ada sisa
+            if (jalanPatokan.endsWith(',')) jalanPatokan = jalanPatokan.slice(0, -1).trim();
+            
+            // Menggabungkan Nama, Jalan/Patokan bersih, Wilayah Acak, dan No HP
             const res = `${item.nama}, ${jalanPatokan}, ${wilayahAcak}, ${item.no_hp}`;
             
             document.getElementById('genNameOutput').value = res;
