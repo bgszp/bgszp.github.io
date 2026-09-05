@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vak-SMS Panel (Anti-Crash Version)</title>
+    <title>Vak-SMS Panel (Auto-Tiers Pro)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -57,18 +57,17 @@
                 <span id="panahApiKey" style="font-size: 10px;">▼</span>
             </div>
             <div id="wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
-                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Vak-SMS (API Type 2) Key:</label>
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Vak-SMS (API Type 1) Key:</label>
                 <div style="display: flex; gap: 6px;">
                     <input type="password" id="otpKeyVak" placeholder="Masukkan API Key" class="search-input" style="margin-bottom:0;">
                     <button onclick="simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
                 </div>
-                <small id="statusKeyVak" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Gunakan API Type 2.</small>
             </div>
         </div>
 
         <!-- AREA PEMESANAN -->
         <div class="dropdown-box-wrapper">
-            <label class="form-label">🛒 Setup Layanan & Kualitas Server</label>
+            <label class="form-label">🛒 Setup Layanan & Kualitas Server (Harga Live)</label>
             <div class="unified-order-box">
                 <select id="dropdownLayanan" class="unified-select-op" onchange="muatProdukLayanan(true)">
                     <option value="ka" selected>Shopee</option>
@@ -115,22 +114,29 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem API Type 2 Vak-SMS (Anti-Crash Fallback) aktif...
+            └> Sistem Webhook Vak-SMS API Type 1 (Pemetaan Harga Real-Time) siap digunakan...
         </div>
     </div>
     
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        const VAK_API_URL = "https://vak-sms.com/stubs/handler_api.php"; 
+        const VAK_API_TYPE1 = "https://vak-sms.com/api/"; 
         const KURS_USD = 17757; 
-        const ID_NEGARA_INDONESIA = "6"; 
         
         let daftarOrderan = []; 
         let daftarServerTersedia = []; 
-        let produkTerpilihId = null; 
+        let hargaTerpilihString = ""; 
         let namaProdukTerpilih = ""; 
         let hargaProdukTerpilih = 0; 
+        
+        // Pemetaan Kode Layanan ke API Type 1
+        const MAP_TYPE1 = { 
+            "ka": "sh", 
+            "wa": "wa", 
+            "tg": "tg", 
+            "ig": "ig"
+        };
 
         function formatRupiah(angka) {
             return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
@@ -142,11 +148,12 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        async function fetchVakAPI(action, params = {}) {
+        // FUNGSI INTI API TYPE 1 YANG SUDAH DIPERBAIKI
+        async function fetchVakAPI_Type1(action, params = {}) {
             const token = localStorage.getItem("otp_key_vak");
             if (!token) throw new Error("API Key belum disetting.");
 
-            let url = `${VAK_API_URL}?api_key=${token}&action=${action}`;
+            let url = `${VAK_API_TYPE1}${action}/?apiKey=${token}`;
             for (let k in params) {
                 if (params[k] !== undefined) url += `&${k}=${params[k]}`;
             }
@@ -160,17 +167,21 @@
                 
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 let textResponse = await res.text();
-
-                if(textResponse === "BAD_KEY") throw new Error("API Key Salah!");
-                if(textResponse === "NO_BALANCE") throw new Error("Saldo Kosong!");
-                if(textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor kosong!");
-                if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
+                let data;
                 
-                return textResponse; 
+                try { data = JSON.parse(textResponse); } catch(e) { return textResponse; }
+
+                if (data.error && action !== 'getSmsCode') {
+                    if (data.error === "badApiKey") throw new Error("API Key Salah!");
+                    if (data.error === "noBalance") throw new Error("Saldo Kosong!");
+                    if (data.error === "noNumbers") throw new Error("Stok nomor kosong di harga ini!");
+                    throw new Error(data.error);
+                }
+                return data; 
             } catch (e) { 
                 clearTimeout(timeoutId);
-                if (e.name === 'AbortError') throw new Error("Timeout: Server lambat");
-                if (e.message.includes("Failed to fetch")) throw new Error("Koneksi Ditolak");
+                if (e.name === 'AbortError') throw new Error("Koneksi API Time-out.");
+                if (e.message.includes("Failed to fetch")) throw new Error("Koneksi Internet Ditolak.");
                 throw e; 
             }
         }
@@ -179,11 +190,9 @@
             const savedKey = localStorage.getItem("otp_key_vak");
             if(savedKey) {
                 document.getElementById("otpKeyVak").value = savedKey;
-                document.getElementById("statusKeyVak").innerText = "✅ Token Aktif."; 
-                document.getElementById("statusKeyVak").style.color = "#50fa7b";
                 refreshSemuaDataLive();
             } else {
-                logConsole("Silakan masukkan API Key Type 2.");
+                logConsole("Silakan masukkan API Key Vak-SMS.");
                 toggleApiKeyDropdown();
             }
 
@@ -219,68 +228,71 @@
 
         async function ambilSaldoLive() {
             try {
-                const res = await fetchVakAPI('getBalance');
-                if (res.includes("ACCESS_BALANCE")) {
-                    let saldoApi = parseFloat(res.split(":")[1] || 0);
-                    document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoApi * KURS_USD);
+                const data = await fetchVakAPI_Type1('getBalance');
+                if (data.balance !== undefined) {
+                    document.getElementById("txtSaldoLive").innerText = formatRupiah(parseFloat(data.balance) * KURS_USD);
                 }
             } catch(e) {}
         }
 
-        // SISTEM ANTI-CRASH (FALLBACK OPERATOR LIST)
+        // SISTEM MAPPING HARGA LANGSUNG DARI STRUKTUR OBJEK
         async function muatProdukLayanan(autoOpen = false) {
-            let serviceId = document.getElementById("dropdownLayanan").value;
-            let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
-
-            document.getElementById("labelServerTerpilih").innerHTML = `⏳ Menarik data live...`;
-            document.getElementById("btnPesanAksi").disabled = true;
-            
-            let opData = null;
-
             try {
-                const resText = await fetchVakAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });
-                let data = JSON.parse(resText);
+                let serviceId = document.getElementById("dropdownLayanan").value;
+                let type1Svc = MAP_TYPE1[serviceId] || serviceId;
+
+                document.getElementById("labelServerTerpilih").innerHTML = `⏳ Menarik data live...`;
+                document.getElementById("btnPesanAksi").disabled = true;
+
+                const data = await fetchVakAPI_Type1('getOfferNumberList', { country: 'id', services: type1Svc });
                 
-                if (data[ID_NEGARA_INDONESIA]) {
-                    opData = data[ID_NEGARA_INDONESIA][serviceId] || data[ID_NEGARA_INDONESIA]['sh'] || data[ID_NEGARA_INDONESIA]['any'];
-                }
-            } catch (e) {
-                logConsole("Sistem getPrices diblokir server. Mengaktifkan Fallback Mode...");
-            }
+                // VALIDASI KEAMANAN PARSING JSON AGAR TIDAK CRASH
+                if (!data || data.error) throw new Error(data.error || "Gagal menghubungi server");
+                if (!data[type1Svc]) throw new Error("Layanan tidak tersedia di server saat ini");
+                if (!data[type1Svc].priceMap) throw new Error("Stok harga kosong");
 
-            daftarServerTersedia = [];
+                let priceMap = data[type1Svc].priceMap;
+                daftarServerTersedia = [];
+                
+                // Urutkan harga dari termahal (Premium) ke termurah (Promo)
+                let sortedPrices = Object.keys(priceMap).sort((a,b) => parseFloat(b) - parseFloat(a));
+                
+                let serverIndex = 1;
 
-            if (opData && typeof opData === 'object') {
-                let opKeys = Object.keys(opData).sort((a, b) => opData[b].cost - opData[a].cost);
-                opKeys.forEach(opKey => {
-                    let stockCount = opData[opKey].count;
-                    let priceUSD = opData[opKey].cost;
+                sortedPrices.forEach(priceStr => {
+                    let stockCount = priceMap[priceStr];
+                    let priceNum = parseFloat(priceStr);
+                    
                     if (stockCount > 0) {
-                        let opNameFormatted = opKey === "any" ? "Server Random (Termurah)" : `Server ${opKey.toUpperCase()}`;
-                        daftarServerTersedia.push({ id: opKey, nama: opNameFormatted, stock: stockCount, price: priceUSD });
+                        let srvName = `Server ${serverIndex}`;
+                        
+                        // KATEGORISASI NAMA SERVER
+                        if (serverIndex === 1) srvName += ` (Premium)`;
+                        else if (serverIndex === 2) srvName += ` (Fast)`;
+                        else if (serverIndex === sortedPrices.length) srvName += ` (Promo)`;
+                        else srvName += ` (Standar)`;
+
+                        daftarServerTersedia.push({ 
+                            priceVal: priceStr,
+                            nama: srvName, 
+                            stock: stockCount, 
+                            priceUSD: priceNum 
+                        });
+                        serverIndex++;
                     }
                 });
-            } else {
-                // FALLBACK LIST JIKA SERVER MENOLAK PARSING HARGA
-                daftarServerTersedia = [
-                    { id: "any", nama: "Server Random (Termurah)", stock: "~", price: 0 },
-                    { id: "telkomsel", nama: "Server Premium (Telkomsel)", stock: "~", price: 0 },
-                    { id: "indosat", nama: "Server Fast (Indosat)", stock: "~", price: 0 },
-                    { id: "xl", nama: "Server Promo (XL Axiata)", stock: "~", price: 0 },
-                    { id: "three", nama: "Server Promo (Tri)", stock: "~", price: 0 },
-                    { id: "smartfren", nama: "Server Promo (Smartfren)", stock: "~", price: 0 }
-                ];
-            }
 
-            if (daftarServerTersedia.length === 0) {
-                document.getElementById("labelServerTerpilih").innerHTML = `<span style="color:var(--accent-red);">❌ Stok habis.</span>`;
-                return;
-            }
+                if (daftarServerTersedia.length === 0) throw new Error("Stok habis di semua server.");
 
-            renderDropdownOptions();
-            pilihServerDropdown(0, false); 
-            
-            if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
+                renderDropdownOptions();
+                pilihServerDropdown(0, false); 
+                
+                if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
+                
+            } catch (e) {
+                document.getElementById("labelServerTerpilih").innerHTML = `<span style="color:var(--accent-red);">❌ ${e.message}</span>`;
+                document.getElementById("btnPesanAksi").disabled = true; 
+            }
         }
 
         function renderDropdownOptions() {
@@ -288,11 +300,10 @@
             if(daftarServerTersedia.length === 0) { return; }
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
-                let sel = (produkTerpilihId === srv.id) ? "selected" : "";
-                let textHarga = srv.price > 0 ? formatRupiah(srv.price * KURS_USD) : "Live Tariff";
+                let sel = (hargaTerpilihString === srv.priceVal) ? "selected" : "";
                 html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index}, true)">
                     <span>${srv.nama} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span>
-                    <span style="color:var(--accent-cyan); font-weight:bold;">${textHarga}</span>
+                    <span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.priceUSD * KURS_USD)}</span>
                 </div>`;
             });
             container.innerHTML = html;
@@ -301,13 +312,11 @@
         function pilihServerDropdown(index, closeDropdown = true) {
             let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
             const srv = daftarServerTersedia[index];
-            produkTerpilihId = srv.id; 
-            hargaProdukTerpilih = srv.price; 
-            namaProdukTerpilih = `${elemNamaSrv} - ${srv.id.toUpperCase()}`; 
+            hargaTerpilihString = srv.priceVal; 
+            hargaProdukTerpilih = srv.priceUSD; 
+            namaProdukTerpilih = `${elemNamaSrv} - ${srv.nama}`; 
             
-            let displayHarga = srv.price > 0 ? formatRupiah(srv.price * KURS_USD) : "Tarif Auto";
-            document.getElementById("labelServerTerpilih").innerHTML = `${displayHarga} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
-            
+            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.priceUSD * KURS_USD)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
             if(closeDropdown) document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false; 
             renderDropdownOptions();
@@ -318,68 +327,71 @@
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
-                let paramOrder = { service: serviceId, country: ID_NEGARA_INDONESIA };
-                if (produkTerpilihId !== "any") paramOrder.operator = produkTerpilihId;
+                let type1Svc = MAP_TYPE1[serviceId] || serviceId;
 
-                let resText = await fetchVakAPI('getNumber', paramOrder);
+                // MEMANGGIL API TYPE 1 DENGAN PARAMETER PRICE
+                const data = await fetchVakAPI_Type1('getNumber', { 
+                    service: type1Svc, 
+                    country: 'id',
+                    price: hargaTerpilihString 
+                });
                 
-                // AUTO RETRY JIKA KODE SHOPEE 'ka' DITOLAK
-                if ((resText.includes("BAD_SERVICE") || resText.includes("WRONG")) && serviceId === 'ka') {
-                    logConsole("Kode 'ka' ditolak, mencoba kode 'sh' untuk Shopee...");
-                    paramOrder.service = 'sh';
-                    resText = await fetchVakAPI('getNumber', paramOrder);
-                }
+                if (!data.tel || !data.idNum) throw new Error("Gagal mendapat respons nomor dari server.");
 
-                if (resText.includes("ACCESS_NUMBER")) {
-                    let parts = resText.split(":");
-                    daftarOrderan.unshift({ 
-                        order_id: parts[1], phone: parts[2], layanan: namaProdukTerpilih, 
-                        harga: hargaProdukTerpilih, waktu_dibuat: Date.now(), status: "pending", 
-                        otp: "", is_cancelling: false 
-                    });
-                    renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
-                } else { throw new Error(resText); }
-            } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
+                daftarOrderan.unshift({ 
+                    order_id: data.idNum, 
+                    phone: data.tel, 
+                    layanan: namaProdukTerpilih, 
+                    harga: hargaProdukTerpilih, 
+                    waktu_dibuat: Date.now(), 
+                    status: "pending", 
+                    otp: "", 
+                    is_cancelling: false 
+                });
+                renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
+            } catch (e) { 
+                alert("Gagal order: " + e.message); 
+            } finally { 
+                btn.disabled = false; btn.innerHTML = teksAsli; 
+            }
         }
 
         function simpanKonfigurasi() {
             const key = document.getElementById("otpKeyVak").value.trim();
             if(!key) return alert("Masukkan Token!");
             localStorage.setItem("otp_key_vak", key);
-            document.getElementById("statusKeyVak").innerText = "✅ Token Disimpan!";
+            document.getElementById("txtSaldoLive").innerText = "⏳...";
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        async function eksekusiBatalkanServer(index, statusTipe) {
+        async function eksekusiBatalkanServer(index, type1Status) {
             const item = daftarOrderan[index];
             item.is_cancelling = true; renderUILayout();
             
             try { 
-                await fetchVakAPI('setStatus', { status: statusTipe, id: item.order_id });
+                await fetchVakAPI_Type1('setStatus', { status: type1Status, idNum: item.order_id });
                 item.status = "cancelled"; 
                 item.is_cancelling = false;
                 renderUILayout(); 
                 simpanDaftarOrderanKeLokal(); 
                 ambilSaldoLive(); 
-                showToast(statusTipe === 9 ? "Dibatalkan & Diblokir!" : "Dibatalkan!"); 
+                showToast(type1Status === 'bad' ? "Dibatalkan & Diblokir!" : "Dibatalkan!"); 
             } catch (e) { 
                 item.is_cancelling = false;
-                logConsole("Gagal membatalkan ke server.");
+                logConsole("Gagal membatalkan. Server mungkin sibuk.");
                 renderUILayout();
             }
         }
         
         async function eksekusiResend(index) {
             const item = daftarOrderan[index];
-            try { await fetchVakAPI('setStatus', { status: 3, id: item.order_id }); showToast("Kirim Ulang diminta."); } catch (e) {}
+            try { await fetchVakAPI_Type1('setStatus', { status: 'send', idNum: item.order_id }); showToast("Kirim Ulang diminta."); } catch (e) {}
         }
 
         async function eksekusiSelesai(index) {
             const item = daftarOrderan[index];
-            try { 
-                await fetchVakAPI('setStatus', { status: 6, id: item.order_id });
-                item.status = "completed"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Selesai!"); 
-            } catch(err) {}
+            item.status = "completed"; 
+            renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Selesai!"); 
         }
 
         async function mesinCekSmsTerpusat() {
@@ -397,18 +409,14 @@
             let i = daftarOrderan[activeOrderIndex];
                 
             try {
-                const resText = await fetchVakAPI('getStatus', { id: i.order_id });
+                const data = await fetchVakAPI_Type1('getSmsCode', { idNum: i.order_id });
                 
-                if (resText.includes("STATUS_OK")) { 
-                    let otpCode = resText.split(":")[1];
-                    if (i.status === "pending" || i.otp !== otpCode) {
-                        i.status = "received"; i.otp = otpCode; 
+                if (data && data.smsCode) { 
+                    if (i.status === "pending" || i.otp !== data.smsCode) {
+                        i.status = "received"; i.otp = data.smsCode; 
                         putarSuaraNotifKeras(); munculkanPopupNative(i.phone, i.otp, i.layanan); 
                         renderUILayout(); simpanDaftarOrderanKeLokal();
                     }
-                } else if (resText.includes("STATUS_CANCEL")) {
-                    i.status = "cancelled";
-                    renderUILayout(); simpanDaftarOrderanKeLokal();
                 }
             } catch (e) {}
         }
@@ -433,7 +441,7 @@
                 let maxWait = isBlocked ? 120 : 300; 
                 
                 if (item.status === "pending" && sec >= maxWait && !item.is_cancelling) { 
-                    eksekusiBatalkanServer(index, 8);
+                    eksekusiBatalkanServer(index, 'end');
                 }
 
                 let d = new Date(item.waktu_dibuat);
@@ -484,8 +492,8 @@
                 } else if (item.status === "pending" && !item.is_cancelling) {
                     btnAksi = `
                     <div style="display:flex; gap: 8px; margin-top: 10px;">
-                        <button class="btn-action-half" style="background:#ff5555; color:#fff;" onclick="eksekusiBatalkanServer(${index}, 8)">❌ Batal</button>
-                        <button class="btn-action-half" style="background:#5a2e8c; color:#fff;" onclick="eksekusiBatalkanServer(${index}, 9)">🚫 Batal & Ban</button>
+                        <button class="btn-action-half" style="background:#ff5555; color:#fff;" onclick="eksekusiBatalkanServer(${index}, 'end')">❌ Batal</button>
+                        <button class="btn-action-half" style="background:#5a2e8c; color:#fff;" onclick="eksekusiBatalkanServer(${index}, 'bad')">🚫 Batal & Ban</button>
                     </div>`;
                 }
                 
