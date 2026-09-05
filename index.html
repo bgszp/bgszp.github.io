@@ -108,6 +108,8 @@
 
     <!-- === 1. MENU SERVERS === -->
     <div class="wrapper-menu-server" style="position: relative; margin-bottom: 18px;">
+        
+        <!-- TAMPILAN IP & PING JARINGAN -->
         <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Shopee / Ipify)" style="position: absolute; right: 0; top: -20px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
             <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
         </div>
@@ -157,6 +159,7 @@
             </div>
             <div class="history-card" style="margin-top: 20px; border: 1px solid #3d3463;">
                 <div class="history-title"><span>RIWAYAT GENERATOR</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()" title="Hapus Riwayat & Reset Batas 24 Jam">Hapus</span></div>
+                <!-- ID historyList sekarang di-handle oleh Firebase -->
                 <div id="historyList"></div>
             </div>
         </div>
@@ -602,12 +605,9 @@
             }
         }
 
-        // === CACHE UNTUK MENYIMPAN DATA JALAN OSM AGAR TIDAK LAG ===
-        window.CACHE_JALAN_OSM = {};
-
-        // === FUNGSI MENGAMBIL ALAMAT & NAMA JALAN ASLI DARI OSM ===
-        async function dapatkanAlamatAcak() {
-            if (Object.keys(DATA_KOTA_JAWA).length === 0) return "Alamat Tidak Tersedia (Memuat...)";
+        // === FUNGSI ACAK WILAYAH DARI KOTA PULAU JAWA ===
+        function dapatkanAlamatAcak() {
+            if (Object.keys(DATA_KOTA_JAWA).length === 0) return "Alamat Tidak Tersedia";
             
             const listProvinsi = Object.keys(DATA_KOTA_JAWA);
             const prov = listProvinsi[Math.floor(Math.random() * listProvinsi.length)];
@@ -620,51 +620,10 @@
             const kodePos = DATA_KOTA_JAWA[prov][kab][kec][kel];
             
             let formatKab = kab;
-            let namaKabBersih = kab;
-            if(kab.includes(", Kota")) {
-                formatKab = "Kota " + kab.replace(", Kota", "");
-                namaKabBersih = kab.replace(", Kota", "").trim();
-            }
-            if(kab.includes(", Kabupaten")) {
-                formatKab = "Kab. " + kab.replace(", Kabupaten", "");
-                namaKabBersih = kab.replace(", Kabupaten", "").trim();
-            }
+            if(kab.includes(", Kota")) formatKab = "Kota " + kab.replace(", Kota", "");
+            if(kab.includes(", Kabupaten")) formatKab = "Kab. " + kab.replace(", Kabupaten", "");
             
-            let namaJalanLengkap = "Jl. Raya " + kel; // Fallback darurat
-            
-            try {
-                let listJalan = window.CACHE_JALAN_OSM[namaKabBersih];
-                
-                if (!listJalan) {
-                    const queryOSM = `[out:json][timeout:10];area[name="${namaKabBersih}"]->.searchArea;way(area.searchArea)[highway~"primary|secondary|tertiary|residential"][name];out 30;`;
-                    
-                    const response = await fetch("https://overpass-api.de/api/interpreter", {
-                        method: "POST",
-                        body: "data=" + encodeURIComponent(queryOSM)
-                    });
-                    const dataOSM = await response.json();
-                    
-                    if (dataOSM && dataOSM.elements && dataOSM.elements.length > 0) {
-                        listJalan = [...new Set(dataOSM.elements.map(el => el.tags.name).filter(n => n))];
-                        window.CACHE_JALAN_OSM[namaKabBersih] = listJalan; 
-                    }
-                }
-                
-                if (listJalan && listJalan.length > 0) {
-                    const jalanAcak = listJalan[Math.floor(Math.random() * listJalan.length)];
-                    const listFormatNo = ["No.", "Blok A No.", "Blok B No.", "Blok C No.", "Kav."];
-                    const formatNoAcak = listFormatNo[Math.floor(Math.random() * listFormatNo.length)];
-                    const noRumahAcak = Math.floor(Math.random() * 150) + 1;
-                    const prefixJalan = jalanAcak.toLowerCase().startsWith("jl") || jalanAcak.toLowerCase().startsWith("jalan") ? "" : "Jl. ";
-                    namaJalanLengkap = `${prefixJalan}${jalanAcak} ${formatNoAcak} ${noRumahAcak}`;
-                }
-            } catch (error) {
-                console.log("Koneksi ke OSM gagal/limit, menggunakan jalan bawaan.");
-                const listDarurat = ["Jl. Merdeka", "Jl. Sudirman", "Jl. Melati", "Jl. Diponegoro"];
-                namaJalanLengkap = listDarurat[Math.floor(Math.random() * listDarurat.length)] + " No. " + (Math.floor(Math.random() * 100) + 1);
-            }
-            
-            return `${namaJalanLengkap}, Kel. ${kel}, Kec. ${kec}, ${formatKab}, ${prov} ${kodePos}`;
+            return `Kel. ${kel}, Kec. ${kec}, ${formatKab}, ${prov} ${kodePos}`;
         }
 
         // === FUNGSI FILTER DATA TERSEDIA MENGGUNAKAN FIREBASE ===
@@ -674,31 +633,30 @@
             return tersedia;
         }
 
-        // === MODIFIKASI FUNGSI GENERATE (ASYNCHRONOUS UNTUK OSM) ===
-        window.generateName = async function() {
+        // === FUNGSI GENERATE (INSTAN) ===
+        window.generateName = function() {
             if (DATA_DUMMY_DATABASE.length === 0) return;
             
             let dataTersedia = dapatkanDataTersedia();
+            
             if (dataTersedia.length === 0) {
                 alert("Semua data pengguna telah habis digunakan hari ini. Silakan tunggu 24 jam atau klik 'Hapus' pada Riwayat Generator.");
                 return;
             }
 
-            const btnGen = document.getElementById("btn-acak-data");
-            const teksAsli = btnGen.innerHTML;
-            btnGen.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat OSM...';
-            btnGen.disabled = true;
-
             const item = dataTersedia[Math.floor(Math.random() * dataTersedia.length)];
-            const alamatAcak = await dapatkanAlamatAcak();
-            const res = `${item.nama}, ${alamatAcak}, ${item.no_hp}`;
+            const wilayahAcak = dapatkanAlamatAcak();
             
-            btnGen.innerHTML = teksAsli;
-            btnGen.disabled = false;
+            // Mengambil jalan/patokan asli dari data_pengguna.json
+            const jalanPatokan = item.alamat ? item.alamat.trim() : "";
+            
+            // Menggabungkan Nama, Jalan/Patokan, Wilayah Acak, dan No HP
+            const res = `${item.nama}, ${jalanPatokan}, ${wilayahAcak}, ${item.no_hp}`;
             
             document.getElementById('genNameOutput').value = res;
             window.eksekusiSalinTeks(res).then(() => window.showToast("Berhasil Disalin! ✨")); 
             
+            // Kirim ke Firebase (Otomatis masuk ke Riwayat & mengunci No HP 24 Jam)
             if(window.tambahKeRiwayatFirebase) {
                 window.tambahKeRiwayatFirebase(res, item.no_hp);
             }
