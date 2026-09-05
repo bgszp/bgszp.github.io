@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Va-SMS Panel (Auto-Server Tiers)</title>
+    <title>Vak-SMS Panel (Auto-Server Tiers)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -249,15 +249,14 @@
 
                 const data = await fetchVakAPI_Type1('getOfferNumberList', { country: 'id', services: type1Svc });
                 
-                if (!data[type1Svc] || data[type1Svc].length === 0) throw new Error("Layanan tidak tersedia.");
+                // PERBAIKAN: Menghapus index [0] karena format JSON dari server berupa Object langsung, bukan Array
+                if (!data[type1Svc] || !data[type1Svc].priceMap) throw new Error("Stok kosong/tidak tersedia.");
                 
-                let priceMap = data[type1Svc][0].priceMap;
-                if (!priceMap || Object.keys(priceMap).length === 0) throw new Error("Stok kosong.");
+                let priceMap = data[type1Svc].priceMap;
 
                 daftarServerTersedia = [];
                 let sortedPrices = Object.keys(priceMap).sort((a,b) => parseFloat(b) - parseFloat(a));
                 
-                let serverIndex = 1;
                 let srvExtraCount = 4;
 
                 sortedPrices.forEach(priceStr => {
@@ -281,7 +280,6 @@
                             stock: stockCount, 
                             priceUSD: priceNum 
                         });
-                        serverIndex++;
                     }
                 });
 
