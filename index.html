@@ -135,7 +135,7 @@
             <iframe src="smsbower.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
         </div>
         <div id="wadahOTP2" class="wadah-iframe-server">
-            <iframe src="smscode.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+            <iframe src="smshero.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
         </div>
     </div>
 
@@ -157,7 +157,8 @@
                 <button class="btn-primary" id="btn-username" onclick="generateUsername()"><i class="fa-solid fa-user"></i> NaPaSi</button>
             </div>
             <div class="history-card" style="margin-top: 20px; border: 1px solid #3d3463;">
-                <div class="history-title"><span>RIWAYAT GENERATOR</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()">Hapus</span></div>
+                <div class="history-title"><span>RIWAYAT GENERATOR</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()" title="Hapus Riwayat & Reset Batas 24 Jam">Hapus</span></div>
+                <!-- ID historyList sekarang di-handle oleh Firebase -->
                 <div id="historyList"></div>
             </div>
         </div>
@@ -444,18 +445,16 @@
         }
 
         let DATA_DUMMY_DATABASE = [];
-        let DATA_KOTA_JAWA = {}; // Variabel penampung data wilayah Jawa
+        let DATA_KOTA_JAWA = {}; 
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
         let rawNotesLines = [];
 
         document.addEventListener("DOMContentLoaded", function() {
-            // Memuat data JSON Nama & No HP
             fetch(`./data_pengguna.json?t=${Date.now()}`)
                 .then(r => r.ok?r.json():[])
                 .then(d => { DATA_DUMMY_DATABASE = d; });
 
-            // Memuat data JSON Alamat Jawa Baru
             fetch(`./kota_pulau_jawa.json?t=${Date.now()}`)
                 .then(r => r.ok?r.json():{})
                 .then(d => { DATA_KOTA_JAWA = d; })
@@ -610,22 +609,16 @@
             }
         }
 
-        // === FUNGSI BANTUAN UNTUK MENDAPATKAN ALAMAT ACAK ===
         function dapatkanAlamatAcak() {
             if (Object.keys(DATA_KOTA_JAWA).length === 0) return "Alamat Tidak Tersedia (Memuat...)";
-            
             const listProvinsi = Object.keys(DATA_KOTA_JAWA);
             const prov = listProvinsi[Math.floor(Math.random() * listProvinsi.length)];
-            
             const listKabupaten = Object.keys(DATA_KOTA_JAWA[prov]);
             const kab = listKabupaten[Math.floor(Math.random() * listKabupaten.length)];
-            
             const listKecamatan = Object.keys(DATA_KOTA_JAWA[prov][kab]);
             const kec = listKecamatan[Math.floor(Math.random() * listKecamatan.length)];
-            
             const listKelurahan = Object.keys(DATA_KOTA_JAWA[prov][kab][kec]);
             const kel = listKelurahan[Math.floor(Math.random() * listKelurahan.length)];
-            
             const kodePos = DATA_KOTA_JAWA[prov][kab][kec][kel];
             
             let formatKab = kab;
@@ -635,18 +628,38 @@
             return `Kel. ${kel}, Kec. ${kec}, ${formatKab}, ${prov} ${kodePos}`;
         }
 
-        // === MODIFIKASI GENERATOR UNTUK MENGGABUNGKAN DATA ===
+        // === FUNGSI FILTER DATA TERSEDIA MENGGUNAKAN FIREBASE ===
+        function dapatkanDataTersedia() {
+            // Ambil data yang dikunci dari Firebase Global
+            let dataTerpakai = window.DATA_TERPAKAI_FIREBASE || {};
+            
+            // Saring database asli agar tidak menampilkan data yang masih dilock (24 jam)
+            let tersedia = DATA_DUMMY_DATABASE.filter(item => !dataTerpakai[item.no_hp]);
+            return tersedia;
+        }
+
         window.generateName = function() {
             if (DATA_DUMMY_DATABASE.length === 0) return;
             
-            const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
-            const alamatAcak = dapatkanAlamatAcak(); // Mengambil dari JSON Kota Pulau Jawa
+            let dataTersedia = dapatkanDataTersedia();
             
+            // Jika semua data di database sedang dikunci dalam 24 jam ini
+            if (dataTersedia.length === 0) {
+                alert("Semua data pengguna telah habis digunakan hari ini. Silakan tunggu 24 jam atau klik 'Hapus' pada Riwayat Generator.");
+                return;
+            }
+
+            const item = dataTersedia[Math.floor(Math.random() * dataTersedia.length)];
+            const alamatAcak = dapatkanAlamatAcak();
             const res = `${item.nama}, ${alamatAcak}, ${item.no_hp}`;
             
             document.getElementById('genNameOutput').value = res;
             window.eksekusiSalinTeks(res).then(() => window.showToast("Berhasil Disalin! ✨")); 
-            tambahKeRiwayat(res);
+            
+            // Kirim ke Firebase (Otomatis masuk ke Riwayat semua perangkat & mengunci No HP)
+            if(window.tambahKeRiwayatFirebase) {
+                window.tambahKeRiwayatFirebase(res, item.no_hp);
+            }
         };
         
         window.generateUsername = function() {
@@ -655,18 +668,22 @@
             let usernameDasar = namaAsli.replace(/\s+/g, '_').toLowerCase();
             if(usernameDasar === "") usernameDasar = "user";
             const res = usernameDasar + (Math.floor(Math.random() * 9999) + 10);
+            
             document.getElementById('genNameOutput').value = res;
             window.eksekusiSalinTeks(res).then(() => window.showToast("Username Disalin! ✨")); 
-            tambahKeRiwayat(res);
+            
+            // Masukkan ke Riwayat Firebase tanpa memberikan id No HP (tidak memicu blokir 24 jam untuk Username)
+            if(window.tambahKeRiwayatFirebase) {
+                window.tambahKeRiwayatFirebase(res, null);
+            }
         };
 
-        function tambahKeRiwayat(t) {
-            const list = document.getElementById('historyList'); const item = document.createElement('div');
-            item.className = 'history-item'; item.innerText = t; 
-            item.onclick = function() { document.getElementById('genNameOutput').value = t; window.eksekusiSalinTeks(t).then(() => window.showToast("Disalin! ✨")); };
-            list.insertBefore(item, list.firstChild);
+        function clearHistory() { 
+            // Menghapus data riwayat langsung dari Database Firebase
+            if(window.hapusRiwayatFirebase) {
+                window.hapusRiwayatFirebase();
+            }
         }
-        function clearHistory() { document.getElementById('historyList').innerHTML = ''; }
         
         window.showToast = function(m) { 
             const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); 
