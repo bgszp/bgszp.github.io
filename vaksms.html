@@ -115,7 +115,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem API Type 2 Vak-SMS (Pemetaan Tiers Server Aktif)...
+            └> Sistem API Type 2 Vak-SMS (Filter Anti-Null Aktif) siap digunakan...
         </div>
     </div>
     
@@ -225,7 +225,7 @@
             } catch(e) {}
         }
 
-        // FUNGSI INTI: MENYEDOT OPERATOR LIVE & MENYAMARKANNYA JADI "SERVER 1, 2, 3" BERDASARKAN HARGA
+        // FUNGSI INTI: MENYEDOT OPERATOR LIVE, FILTER NULL, & MENYAMARKANNYA JADI "SERVER 1, 2, 3"
         async function muatProdukLayanan(autoOpen = false) {
             let serviceId = document.getElementById("dropdownLayanan").value;
 
@@ -243,23 +243,25 @@
                 let opData = data[ID_NEGARA_INDONESIA][serviceId];
                 daftarServerTersedia = [];
                 
+                // FILTER ANTI-CRASH: Buang operator yang bernilai null (stok kosong total)
+                let validOpKeys = Object.keys(opData).filter(k => opData[k] !== null && typeof opData[k] === 'object' && opData[k].cost !== undefined);
+                
                 // Urutkan dari harga paling mahal ke paling murah
-                let opKeys = Object.keys(opData).sort((a, b) => opData[b].cost - opData[a].cost);
+                validOpKeys.sort((a, b) => opData[b].cost - opData[a].cost);
                 
                 let serverIndex = 1;
 
-                opKeys.forEach(opKey => {
+                validOpKeys.forEach(opKey => {
                     let stockCount = opData[opKey].count;
                     let priceUSD = opData[opKey].cost;
                     
                     if (stockCount > 0) {
                         let srvName = `Server ${serverIndex}`;
                         
-                        // KATEGORISASI NAMA AGAR TERLIHAT PROFESIONAL
-                        if (serverIndex === 1) srvName += ` (Premium)`;
-                        else if (serverIndex === 2) srvName += ` (Fast)`;
-                        else if (serverIndex === opKeys.length) srvName += ` (Promo)`;
-                        else srvName += ` (Standar)`;
+                        // KATEGORISASI NAMA AGAR TERLIHAT SEPERTI TIER
+                        if (opKey === "any") srvName += ` (Random/Promo)`;
+                        else if (serverIndex === 1) srvName += ` (Premium ${opKey.toUpperCase()})`;
+                        else srvName += ` (${opKey.toUpperCase()})`;
 
                         daftarServerTersedia.push({ 
                             id: opKey, // KODE RAHASIA OPERATOR YANG AKAN DIKIRIM KE VAK-SMS
