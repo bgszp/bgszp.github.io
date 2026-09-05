@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vak-SMS Panel (Live Server Auto-Map)</title>
+    <title>Vak-SMS Webhook Panel (Standard Operator)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -62,13 +62,13 @@
                     <input type="password" id="otpKeyVak" placeholder="Masukkan API Key" class="search-input" style="margin-bottom:0;">
                     <button onclick="simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
                 </div>
-                <small id="statusKeyVak" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Gunakan API Type 2 agar terhindar dari error noNumber.</small>
+                <small id="statusKeyVak" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Gunakan API Type 2.</small>
             </div>
         </div>
 
         <!-- AREA PEMESANAN -->
         <div class="dropdown-box-wrapper">
-            <label class="form-label">🛒 Setup Layanan & Kualitas Server</label>
+            <label class="form-label">🛒 Setup Layanan & Operator Indonesia</label>
             <div class="unified-order-box">
                 <select id="dropdownLayanan" class="unified-select-op" onchange="muatProdukLayanan(true)">
                     <option value="ka" selected>Shopee</option>
@@ -78,8 +78,8 @@
                 </select>
                 
                 <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
-                    <span id="labelServerTerpilih" style="color: #fff;">Pilih Server...</span>
-                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Server</span>
+                    <span id="labelServerTerpilih" style="color: #fff;">Pilih Operator...</span>
+                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Operator</span>
                 </div>
             </div>
             <div id="containerListDropdown" class="dropdown-list-options"></div>
@@ -115,7 +115,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem API Type 2 Vak-SMS (Filter Anti-Null Aktif) siap digunakan...
+            └> Sistem API Type 2 Vak-SMS (Standard Operator Mode) aktif...
         </div>
     </div>
     
@@ -131,6 +131,18 @@
         let produkTerpilihId = null; 
         let namaProdukTerpilih = ""; 
         let hargaProdukTerpilih = 0; 
+        
+        // DAFTAR OPERATOR STANDAR
+        const MASTER_OPERATOR = { 
+            "any": "Semua Operator (Random)", 
+            "telkomsel": "Telkomsel", 
+            "indosat": "Indosat", 
+            "xl": "XL Axiata",
+            "axis": "Axis",
+            "three": "Tri (3)", 
+            "smartfren": "Smartfren",
+            "byu": "By.U"
+        };
 
         function formatRupiah(angka) {
             return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
@@ -225,64 +237,45 @@
             } catch(e) {}
         }
 
-        // FUNGSI INTI: MENYEDOT OPERATOR LIVE, FILTER NULL, & MENYAMARKANNYA JADI "SERVER 1, 2, 3"
         async function muatProdukLayanan(autoOpen = false) {
-            let serviceId = document.getElementById("dropdownLayanan").value;
-
-            document.getElementById("labelServerTerpilih").innerHTML = `⏳ Menarik data live...`;
-            document.getElementById("btnPesanAksi").disabled = true;
-
             try {
+                let serviceId = document.getElementById("dropdownLayanan").value;
+                let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
+
+                document.getElementById("labelServerTerpilih").innerHTML = `⏳ Mengambil operator...`;
+                document.getElementById("btnPesanAksi").disabled = true;
+
                 const resText = await fetchVakAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });
                 let data = JSON.parse(resText);
                 
-                if (!data[ID_NEGARA_INDONESIA] || !data[ID_NEGARA_INDONESIA][serviceId]) {
-                    throw new Error("Layanan/Stok kosong");
+                let stockID = 0; let priceUSD = 0;
+                if (data[ID_NEGARA_INDONESIA] && data[ID_NEGARA_INDONESIA][serviceId]) {
+                    stockID = data[ID_NEGARA_INDONESIA][serviceId].count || 100;
+                    priceUSD = data[ID_NEGARA_INDONESIA][serviceId].cost || 0.01;
+                }
+                
+                daftarServerTersedia = [];
+                for (let opId in MASTER_OPERATOR) {
+                    daftarServerTersedia.push({ id: opId, nama: MASTER_OPERATOR[opId], stock: stockID, price: priceUSD });
                 }
 
-                let opData = data[ID_NEGARA_INDONESIA][serviceId];
-                daftarServerTersedia = [];
-                
-                // FILTER ANTI-CRASH: Buang operator yang bernilai null (stok kosong total)
-                let validOpKeys = Object.keys(opData).filter(k => opData[k] !== null && typeof opData[k] === 'object' && opData[k].cost !== undefined);
-                
-                // Urutkan dari harga paling mahal ke paling murah
-                validOpKeys.sort((a, b) => opData[b].cost - opData[a].cost);
-                
-                let serverIndex = 1;
-
-                validOpKeys.forEach(opKey => {
-                    let stockCount = opData[opKey].count;
-                    let priceUSD = opData[opKey].cost;
-                    
-                    if (stockCount > 0) {
-                        let srvName = `Server ${serverIndex}`;
-                        
-                        // KATEGORISASI NAMA AGAR TERLIHAT SEPERTI TIER
-                        if (opKey === "any") srvName += ` (Random/Promo)`;
-                        else if (serverIndex === 1) srvName += ` (Premium ${opKey.toUpperCase()})`;
-                        else srvName += ` (${opKey.toUpperCase()})`;
-
-                        daftarServerTersedia.push({ 
-                            id: opKey, // KODE RAHASIA OPERATOR YANG AKAN DIKIRIM KE VAK-SMS
-                            nama: srvName, 
-                            stock: stockCount, 
-                            price: priceUSD 
-                        });
-                        serverIndex++;
-                    }
-                });
-
-                if (daftarServerTersedia.length === 0) throw new Error("Stok habis di semua server.");
-
                 renderDropdownOptions();
-                pilihServerDropdown(0, false); 
+                const srv = daftarServerTersedia[0]; 
+                produkTerpilihId = srv.id; namaProdukTerpilih = `${elemNamaSrv} (${srv.nama})`; hargaProdukTerpilih = srv.price; 
                 
+                document.getElementById("labelServerTerpilih").innerHTML = `${srv.nama} <span style="font-size:11px;">(${formatRupiah(srv.price * KURS_USD)})</span>`;
+                document.getElementById("btnPesanAksi").disabled = false;
                 if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
-
+                
             } catch (e) {
-                document.getElementById("labelServerTerpilih").innerHTML = `<span style="color:var(--accent-red);">❌ ${e.message}</span>`;
-                document.getElementById("btnPesanAksi").disabled = true; 
+                // Fallback aman jika getPrices gagal total
+                daftarServerTersedia = [];
+                for (let opId in MASTER_OPERATOR) {
+                    daftarServerTersedia.push({ id: opId, nama: MASTER_OPERATOR[opId], stock: "~", price: 0.01 });
+                }
+                renderDropdownOptions();
+                pilihServerDropdown(0, false);
+                document.getElementById("btnPesanAksi").disabled = false;
             }
         }
 
@@ -293,8 +286,8 @@
             daftarServerTersedia.forEach((srv, index) => {
                 let sel = (produkTerpilihId === srv.id) ? "selected" : "";
                 html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index}, true)">
-                    <span>${srv.nama} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span>
-                    <span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.price * KURS_USD)}</span>
+                    <span>${srv.nama}</span>
+                    <span style="color:var(--accent-cyan); font-weight:bold;">${srv.price > 0 ? formatRupiah(srv.price * KURS_USD) : ''}</span>
                 </div>`;
             });
             container.innerHTML = html;
@@ -303,14 +296,8 @@
         function pilihServerDropdown(index, closeDropdown = true) {
             let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
             const srv = daftarServerTersedia[index];
-            
-            // SIMPAN KODE OPERATOR ASLI UNTUK DIORDER
-            produkTerpilihId = srv.id; 
-            hargaProdukTerpilih = srv.price; 
-            namaProdukTerpilih = `${elemNamaSrv} - ${srv.nama}`; 
-            
-            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_USD)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
-            
+            produkTerpilihId = srv.id; namaProdukTerpilih = `${elemNamaSrv} (${srv.nama})`; hargaProdukTerpilih = srv.price; 
+            document.getElementById("labelServerTerpilih").innerHTML = `${srv.nama} <span style="font-size:11px;">(${srv.price > 0 ? formatRupiah(srv.price * KURS_USD) : 'Tarif Live'})</span>`;
             if(closeDropdown) document.getElementById("containerListDropdown").classList.remove("active");
             document.getElementById("btnPesanAksi").disabled = false; 
             renderDropdownOptions();
@@ -322,11 +309,15 @@
             try {
                 let serviceId = document.getElementById("dropdownLayanan").value;
                 let paramOrder = { service: serviceId, country: ID_NEGARA_INDONESIA };
-                
-                // MENGIRIM KODE OPERATOR ASLI (TIDAK MENGIRIM HARGA)
                 if (produkTerpilihId !== "any") paramOrder.operator = produkTerpilihId;
 
                 let resText = await fetchVakAPI('getNumber', paramOrder);
+                
+                // Auto-retry untuk shopee jika 'ka' gagal
+                if ((resText.includes("BAD_SERVICE") || resText.includes("WRONG")) && serviceId === 'ka') {
+                    paramOrder.service = 'sh';
+                    resText = await fetchVakAPI('getNumber', paramOrder);
+                }
 
                 if (resText.includes("ACCESS_NUMBER")) {
                     let parts = resText.split(":");
