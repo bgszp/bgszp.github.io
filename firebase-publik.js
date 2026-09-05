@@ -129,3 +129,69 @@ window.simpanCatatanUtamaKeFirebase = function(teksUtama) {
         alert("Gagal menyimpan ke Cloud: " + err.message);
     });
 };
+
+
+// === 3. LOGIKA RIWAYAT GENERATOR & COOLDOWN 24 JAM (GLOBAL) ===
+window.DATA_TERPAKAI_FIREBASE = {};
+
+const refRiwayat = ref(db, 'riwayat_generator');
+onValue(refRiwayat, (snapshot) => {
+    const list = document.getElementById('historyList');
+    if (!list) return;
+    
+    // Kosongkan riwayat lokal setiap ada update dari Firebase
+    list.innerHTML = "";
+    window.DATA_TERPAKAI_FIREBASE = {};
+
+    const data = snapshot.val();
+    if (!data) return;
+
+    const sekarang = Date.now();
+    const WAKTU_COOLDOWN = 24 * 60 * 60 * 1000; // Batas 24 Jam
+    
+    // Membalik urutan agar yang terbaru muncul di atas
+    const keys = Object.keys(data).reverse();
+
+    keys.forEach(key => {
+        const item = data[key];
+        
+        // Filter: Hanya tampilkan dan kunci data yang usianya di bawah 24 jam
+        if (sekarang - item.waktu < WAKTU_COOLDOWN) {
+            
+            // Kunci No HP ini agar masuk daftar hitam sementara
+            if(item.no_hp) {
+                window.DATA_TERPAKAI_FIREBASE[item.no_hp] = true;
+            }
+
+            // Render teks ke dalam kotak riwayat HTML
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerText = item.teks;
+            div.onclick = function() {
+                document.getElementById('genNameOutput').value = item.teks;
+                if(window.eksekusiSalinTeks) {
+                    window.eksekusiSalinTeks(item.teks).then(() => {
+                        if(window.showToast) window.showToast("Disalin dari Riwayat! ✨");
+                    });
+                }
+            };
+            list.appendChild(div);
+        }
+    });
+});
+
+// Fungsi melempar data baru ke Firebase
+window.tambahKeRiwayatFirebase = function(teks, no_hp) {
+    push(ref(db, 'riwayat_generator'), {
+        teks: teks,
+        no_hp: no_hp || null,
+        waktu: Date.now()
+    });
+};
+
+// Fungsi menghapus semua riwayat sekaligus mereset blokir 24 jam di semua perangkat
+window.hapusRiwayatFirebase = function() {
+    remove(ref(db, 'riwayat_generator')).then(() => {
+        if(window.showToast) window.showToast("Riwayat & Batas 24 Jam Global Direset! 🔄");
+    });
+};
