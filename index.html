@@ -108,7 +108,7 @@
     <!-- === 1. MENU SERVERS === -->
     <div class="wrapper-menu-server" style="position: relative; margin-bottom: 18px;">
         
-        <!-- TAMPILAN IP & PING JARINGAN (Bisa Di-klik Untuk Ganti Target Ping) -->
+        <!-- TAMPILAN IP & PING JARINGAN -->
         <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Shopee / Ipify)" style="position: absolute; right: 0; top: -20px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
             <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
         </div>
@@ -390,11 +390,9 @@
         }
         setInterval(cekAlarmCopas, 5000);
 
-        // === FITUR DETEKSI IP & PING REALTIME (DUA PILIHAN: SHOPEE / IPIFY) ===
         let currentIP = "Memuat IP...";
-        let modePingTarget = "shopee"; // Mode bawaan (lebih responsif/kencang)
+        let modePingTarget = "shopee"; 
 
-        // Fungsi ganti mode saat pengguna klik tulisan IP di pojok kanan atas
         window.gantiTargetPing = function() {
             modePingTarget = (modePingTarget === "shopee") ? "ipify" : "shopee";
             updateIPAddress(); 
@@ -406,7 +404,6 @@
             if (!ipText) return;
             
             try {
-                // 1. Ambil IP dari ipify (hanya jika IP belum dimuat atau status terputus, agar hemat kuota)
                 if (currentIP === "Memuat IP..." || currentIP === "Terputus") {
                     const resIP = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
                     const dataIP = await resIP.json();
@@ -416,23 +413,18 @@
                 let ping = 0;
                 let labelTarget = "";
 
-                // 2. Jalankan Ping sesuai dengan Mode yang Dipilih
                 if (modePingTarget === "ipify") {
-                    // Ping ke server luar negeri (Ipify)
                     const startWaktu = performance.now();
                     await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
                     ping = Math.round(performance.now() - startWaktu);
                     labelTarget = "Ipify";
                 } else {
-                    // Ping ke server Shopee dengan mengunduh icon kecil secara sembunyi (no-cors)
-                    // Ditambah 't=Date.now()' agar selalu akurat dan tidak terambil dari cache memory HP
                     const startWaktu = performance.now();
                     await fetch('https://shopee.co.id/favicon.ico?t=' + Date.now(), { mode: 'no-cors' });
                     ping = Math.round(performance.now() - startWaktu);
                     labelTarget = "Sho";
                 }
 
-                // 3. Render Warna & Teks 
                 let warnaPing = "#00ffcc"; 
                 if (ping > 150) warnaPing = "#f0ad4e"; 
                 if (ping > 300) warnaPing = "#ff4a4a"; 
@@ -452,17 +444,27 @@
         }
 
         let DATA_DUMMY_DATABASE = [];
+        let DATA_KOTA_JAWA = {}; // Variabel penampung data wilayah Jawa
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
         let rawNotesLines = [];
 
         document.addEventListener("DOMContentLoaded", function() {
-            fetch(`./data_pengguna.json?t=${Date.now()}`).then(r => r.ok?r.json():[]).then(d => { DATA_DUMMY_DATABASE = d; });
+            // Memuat data JSON Nama & No HP
+            fetch(`./data_pengguna.json?t=${Date.now()}`)
+                .then(r => r.ok?r.json():[])
+                .then(d => { DATA_DUMMY_DATABASE = d; });
+
+            // Memuat data JSON Alamat Jawa Baru
+            fetch(`./kota_pulau_jawa.json?t=${Date.now()}`)
+                .then(r => r.ok?r.json():{})
+                .then(d => { DATA_KOTA_JAWA = d; })
+                .catch(err => console.log("Gagal memuat kota_pulau_jawa.json"));
+
             muatDataCopas();
             updateIPAddress(); 
         });
 
-        // Cek update ping setiap 10 detik
         window.addEventListener('online', updateIPAddress);
         window.addEventListener('offline', () => {
             const ipText = document.getElementById('teks-ip-jaringan');
@@ -608,12 +610,43 @@
             }
         }
 
+        // === FUNGSI BANTUAN UNTUK MENDAPATKAN ALAMAT ACAK ===
+        function dapatkanAlamatAcak() {
+            if (Object.keys(DATA_KOTA_JAWA).length === 0) return "Alamat Tidak Tersedia (Memuat...)";
+            
+            const listProvinsi = Object.keys(DATA_KOTA_JAWA);
+            const prov = listProvinsi[Math.floor(Math.random() * listProvinsi.length)];
+            
+            const listKabupaten = Object.keys(DATA_KOTA_JAWA[prov]);
+            const kab = listKabupaten[Math.floor(Math.random() * listKabupaten.length)];
+            
+            const listKecamatan = Object.keys(DATA_KOTA_JAWA[prov][kab]);
+            const kec = listKecamatan[Math.floor(Math.random() * listKecamatan.length)];
+            
+            const listKelurahan = Object.keys(DATA_KOTA_JAWA[prov][kab][kec]);
+            const kel = listKelurahan[Math.floor(Math.random() * listKelurahan.length)];
+            
+            const kodePos = DATA_KOTA_JAWA[prov][kab][kec][kel];
+            
+            let formatKab = kab;
+            if(kab.includes(", Kota")) formatKab = "Kota " + kab.replace(", Kota", "");
+            if(kab.includes(", Kabupaten")) formatKab = "Kab. " + kab.replace(", Kabupaten", "");
+            
+            return `Kel. ${kel}, Kec. ${kec}, ${formatKab}, ${prov} ${kodePos}`;
+        }
+
+        // === MODIFIKASI GENERATOR UNTUK MENGGABUNGKAN DATA ===
         window.generateName = function() {
             if (DATA_DUMMY_DATABASE.length === 0) return;
+            
             const item = DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)];
-            const res = `${item.nama}, ${item.alamat}, ${item.no_hp}`;
+            const alamatAcak = dapatkanAlamatAcak(); // Mengambil dari JSON Kota Pulau Jawa
+            
+            const res = `${item.nama}, ${alamatAcak}, ${item.no_hp}`;
+            
             document.getElementById('genNameOutput').value = res;
-            window.eksekusiSalinTeks(res).then(() => window.showToast("Berhasil Disalin! ✨")); tambahKeRiwayat(res);
+            window.eksekusiSalinTeks(res).then(() => window.showToast("Berhasil Disalin! ✨")); 
+            tambahKeRiwayat(res);
         };
         
         window.generateUsername = function() {
@@ -623,7 +656,8 @@
             if(usernameDasar === "") usernameDasar = "user";
             const res = usernameDasar + (Math.floor(Math.random() * 9999) + 10);
             document.getElementById('genNameOutput').value = res;
-            window.eksekusiSalinTeks(res).then(() => window.showToast("Username Disalin! ✨")); tambahKeRiwayat(res);
+            window.eksekusiSalinTeks(res).then(() => window.showToast("Username Disalin! ✨")); 
+            tambahKeRiwayat(res);
         };
 
         function tambahKeRiwayat(t) {
