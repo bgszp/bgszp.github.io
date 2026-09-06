@@ -3,508 +3,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vak-SMS Webhook Panel</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <title>Vak-SMS Dashboard Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
-        * { box-sizing: border-box; transition: all 0.2s ease; }
-        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
-        .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
-        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
-        .search-input:focus { border-color: var(--accent-cyan); }
-        .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
-        .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
-        .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
-        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
-        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
-        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .btn-resend { background: #4a3c8c; color: #fff; }
-        .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
-        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; }
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
-        .unified-order-box { display: flex; flex-direction: column; gap: 6px; background: #0b0c16; border: 1px solid #4a3c8c; border-radius: 10px; padding: 8px; }
-        .unified-select-op { border: none; background: #121324; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 10px; border-radius: 6px; outline: none; cursor: pointer; width: 100%; }
-        .dropdown-selected-bar { background: #121324; border: none; border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
-        .dropdown-list-options { display: none; margin-top: 8px; background: #121324; border: 1px solid #3d3463; border-radius: 10px; max-height: 250px; overflow-y: auto; }
-        .dropdown-list-options.active { display: block; }
-        .dropdown-item-row { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1b35; cursor: pointer; font-size: 13px; }
-        .dropdown-item-row.selected { background: #25204d; border-left: 3px solid var(--accent-purple); }
-        .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; }
-        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; display: block; }
+        body { background-color: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { background-color: #16213e; border: none; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.3); margin-bottom: 20px; }
+        .card-header { background-color: #0f3460; border-bottom: none; border-radius: 12px 12px 0 0 !important; font-weight: bold; }
+        .form-control, .form-select { background-color: #1a1a2e; border: 1px solid #0f3460; color: #fff; }
+        .form-control:focus { background-color: #1a1a2e; color: #fff; border-color: #e94560; box-shadow: none; }
+        .form-control:read-only { background-color: #11111d; }
+        .text-accent { color: #e94560; }
+        .table { color: #e0e0e0; font-size: 0.9rem; }
+        .table th { border-bottom: 2px solid #0f3460; color: #e94560; }
+        .table td { border-bottom: 1px solid #0f3460; vertical-align: middle; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- HEADER SALDO -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Webhook (ID)</h3>
-            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
-                👛 <span id="txtSaldoLive">Rp 0</span>
-                <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
-            </div>
-        </div>
 
-        <!-- SETTING TOKEN -->
-        <div style="margin-bottom: 12px;">
-            <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()">
-                <span>🔑 Konfigurasi API Key (Vak-SMS)</span>
-                <span id="panahApiKey" style="font-size: 10px;">▼</span>
-            </div>
-            <div id="wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
-                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Vak-SMS (API Type 2) Key:</label>
-                <div style="display: flex; gap: 6px;">
-                    <input type="password" id="otpKeyVak" placeholder="Masukkan API Key Vak-SMS" class="search-input" style="margin-bottom:0;">
-                    <button onclick="simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
+<div class="container py-4">
+    <h2 class="text-center mb-4 fw-bold">Vak-SMS <span class="text-accent">Panel</span></h2>
+
+    <div class="row">
+        <!-- Kolom Kiri: Konfigurasi & Pesan -->
+        <div class="col-md-5">
+            <div class="card p-3">
+                <div class="mb-3">
+                    <label class="form-label text-accent fw-bold">API Key</label>
+                    <div class="input-group">
+                        <input type="password" id="apiKey" class="form-control" placeholder="Masukkan API Key Vak-SMS">
+                        <button class="btn btn-outline-danger" onclick="hapusApiKey()">Hapus</button>
+                    </div>
+                    <small class="text-muted">Disimpan otomatis di browser Anda.</small>
                 </div>
-                <small id="statusKeyVak" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
-            </div>
-        </div>
 
-        <!-- AREA PEMESANAN -->
-        <div class="dropdown-box-wrapper">
-            <label class="form-label">🛒 Setup Layanan Utama (Indonesia)</label>
-            <div class="unified-order-box">
-                <select id="dropdownLayanan" class="unified-select-op" onchange="muatProdukLayanan(true)">
-                    <option value="ka" selected>Shopee</option>
-                    <option value="wa">WhatsApp</option>
-                    <option value="tg">Telegram</option>
-                    <option value="ig">Instagram</option>
-                </select>
+                <div class="d-flex justify-content-between align-items-center p-3 rounded" style="background: #0f3460;">
+                    <h5 class="m-0">Saldo: <span id="balanceInfo" class="text-success fw-bold">$0.00</span></h5>
+                    <button class="btn btn-sm btn-light" onclick="cekSaldo()">Refresh</button>
+                </div>
+            </div>
+
+            <div class="card p-3">
+                <h5 class="text-accent fw-bold mb-3">Pesan Nomor Baru (V2)</h5>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label">Service (cth: vk)</label>
+                        <input type="text" id="serviceCode" class="form-control" placeholder="vk" value="vk">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Country ID (cth: 2)</label>
+                        <input type="number" id="countryCode" class="form-control" placeholder="2" value="2">
+                    </div>
+                </div>
+                <button class="btn btn-primary w-100 fw-bold" onclick="pesanNomor()" id="btnPesan" style="background-color: #e94560; border:none;">Order Nomor</button>
                 
-                <div class="dropdown-selected-bar" onclick="toggleDropdownList()">
-                    <span id="labelServerTerpilih" style="color: #fff;">Pilih Operator...</span>
-                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Operator</span>
+                <hr class="border-secondary my-4">
+
+                <div class="mb-2">
+                    <label class="form-label">ID Aktivasi Terakhir</label>
+                    <input type="text" id="activationId" class="form-control text-center text-muted" readonly placeholder="-">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label text-accent fw-bold">Nomor HP</label>
+                    <input type="text" id="phoneNumber" class="form-control text-center fs-5 fw-bold text-success" readonly placeholder="-">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-warning fw-bold">SMS / OTP</label>
+                    <textarea id="smsBox" class="form-control text-center fs-6 fw-bold" rows="2" readonly placeholder="Belum ada SMS"></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success flex-fill fw-bold" onclick="cekSMS()">Cek SMS</button>
+                    <button class="btn btn-danger flex-fill fw-bold" onclick="ubahStatus(8)">Batal</button>
+                    <button class="btn btn-info flex-fill fw-bold text-white" onclick="ubahStatus(6)">Selesai</button>
                 </div>
             </div>
-            <div id="containerListDropdown" class="dropdown-list-options"></div>
-            <button class="btn-pesan-sekarang" id="btnPesanAksi" onclick="eksekusiBeliTerpilih()" disabled>
-                <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
-            </button>
         </div>
 
-        <!-- NOMOR AKTIF -->
-        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
-            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span>📱 Nomor & OTP Aktif:</span>
-                <button onclick="bersihkanAktif()" style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer;">🧹 Bersihkan</button>
+        <!-- Kolom Kanan: Data Riwayat & Aktif -->
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Nomor Aktif Saat Ini</span>
+                    <button class="btn btn-sm btn-outline-light" onclick="getActive()">Muat Data</button>
+                </div>
+                <div class="card-body p-0" style="overflow-x: auto;">
+                    <table class="table table-borderless table-hover mb-0 text-center">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Layanan</th>
+                                <th>Nomor</th>
+                                <th>Sisa Waktu</th>
+                                <th>Kode SMS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activeTable">
+                            <tr><td colspan="5" class="text-muted">Klik muat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div id="containerListOrder">
-                <div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
-            </div>
-        </div>
 
-        <!-- RIWAYAT SUKSES -->
-        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
-            <div class="pemicu-dropdown" onclick="toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
-                <span>📜 Riwayat Sukses (<span id="countRiwayatBadge">0</span>)</span>
-                <span id="panahRiwayat" style="font-size: 10px;">▼</span>
-            </div>
-            <div id="wadahRiwayatDropdown" style="display: none; background: #0b0c16; padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
-                <div style="text-align: right; margin-bottom: 10px;">
-                    <span onclick="hapusSemuaRiwayatBawah()" style="cursor: pointer; font-size: 10px; color: var(--accent-red); font-weight: bold;">🗑️ Hapus Riwayat</span>
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Riwayat Aktivasi (Terakhir)</span>
+                    <button class="btn btn-sm btn-outline-light" onclick="getHistory()">Muat Data</button>
                 </div>
-                <div id="containerRiwayat">
-                    <div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>
+                <div class="card-body p-0" style="overflow-x: auto; max-height: 300px; overflow-y: auto;">
+                    <table class="table table-borderless table-hover mb-0 text-center">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tanggal</th>
+                                <th>Nomor</th>
+                                <th>SMS</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTable">
+                            <tr><td colspan="5" class="text-muted">Klik muat data...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </div>
-        <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Webhook Vak-SMS Type 2 aktif...
         </div>
     </div>
-    
-    <div class="toast" id="toastNotif">Berhasil! ✨</div>
+</div>
 
-    <script>
-        const VAK_API_URL = "https://vak-sms.com/stubs/handler_api.php"; 
-        const KURS_USD = 17757; 
-        const ID_NEGARA_INDONESIA = "6"; 
+<script>
+    const baseUrl = "https://vak-sms.com/stubs/handler_api.php";
+
+    // Auto load API Key
+    window.onload = () => {
+        const savedKey = localStorage.getItem('vakApiKey');
+        if (savedKey) {
+            document.getElementById('apiKey').value = savedKey;
+            cekSaldo();
+        }
+    };
+
+    function saveApiKey() {
+        const key = document.getElementById('apiKey').value.trim();
+        if (key) localStorage.setItem('vakApiKey', key);
+        return key;
+    }
+
+    function hapusApiKey() {
+        localStorage.removeItem('vakApiKey');
+        document.getElementById('apiKey').value = '';
+        alert('API Key dihapus dari browser.');
+    }
+
+    async function fetchApi(params) {
+        const key = saveApiKey();
+        if (!key) { alert("API Key kosong!"); throw new Error("No API Key"); }
+        try {
+            const res = await fetch(`${baseUrl}?api_key=${key}&${params}`);
+            return res;
+        } catch (e) {
+            alert("Koneksi gagal. Periksa ekstensi CORS jika di localhost.");
+            throw e;
+        }
+    }
+
+    async function cekSaldo() {
+        document.getElementById('balanceInfo').innerText = "...";
+        const res = await fetchApi('action=getBalance');
+        const text = await res.text();
+        if(text.includes("ACCESS_BALANCE")) document.getElementById('balanceInfo').innerText = "$" + text.split(":")[1];
+        else document.getElementById('balanceInfo').innerText = "Error";
+    }
+
+    async function pesanNomor() {
+        const service = document.getElementById('serviceCode').value;
+        const country = document.getElementById('countryCode').value;
+        if(!service || !country) return alert("Isi Layanan dan ID Negara!");
         
-        let daftarOrderan = []; 
-        let daftarServerTersedia = []; 
-        let produkTerpilihId = null; 
-        let namaProdukTerpilih = ""; 
-        let hargaProdukTerpilih = 0; 
+        document.getElementById('btnPesan').innerText = "Memproses...";
+        const res = await fetchApi(`action=getNumberV2&service=${service}&country=${country}`);
+        const data = await res.json();
         
-        const MASTER_OPERATOR = { 
-            "any": "Semua Operator (Random)", 
-            "telkomsel": "Telkomsel", 
-            "indosat": "Indosat", 
-            "axis": "XL / Axis",
-            "three": "Tri (3)", 
-            "smartfren": "Smartfren" 
-        };
-
-        function formatRupiah(angka) {
-            return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
+        if(data.activationId) {
+            document.getElementById('activationId').value = data.activationId;
+            document.getElementById('phoneNumber').value = data.phoneNumber;
+            document.getElementById('smsBox').value = "Menunggu SMS...";
+            getActive(); 
+            cekSaldo();
+        } else {
+            alert("Gagal order: Pastikan saldo/stok ada.");
         }
+        document.getElementById('btnPesan').innerText = "Order Nomor";
+    }
 
-        function logConsole(msg) {
-            const logBox = document.getElementById("miniConsoleLog");
-            logBox.innerHTML += `<br>└> <span style="color: #ffb86c">${new Date().toLocaleTimeString()}</span>: ${msg}`;
-            logBox.scrollTop = logBox.scrollHeight;
+    async function cekSMS() {
+        const id = document.getElementById('activationId').value;
+        if(!id) return alert("Tidak ada ID aktif di form!");
+        
+        const res = await fetchApi(`action=getStatusV2&id=${id}`);
+        const data = await res.json();
+        if(data.sms && data.sms.code) {
+            document.getElementById('smsBox').value = `${data.sms.code} \n(${data.sms.text})`;
+        } else {
+            document.getElementById('smsBox').value = "Menunggu SMS masuk...";
         }
+    }
 
-        async function fetchVakAPI(action, params = {}) {
-            const token = localStorage.getItem("otp_key_vak");
-            if (!token) throw new Error("API Key belum disetting.");
+    async function ubahStatus(statusCode) {
+        const id = document.getElementById('activationId').value;
+        if(!id) return alert("Pilih pesanan aktif!");
+        
+        const res = await fetchApi(`action=setStatus&id=${id}&status=${statusCode}`);
+        const text = await res.text();
+        
+        if(text.includes("ACCESS_CANCEL")) {
+            alert("Dibatalkan.");
+            document.getElementById('activationId').value = "";
+            document.getElementById('phoneNumber').value = "";
+            document.getElementById('smsBox').value = "";
+            getActive(); cekSaldo();
+        } else if (text.includes("ACCESS_READY")) {
+            alert("Diatur ke siap/selesai.");
+        } else alert("Respon: " + text);
+    }
 
-            let url = `${VAK_API_URL}?api_key=${token}&action=${action}`;
-            for (let k in params) {
-                if (params[k] !== undefined) url += `&${k}=${params[k]}`;
-            }
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-            try {
-                const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-                clearTimeout(timeoutId);
-                
-                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-                let textResponse = await res.text();
-
-                if(textResponse === "BAD_KEY") throw new Error("API Key Salah!");
-                if(textResponse === "NO_BALANCE") throw new Error("Saldo Kosong!");
-                if(textResponse.includes("NO_NUMBERS")) throw new Error("Stok nomor kosong!");
-                if(textResponse.includes("BANNED")) throw new Error("Akun Diblokir!");
-                if(textResponse.includes("BAD_SERVICE") || textResponse.includes("WRONG") || textResponse.includes("UNPROCESSABLE_ENTITY")) throw new Error("Layanan tidak valid.");
-                
-                return textResponse; 
-            } catch (e) { 
-                clearTimeout(timeoutId);
-                if (e.name === 'AbortError') throw new Error("Timeout: Server lambat");
-                if (e.message.includes("Failed to fetch")) throw new Error("Koneksi Ditolak");
-                throw e; 
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", function() {
-            const savedKey = localStorage.getItem("otp_key_vak");
-            if(savedKey) {
-                document.getElementById("otpKeyVak").value = savedKey;
-                document.getElementById("statusKeyVak").innerText = "✅ Token Aktif."; 
-                document.getElementById("statusKeyVak").style.color = "#50fa7b";
-                refreshSemuaDataLive();
-            } else {
-                logConsole("Silakan masukkan API Key terlebih dahulu.");
-                toggleApiKeyDropdown();
-            }
-
-            const orderanLokal = localStorage.getItem("daftar_orderan_vak");
-            if (orderanLokal) { daftarOrderan = JSON.parse(orderanLokal); renderUILayout(); }
-
-            setInterval(mesinWaktuTerpusat, 1000);
-            setInterval(mesinCekSmsTerpusat, 4000); 
-        });
-
-        function toggleRiwayatDropdown() { const w = document.getElementById("wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
-        function toggleApiKeyDropdown() { const w = document.getElementById("wadahApiKeyDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
-        function toggleDropdownList() { document.getElementById("containerListDropdown").classList.toggle("active"); }
-
-        function bersihkanAktif() {
-            let pindah = false;
-            daftarOrderan.forEach(item => { if (item.status === "received") { item.status = "history_received"; pindah = true; } });
-            if (pindah) { renderUILayout(); simpanDaftarOrderanKeLokal(); }
-            refreshSemuaDataLive(); showToast("Dibersihkan!");
-        }
-
-        async function inisialisasiLayanan() { await muatProdukLayanan(false); }
-
-        function refreshSemuaDataLive() { 
-            document.getElementById("txtSaldoLive").innerText = "⏳...";
-            document.getElementById("labelServerTerpilih").innerHTML = `⏳ Menghubungkan...`;
-            document.getElementById("btnPesanAksi").disabled = true;
-            daftarServerTersedia = [];
-            renderDropdownOptions();
-            ambilSaldoLive(); 
-            inisialisasiLayanan();
-        }
-
-        async function ambilSaldoLive() {
-            try {
-                const res = await fetchVakAPI('getBalance');
-                if (res.includes("ACCESS_BALANCE")) {
-                    let saldoApi = parseFloat(res.split(":")[1] || 0);
-                    document.getElementById("txtSaldoLive").innerText = formatRupiah(saldoApi * KURS_USD);
-                }
-            } catch(e) {}
-        }
-
-        async function muatProdukLayanan(autoOpen = false) {
-            try {
-                let serviceId = document.getElementById("dropdownLayanan").value;
-                let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
-
-                document.getElementById("labelServerTerpilih").innerHTML = `⏳ Mengambil data...`;
-                document.getElementById("btnPesanAksi").disabled = true;
-
-                const resText = await fetchVakAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });
-                let data = JSON.parse(resText);
-                
-                let stockID = 0; let priceUSD = 0;
-                if (data[ID_NEGARA_INDONESIA] && data[ID_NEGARA_INDONESIA][serviceId]) {
-                    stockID = data[ID_NEGARA_INDONESIA][serviceId].count;
-                    priceUSD = data[ID_NEGARA_INDONESIA][serviceId].cost;
-                } else { throw new Error("Stok kosong."); }
-                
-                daftarServerTersedia = [];
-                for (let opId in MASTER_OPERATOR) {
-                    daftarServerTersedia.push({ id: opId, nama: MASTER_OPERATOR[opId], stock: stockID, price: priceUSD });
-                }
-
-                renderDropdownOptions();
-                const srv = daftarServerTersedia[0]; 
-                produkTerpilihId = srv.id; namaProdukTerpilih = `${elemNamaSrv} (${srv.nama})`; hargaProdukTerpilih = srv.price; 
-                
-                document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_USD)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
-                document.getElementById("btnPesanAksi").disabled = false;
-                if(autoOpen) document.getElementById("containerListDropdown").classList.add("active");
-                
-            } catch (e) {
-                document.getElementById("labelServerTerpilih").innerHTML = `<span style="color:var(--accent-red);">❌ Gagal Memuat</span>`;
-                document.getElementById("btnPesanAksi").disabled = true; 
-            }
-        }
-
-        function renderDropdownOptions() {
-            const container = document.getElementById("containerListDropdown");
-            if(daftarServerTersedia.length === 0) { return; }
-            let html = "";
-            daftarServerTersedia.forEach((srv, index) => {
-                let sel = (produkTerpilihId === srv.id) ? "selected" : "";
-                html += `<div class="dropdown-item-row ${sel}" onclick="pilihServerDropdown(${index})"><span>${srv.nama} <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span><span style="color:var(--accent-cyan); font-weight:bold;">${formatRupiah(srv.price * KURS_USD)}</span></div>`;
+    async function getActive() {
+        document.getElementById('activeTable').innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        const res = await fetchApi('action=getActiveActivations');
+        const data = await res.json();
+        
+        if(data.status === "success" && data.data.length > 0) {
+            let rows = "";
+            data.data.forEach(item => {
+                let smsShow = item.smsCode ? `<span class="text-success fw-bold">${item.smsCode}</span>` : 'Menunggu...';
+                rows += `<tr>
+                    <td><small class="text-muted">${item.activationId}</small></td>
+                    <td><span class="badge bg-secondary">${item.serviceCode}</span></td>
+                    <td class="text-info">${item.phoneNumber}</td>
+                    <td>${item.activationTime.split(" ")[1]}</td>
+                    <td>${smsShow}</td>
+                </tr>`;
             });
-            container.innerHTML = html;
+            document.getElementById('activeTable').innerHTML = rows;
+        } else {
+            document.getElementById('activeTable').innerHTML = '<tr><td colspan="5" class="text-muted">Tidak ada nomor aktif.</td></tr>';
         }
+    }
 
-        function pilihServerDropdown(index) {
-            let elemNamaSrv = document.getElementById("dropdownLayanan").options[document.getElementById("dropdownLayanan").selectedIndex].text;
-            const srv = daftarServerTersedia[index];
-            produkTerpilihId = srv.id; namaProdukTerpilih = `${elemNamaSrv} (${srv.nama})`; hargaProdukTerpilih = srv.price; 
-            document.getElementById("labelServerTerpilih").innerHTML = `${formatRupiah(srv.price * KURS_USD)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
-            document.getElementById("containerListDropdown").classList.remove("active");
-            document.getElementById("btnPesanAksi").disabled = false; renderDropdownOptions();
-        }
-
-        async function eksekusiBeliTerpilih() {
-            const btn = document.getElementById("btnPesanAksi"); const teksAsli = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
-            try {
-                let serviceId = document.getElementById("dropdownLayanan").value;
-                let paramOrder = { service: serviceId, country: ID_NEGARA_INDONESIA };
-                if (produkTerpilihId !== "any") paramOrder.operator = produkTerpilihId;
-
-                const resText = await fetchVakAPI('getNumber', paramOrder);
-                if (resText.includes("ACCESS_NUMBER")) {
-                    let parts = resText.split(":");
-                    daftarOrderan.unshift({ 
-                        order_id: parts[1], phone: parts[2], layanan: namaProdukTerpilih, 
-                        harga: hargaProdukTerpilih, waktu_dibuat: Date.now(), status: "pending", 
-                        otp: "", is_cancelling: false 
-                    });
-                    renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive();
-                } else { throw new Error(resText); }
-            } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
-        }
-
-        function simpanKonfigurasi() {
-            const key = document.getElementById("otpKeyVak").value.trim();
-            if(!key) return alert("Masukkan Token!");
-            localStorage.setItem("otp_key_vak", key);
-            document.getElementById("statusKeyVak").innerText = "✅ Token Disimpan!";
-            refreshSemuaDataLive(); toggleApiKeyDropdown();
-        }
-
-        async function eksekusiBatalkanServer(index) {
-            const item = daftarOrderan[index];
-            item.is_cancelling = true; renderUILayout();
-            
-            try { 
-                await fetchVakAPI('setStatus', { status: 8, id: item.order_id });
-                item.status = "cancelled"; 
-                item.is_cancelling = false;
-                renderUILayout(); 
-                simpanDaftarOrderanKeLokal(); 
-                ambilSaldoLive(); 
-                showToast("Dibatalkan!"); 
-            } catch (e) { 
-                item.is_cancelling = false;
-                logConsole("Gagal membatalkan ke server. Akan dicoba lagi.");
-                renderUILayout();
-            }
-        }
+    async function getHistory() {
+        document.getElementById('historyTable').innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        // Ambil 10 data terakhir
+        const res = await fetchApi('action=getHistory&size=10'); 
+        const text = await res.text();
         
-        async function eksekusiResend(index) {
-            const item = daftarOrderan[index];
-            try { await fetchVakAPI('setStatus', { status: 3, id: item.order_id }); showToast("Kirim Ulang diminta."); } catch (e) {}
-        }
-
-        async function eksekusiSelesai(index) {
-            const item = daftarOrderan[index];
-            try { 
-                await fetchVakAPI('setStatus', { status: 6, id: item.order_id });
-                item.status = "completed"; renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Selesai!"); 
-            } catch(err) {}
-        }
-
-        async function mesinCekSmsTerpusat() {
-            let pendingExist = daftarOrderan.some(i => i.status === "pending");
-            if (!pendingExist) return; 
-
-            let activeOrderIndex = -1;
-            for (let j = 0; j < daftarOrderan.length; j++) {
-                if (daftarOrderan[j].status === "pending" && !daftarOrderan[j].is_cancelling) {
-                    activeOrderIndex = j; break;
-                }
-            }
-
-            if (activeOrderIndex === -1) return;
-            let i = daftarOrderan[activeOrderIndex];
-                
-            try {
-                // Mengecek langsung status OTP ke server Vak-SMS 
-                const resText = await fetchVakAPI('getStatus', { id: i.order_id });
-                
-                if (resText.includes("STATUS_OK")) { 
-                    let otpCode = resText.split(":")[1];
-                    if (i.status === "pending" || i.otp !== otpCode) {
-                        i.status = "received"; i.otp = otpCode; 
-                        putarSuaraNotifKeras(); munculkanPopupNative(i.phone, i.otp, i.layanan); 
-                        renderUILayout(); simpanDaftarOrderanKeLokal();
-                    }
-                } else if (resText.includes("STATUS_CANCEL")) {
-                    i.status = "cancelled";
-                    renderUILayout(); simpanDaftarOrderanKeLokal();
-                }
-            } catch (e) {}
-        }
-
-        function renderUILayout() {
-            const containerAktif = document.getElementById("containerListOrder");
-            const containerRiwayat = document.getElementById("containerRiwayat");
-            let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
-
-            let activeOrderIndex = -1;
-            for (let j = 0; j < daftarOrderan.length; j++) {
-                if (daftarOrderan[j].status === "pending" || daftarOrderan[j].status === "received") {
-                    activeOrderIndex = j; break;
-                }
-            }
-
-            daftarOrderan.forEach((item, index) => {
-                if (item.status === "cancelled") return; 
-
-                let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                let isBlocked = (item.status === "pending" && index !== activeOrderIndex);
-                let maxWait = isBlocked ? 120 : 300; 
-                
-                if (item.status === "pending" && sec >= maxWait && !item.is_cancelling) { 
-                    eksekusiBatalkanServer(index);
-                }
-
-                let d = new Date(item.waktu_dibuat);
-                let timeStr = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + " " + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-
-                if (item.status === "completed" || item.status === "history_received") {
-                    let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
-                    htmlRiwayat += `
-                    <div class="history-card">
-                        <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;">
-                            <span>${item.layanan}</span><span>⏱️ ${timeStr}</span>
-                        </div>
-                        <div class="box-copy-statik">
-                            <div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:14px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div>
-                            <button onclick="salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button>
-                        </div>
-                        <div class="box-copy-statik otp-masuk" style="margin-top:6px;">
-                            <div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div></div>
-                            <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button>
-                        </div>
-                        ${btnKirimUlang}
-                    </div>`;
-                    countRiwayat++; return;
-                }
-
-                countAktif++; 
-                let sisa = Math.max(0, maxWait - sec); 
-                let cool = Math.max(0, 120 - sec); 
-                if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) cool = 0; 
-
-                let textStat = `⚡ Menunggu Webhook OTP... (${sec}s)`; 
-                let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
-
-                if (item.is_cancelling) {
-                    textStat = `🔄 Sedang Membatalkan Pesanan...`; colStat = "#ff5555";
-                    btnAksi = `<button class="btn-batal" disabled style="background:#444;">Proses Batal...</button>`;
-                } else if (isBlocked) {
-                    textStat = `⏸️ Diblokir (Antrian) - Auto-Batal dlm ${sisa}s`; colStat = "#ff5555";
-                }
-
-                let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
-
-                if (item.status === "received") { 
-                    textStat = `🎉 OTP Diterima!`; colStat = "#50fa7b"; 
-                    kotakOtp = `<div class="box-copy-statik otp-masuk">
-                        <div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b;">${item.otp}</div></div>
-                        <button onclick="salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button>
-                    </div>`;
-                    btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai (Simpan)</button></div>`;
-                } else if (item.status === "pending" && !item.is_cancelling) {
-                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu Cancel (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
-                }
-                
-                htmlAktif += `
-                <div class="card-order">
-                    <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;">
-                        <span>${item.layanan}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span>
-                    </div>
-                    <div class="box-copy-statik">
-                        <div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div>
-                        <button onclick="salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> Salin</button>
-                    </div>
-                    ${kotakOtp}
-                    <div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>
-                    ${btnAksi}
-                </div>`;
-            });
-
-            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>`;
-            containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
-            document.getElementById("countRiwayatBadge").innerText = countRiwayat;
-        }
-
-        function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_vak", JSON.stringify(daftarOrderan)); }
-        function hapusSemuaRiwayatBawah() { daftarOrderan = daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); renderUILayout(); simpanDaftarOrderanKeLokal(); }
-        function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
-        function showToast(m) { const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
-        function salinTeksToast(txt) { navigator.clipboard.writeText(txt); showToast("Disalin!"); }
-
-        function putarSuaraNotifKeras() {
-            try { 
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (!AudioContext) return;
-                const audioCtx = new AudioContext(); let time = audioCtx.currentTime; 
-                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
-                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-                    osc.type = idx % 2 === 0 ? "sine" : "sawtooth"; let startTime = time + (idx * 0.09);
-                    osc.frequency.setValueAtTime(freq, startTime); gain.gain.setValueAtTime(0.4, startTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
-                    osc.connect(gain).connect(audioCtx.destination); osc.start(startTime); osc.stop(startTime + 0.4);
+        try {
+            const data = JSON.parse(text);
+            if(data.length > 0) {
+                let rows = "";
+                data.forEach(item => {
+                    let statusBadge = item.status == "6" ? '<span class="badge bg-success">Sukses</span>' : 
+                                      item.status == "8" ? '<span class="badge bg-danger">Batal</span>' : 
+                                      `<span class="badge bg-secondary">${item.status}</span>`;
+                    
+                    rows += `<tr>
+                        <td><small class="text-muted">${item.id}</small></td>
+                        <td><small>${item.date.split(" ")[0]}</small></td>
+                        <td>${item.phone}</td>
+                        <td>${item.sms || '-'}</td>
+                        <td>${statusBadge}</td>
+                    </tr>`;
                 });
-            } catch (e) {}
+                document.getElementById('historyTable').innerHTML = rows;
+            } else {
+                document.getElementById('historyTable').innerHTML = '<tr><td colspan="5" class="text-muted">Belum ada riwayat.</td></tr>';
+            }
+        } catch (e) {
+            document.getElementById('historyTable').innerHTML = `<tr><td colspan="5" class="text-danger">Error memuat data.</td></tr>`;
         }
-        function munculkanPopupNative(nomor, otp, layanan) {
-            if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
-            } 
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
