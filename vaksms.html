@@ -3,283 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vak-SMS Dashboard Pro</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Kerangka UI Panel</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { background-color: #16213e; border: none; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.3); margin-bottom: 20px; }
-        .card-header { background-color: #0f3460; border-bottom: none; border-radius: 12px 12px 0 0 !important; font-weight: bold; }
-        .form-control, .form-select { background-color: #1a1a2e; border: 1px solid #0f3460; color: #fff; }
-        .form-control:focus { background-color: #1a1a2e; color: #fff; border-color: #e94560; box-shadow: none; }
-        .form-control:read-only { background-color: #11111d; }
-        .text-accent { color: #e94560; }
-        .table { color: #e0e0e0; font-size: 0.9rem; }
-        .table th { border-bottom: 2px solid #0f3460; color: #e94560; }
-        .table td { border-bottom: 1px solid #0f3460; vertical-align: middle; }
+        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
+        .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
+        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
+        .search-input:focus { border-color: var(--accent-cyan); }
+        .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
+        .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
+        .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
+        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
+        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
+        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-resend { background: #4a3c8c; color: #fff; }
+        .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
+        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
+        .unified-order-box { display: flex; flex-direction: column; gap: 6px; background: #0b0c16; border: 1px solid #4a3c8c; border-radius: 10px; padding: 8px; }
+        .unified-select-op { border: none; background: #121324; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 10px; border-radius: 6px; outline: none; cursor: pointer; width: 100%; }
+        .dropdown-selected-bar { background: #121324; border: none; border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
+        .dropdown-list-options { display: none; margin-top: 8px; background: #121324; border: 1px solid #3d3463; border-radius: 10px; max-height: 250px; overflow-y: auto; }
+        .dropdown-list-options.active { display: block; }
+        .dropdown-item-row { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1b35; cursor: pointer; font-size: 13px; }
+        .dropdown-item-row.selected { background: #25204d; border-left: 3px solid var(--accent-purple); }
+        .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; display: block; }
     </style>
 </head>
 <body>
-
-<div class="container py-4">
-    <h2 class="text-center mb-4 fw-bold">Vak-SMS <span class="text-accent">Panel</span></h2>
-
-    <div class="row">
-        <!-- Kolom Kiri: Konfigurasi & Pesan -->
-        <div class="col-md-5">
-            <div class="card p-3">
-                <div class="mb-3">
-                    <label class="form-label text-accent fw-bold">API Key</label>
-                    <div class="input-group">
-                        <input type="password" id="apiKey" class="form-control" placeholder="Masukkan API Key Vak-SMS">
-                        <button class="btn btn-outline-danger" onclick="hapusApiKey()">Hapus</button>
-                    </div>
-                    <small class="text-muted">Disimpan otomatis di browser Anda.</small>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center p-3 rounded" style="background: #0f3460;">
-                    <h5 class="m-0">Saldo: <span id="balanceInfo" class="text-success fw-bold">$0.00</span></h5>
-                    <button class="btn btn-sm btn-light" onclick="cekSaldo()">Refresh</button>
-                </div>
-            </div>
-
-            <div class="card p-3">
-                <h5 class="text-accent fw-bold mb-3">Pesan Nomor Baru (V2)</h5>
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <label class="form-label">Service (cth: vk)</label>
-                        <input type="text" id="serviceCode" class="form-control" placeholder="vk" value="vk">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">Country ID (cth: 2)</label>
-                        <input type="number" id="countryCode" class="form-control" placeholder="2" value="2">
-                    </div>
-                </div>
-                <button class="btn btn-primary w-100 fw-bold" onclick="pesanNomor()" id="btnPesan" style="background-color: #e94560; border:none;">Order Nomor</button>
-                
-                <hr class="border-secondary my-4">
-
-                <div class="mb-2">
-                    <label class="form-label">ID Aktivasi Terakhir</label>
-                    <input type="text" id="activationId" class="form-control text-center text-muted" readonly placeholder="-">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label text-accent fw-bold">Nomor HP</label>
-                    <input type="text" id="phoneNumber" class="form-control text-center fs-5 fw-bold text-success" readonly placeholder="-">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label text-warning fw-bold">SMS / OTP</label>
-                    <textarea id="smsBox" class="form-control text-center fs-6 fw-bold" rows="2" readonly placeholder="Belum ada SMS"></textarea>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <button class="btn btn-success flex-fill fw-bold" onclick="cekSMS()">Cek SMS</button>
-                    <button class="btn btn-danger flex-fill fw-bold" onclick="ubahStatus(8)">Batal</button>
-                    <button class="btn btn-info flex-fill fw-bold text-white" onclick="ubahStatus(6)">Selesai</button>
-                </div>
+    <div class="container">
+        <!-- HEADER SALDO -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel UI Template</h3>
+            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
+                👛 <span>Rp 0</span>
+                <span style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
             </div>
         </div>
 
-        <!-- Kolom Kanan: Data Riwayat & Aktif -->
-        <div class="col-md-7">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Nomor Aktif Saat Ini</span>
-                    <button class="btn btn-sm btn-outline-light" onclick="getActive()">Muat Data</button>
-                </div>
-                <div class="card-body p-0" style="overflow-x: auto;">
-                    <table class="table table-borderless table-hover mb-0 text-center">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Layanan</th>
-                                <th>Nomor</th>
-                                <th>Sisa Waktu</th>
-                                <th>Kode SMS</th>
-                            </tr>
-                        </thead>
-                        <tbody id="activeTable">
-                            <tr><td colspan="5" class="text-muted">Klik muat data...</td></tr>
-                        </tbody>
-                    </table>
+        <!-- SETTING PANEL (DROPDOWN) -->
+        <div style="margin-bottom: 12px;">
+            <div class="pemicu-dropdown">
+                <span>🔑 Label Pengaturan API</span>
+                <span style="font-size: 10px;">▼</span>
+            </div>
+        </div>
+
+        <!-- AREA FORM SELEKSI (KHUSUS SHOPEE & WHATSAPP) -->
+        <div class="dropdown-box-wrapper">
+            <label class="form-label">🛒 Setup Layanan Utama (Indonesia)</label>
+            <div class="unified-order-box">
+                <select class="unified-select-op">
+                    <option value="ka" selected>Shopee</option>
+                    <option value="wa">WhatsApp</option>
+                </select>
+                
+                <div class="dropdown-selected-bar">
+                    <span style="color: #fff;">Pilih Operator...</span>
+                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah</span>
                 </div>
             </div>
+            <!-- Tombol normal, tidak stuck di "Memproses" -->
+            <button class="btn-pesan-sekarang">
+                <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
+            </button>
+        </div>
 
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Riwayat Aktivasi (Terakhir)</span>
-                    <button class="btn btn-sm btn-outline-light" onclick="getHistory()">Muat Data</button>
+        <!-- DAFTAR KARTU AKTIF -->
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📱 Daftar Kartu Aktif:</span>
+                <button style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer;">🧹 Bersihkan</button>
+            </div>
+            
+            <!-- Contoh Desain Kartu -->
+            <div class="card-order">
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;">
+                    <span>Shopee (Telkomsel)</span><span>⏱️ 4m 30s</span>
                 </div>
-                <div class="card-body p-0" style="overflow-x: auto; max-height: 300px; overflow-y: auto;">
-                    <table class="table table-borderless table-hover mb-0 text-center">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Tanggal</th>
-                                <th>Nomor</th>
-                                <th>SMS</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTable">
-                            <tr><td colspan="5" class="text-muted">Klik muat data...</td></tr>
-                        </tbody>
-                    </table>
+                <div class="box-copy-statik">
+                    <div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">081234567890</div></div>
+                    <button class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button>
+                </div>
+                <div style="display:flex; gap: 8px; margin-top: 10px;">
+                    <button class="btn-batal" style="background:var(--accent-red);">❌ Batalkan Pesanan</button>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<script>
-    const baseUrl = "https://vak-sms.com/stubs/handler_api.php";
-
-    // Auto load API Key
-    window.onload = () => {
-        const savedKey = localStorage.getItem('vakApiKey');
-        if (savedKey) {
-            document.getElementById('apiKey').value = savedKey;
-            cekSaldo();
-        }
-    };
-
-    function saveApiKey() {
-        const key = document.getElementById('apiKey').value.trim();
-        if (key) localStorage.setItem('vakApiKey', key);
-        return key;
-    }
-
-    function hapusApiKey() {
-        localStorage.removeItem('vakApiKey');
-        document.getElementById('apiKey').value = '';
-        alert('API Key dihapus dari browser.');
-    }
-
-    async function fetchApi(params) {
-        const key = saveApiKey();
-        if (!key) { alert("API Key kosong!"); throw new Error("No API Key"); }
-        try {
-            const res = await fetch(`${baseUrl}?api_key=${key}&${params}`);
-            return res;
-        } catch (e) {
-            alert("Koneksi gagal. Periksa ekstensi CORS jika di localhost.");
-            throw e;
-        }
-    }
-
-    async function cekSaldo() {
-        document.getElementById('balanceInfo').innerText = "...";
-        const res = await fetchApi('action=getBalance');
-        const text = await res.text();
-        if(text.includes("ACCESS_BALANCE")) document.getElementById('balanceInfo').innerText = "$" + text.split(":")[1];
-        else document.getElementById('balanceInfo').innerText = "Error";
-    }
-
-    async function pesanNomor() {
-        const service = document.getElementById('serviceCode').value;
-        const country = document.getElementById('countryCode').value;
-        if(!service || !country) return alert("Isi Layanan dan ID Negara!");
-        
-        document.getElementById('btnPesan').innerText = "Memproses...";
-        const res = await fetchApi(`action=getNumberV2&service=${service}&country=${country}`);
-        const data = await res.json();
-        
-        if(data.activationId) {
-            document.getElementById('activationId').value = data.activationId;
-            document.getElementById('phoneNumber').value = data.phoneNumber;
-            document.getElementById('smsBox').value = "Menunggu SMS...";
-            getActive(); 
-            cekSaldo();
-        } else {
-            alert("Gagal order: Pastikan saldo/stok ada.");
-        }
-        document.getElementById('btnPesan').innerText = "Order Nomor";
-    }
-
-    async function cekSMS() {
-        const id = document.getElementById('activationId').value;
-        if(!id) return alert("Tidak ada ID aktif di form!");
-        
-        const res = await fetchApi(`action=getStatusV2&id=${id}`);
-        const data = await res.json();
-        if(data.sms && data.sms.code) {
-            document.getElementById('smsBox').value = `${data.sms.code} \n(${data.sms.text})`;
-        } else {
-            document.getElementById('smsBox').value = "Menunggu SMS masuk...";
-        }
-    }
-
-    async function ubahStatus(statusCode) {
-        const id = document.getElementById('activationId').value;
-        if(!id) return alert("Pilih pesanan aktif!");
-        
-        const res = await fetchApi(`action=setStatus&id=${id}&status=${statusCode}`);
-        const text = await res.text();
-        
-        if(text.includes("ACCESS_CANCEL")) {
-            alert("Dibatalkan.");
-            document.getElementById('activationId').value = "";
-            document.getElementById('phoneNumber').value = "";
-            document.getElementById('smsBox').value = "";
-            getActive(); cekSaldo();
-        } else if (text.includes("ACCESS_READY")) {
-            alert("Diatur ke siap/selesai.");
-        } else alert("Respon: " + text);
-    }
-
-    async function getActive() {
-        document.getElementById('activeTable').innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
-        const res = await fetchApi('action=getActiveActivations');
-        const data = await res.json();
-        
-        if(data.status === "success" && data.data.length > 0) {
-            let rows = "";
-            data.data.forEach(item => {
-                let smsShow = item.smsCode ? `<span class="text-success fw-bold">${item.smsCode}</span>` : 'Menunggu...';
-                rows += `<tr>
-                    <td><small class="text-muted">${item.activationId}</small></td>
-                    <td><span class="badge bg-secondary">${item.serviceCode}</span></td>
-                    <td class="text-info">${item.phoneNumber}</td>
-                    <td>${item.activationTime.split(" ")[1]}</td>
-                    <td>${smsShow}</td>
-                </tr>`;
-            });
-            document.getElementById('activeTable').innerHTML = rows;
-        } else {
-            document.getElementById('activeTable').innerHTML = '<tr><td colspan="5" class="text-muted">Tidak ada nomor aktif.</td></tr>';
-        }
-    }
-
-    async function getHistory() {
-        document.getElementById('historyTable').innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
-        // Ambil 10 data terakhir
-        const res = await fetchApi('action=getHistory&size=10'); 
-        const text = await res.text();
-        
-        try {
-            const data = JSON.parse(text);
-            if(data.length > 0) {
-                let rows = "";
-                data.forEach(item => {
-                    let statusBadge = item.status == "6" ? '<span class="badge bg-success">Sukses</span>' : 
-                                      item.status == "8" ? '<span class="badge bg-danger">Batal</span>' : 
-                                      `<span class="badge bg-secondary">${item.status}</span>`;
-                    
-                    rows += `<tr>
-                        <td><small class="text-muted">${item.id}</small></td>
-                        <td><small>${item.date.split(" ")[0]}</small></td>
-                        <td>${item.phone}</td>
-                        <td>${item.sms || '-'}</td>
-                        <td>${statusBadge}</td>
-                    </tr>`;
-                });
-                document.getElementById('historyTable').innerHTML = rows;
-            } else {
-                document.getElementById('historyTable').innerHTML = '<tr><td colspan="5" class="text-muted">Belum ada riwayat.</td></tr>';
-            }
-        } catch (e) {
-            document.getElementById('historyTable').innerHTML = `<tr><td colspan="5" class="text-danger">Error memuat data.</td></tr>`;
-        }
-    }
-</script>
 </body>
 </html>
