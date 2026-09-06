@@ -6,37 +6,28 @@
     <title>Vak-SMS ID - API Kustom</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --bg-main: #0f111a; --bg-card: #16192b; --bg-item: #1c2038; --border-color: #2b304c; --accent-cyan: #00e5ff; --accent-red: #ff4757; --accent-green: #2ed573; --accent-orange: #ffa502; --text-main: #f1f2f6; --text-sub: #a4b0be; }
+        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --accent-orange: #ff9800; --text-main: #f8f8f2; --text-sub: #8b8da9; }
         * { box-sizing: border-box; transition: all 0.2s ease; }
         body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
         
-        .pemicu-dropdown { background: var(--bg-item); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
-        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid var(--border-color); color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
+        .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
+        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
         .search-input:focus { border-color: var(--accent-cyan); }
         
-        /* CARD SMSBOWER STYLE */
-        .card-active { background: #1a1d36; border: 1px solid #363b5e; border-radius: 12px; margin-top: 12px; overflow: hidden; }
-        .card-header { background: #222642; padding: 10px 12px; border-bottom: 1px solid #363b5e; display: flex; justify-content: space-between; align-items: center; }
-        .timer-badge { font-size: 12px; font-weight: bold; color: var(--accent-orange); display: flex; align-items: center; gap: 5px; }
-        
-        .action-group { display: flex; gap: 6px; }
-        .btn-mini { border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; color: #fff; display: flex; align-items: center; gap: 4px; }
+        /* TOMBOL KECIL (SMSBOWER STYLE) */
+        .btn-mini { border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; color: #fff; display: flex; align-items: center; gap: 5px; }
         .btn-mini.selesai { background: #1d3f31; color: var(--accent-green); border: 1px solid #2e6f4e; }
-        .btn-mini.batal { background: #3d1c22; color: var(--accent-red); border: 1px solid #6b2e37; }
-        .btn-mini.ban { background: #3f2a15; color: var(--accent-orange); border: 1px solid #735026; }
+        .btn-mini.batal { background: var(--accent-red); color: white; border: 1px solid #ff2a2a; }
+        .btn-mini.ban { background: var(--accent-orange); color: #000; border: 1px solid #cc7a00; }
+        .btn-mini.salin { background: #25274d; color: var(--accent-cyan); border: 1px solid #3d3f7a; padding: 5px 10px; }
         
-        .card-body { padding: 15px 12px; }
-        .number-display { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-copy { background: #2b304c; color: var(--text-main); border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
+        .unified-order-box { display: flex; flex-direction: column; gap: 6px; background: #0b0c16; border: 1px solid #4a3c8c; border-radius: 10px; padding: 8px; }
+        .unified-select-op { border: none; background: #121324; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 10px; border-radius: 6px; outline: none; cursor: pointer; width: 100%; }
+        .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         
-        .otp-box { background: #0b0c16; border: 1px dashed #363b5e; border-radius: 8px; padding: 12px; margin-top: 12px; font-size: 18px; font-weight: bold; color: var(--accent-cyan); text-align: center; min-height: 45px; display: flex; align-items: center; justify-content: center; letter-spacing: 2px; }
-        
-        .unified-order-box { display: flex; flex-direction: column; gap: 6px; background: #0b0c16; border: 1px solid #2b304c; border-radius: 10px; padding: 10px; margin-top: 10px;}
-        .unified-select-op { border: none; background: #16192b; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 10px; border-radius: 6px; outline: none; cursor: pointer; width: 100%; }
-        .btn-pesan { background: linear-gradient(135deg, #1e90ff, #3742fa); color: #fff; border: none; width: 100%; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(30, 144, 255, 0.3); }
-        
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00e5ff; color: #000; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; transition: all 0.3s; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         
         .loading-dots:after { content: '.'; animation: dots 1.5s steps(5, end) infinite; }
@@ -47,7 +38,7 @@
     <div class="container">
         <!-- HEADER -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Vak-SMS Panel</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Vak-SMS ID Panel</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="balanceInfo">$0.00</span>
                 <i class="fa-solid fa-rotate ms-1" style="cursor: pointer; color:var(--text-sub);" onclick="cekSaldo()"></i>
@@ -57,11 +48,10 @@
         <!-- API CONFIG -->
         <div style="margin-bottom: 12px;">
             <div class="pemicu-dropdown" onclick="toggleElemen('wadahApiKey')">
-                <span>🔑 Konfigurasi API</span>
+                <span>🔑 Konfigurasi API Vak-SMS</span>
                 <span style="font-size: 10px;">▼</span>
             </div>
-            <div id="wadahApiKey" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid var(--border-color); border-top: none; margin-top: -2px;">
-                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">API Key Baru:</label>
+            <div id="wadahApiKey" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
                 <div style="display: flex; gap: 6px;">
                     <input type="password" id="apiKey" placeholder="Masukkan Key API..." class="search-input" style="margin-bottom:0;">
                     <button style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;" onclick="saveApiKey()">Simpan</button>
@@ -70,13 +60,13 @@
             </div>
         </div>
 
-        <!-- ORDER SECTION -->
-        <div style="background: var(--bg-item); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px; margin-top: 12px;">
-            <div style="font-size: 12px; color: var(--text-sub); font-weight: 600;">🛒 Beli Nomor Virtual</div>
+        <!-- MAIN LAYOUT (Order) -->
+        <div class="dropdown-box-wrapper">
+            <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600;">🛒 Setup Layanan API</div>
             <div class="unified-order-box">
                 <select id="serviceCode" class="unified-select-op" onchange="renderDaftarHarga()" style="margin-bottom: 6px;">
-                    <option value="ka" selected>Layanan: Shopee (ID)</option>
-                    <option value="wa">Layanan: WhatsApp (ID)</option>
+                    <option value="ka" selected>Layanan: Shopee (Indonesia)</option>
+                    <option value="wa">Layanan: WhatsApp (Indonesia)</option>
                 </select>
 
                 <div style="display: flex; gap: 6px; margin-bottom: 6px;">
@@ -95,56 +85,60 @@
             </div>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                <span id="infoStokTxt" style="font-size: 11px; color: var(--text-sub);">Info Stok & Harga Trmurah</span>
-                <button class="btn-copy" onclick="cekStokTotal()" id="btnCekStok" style="background:#0b0c16; border: 1px solid var(--border-color);">
-                    <i class="fa-solid fa-box"></i> Cek Cepat
+                <span id="infoStokTxt" style="font-size: 11px; color: var(--text-sub);">Info: Cek status stok saat ini</span>
+                <button class="btn-mini salin" onclick="cekStokTotal()" id="btnCekStok" style="background:#181933; border: 1px solid #3d3463;">
+                    <i class="fa-solid fa-box"></i> Cek Stok Total
                 </button>
             </div>
 
-            <button class="btn-pesan" id="btnPesan" onclick="pesanNomor()">
-                <i class="fa-solid fa-cart-shopping"></i> ORDER SEKARANG
+            <button class="btn-pesan-sekarang" id="btnPesan" onclick="pesanNomor()">
+                <i class="fa-solid fa-cloud-arrow-down"></i> ORDER NOMOR
             </button>
         </div>
 
-        <!-- ACTIVE SMSBOWER STYLE SECTION -->
+        <!-- ACTIVE DATA SECTION (SMSBOWER STYLE) -->
         <div style="margin-top: 18px; display: none;" id="wadahAktif">
-            <div style="font-size: 13px; font-weight: bold; color: var(--text-main); margin-bottom: 8px;">📡 Status Aktivasi</div>
+            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📱 Nomor Aktif:</span>
+                <span id="activeIdDisp" style="font-size: 10px; color: var(--text-sub);">ID: -</span>
+                <input type="hidden" id="activationId">
+            </div>
             
-            <div class="card-active">
-                <!-- Header Card (Waktu & Tombol Aksi) -->
-                <div class="card-header">
-                    <div class="timer-badge">
+            <div style="background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px;">
+                
+                <!-- BARIS ATAS: Waktu & Tombol Aksi -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #3d3f7a; padding-bottom: 10px; margin-bottom: 10px;">
+                    <div style="color: var(--accent-orange); font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px;">
                         <i class="fa-regular fa-clock"></i> <span id="timerDisplay">20:00</span>
                     </div>
-                    <div class="action-group">
+                    <div style="display: flex; gap: 6px;">
                         <button class="btn-mini selesai" onclick="ubahStatus(6, false)" title="Selesai"><i class="fa-solid fa-check"></i></button>
-                        <button class="btn-mini batal" onclick="ubahStatus(8, false)" title="Batal"><i class="fa-solid fa-xmark"></i> Batal</button>
-                        <button class="btn-mini ban" onclick="ubahStatus(8, true)" title="Blokir"><i class="fa-solid fa-ban"></i> Ban</button>
+                        <button class="btn-mini batal" onclick="ubahStatus(8, false)"><i class="fa-solid fa-xmark"></i> Batal</button>
+                        <button class="btn-mini ban" onclick="ubahStatus(8, true)"><i class="fa-solid fa-ban"></i> Ban</button>
                     </div>
                 </div>
-                
-                <!-- Body Card (Nomor & OTP) -->
-                <div class="card-body">
-                    <div style="font-size:10px; color:var(--text-sub); margin-bottom:4px; display:flex; justify-content:space-between;">
-                        <span>Nomor Handphone</span>
-                        <span id="activeIdDisp">ID: -</span>
-                    </div>
-                    <div class="number-display">
-                        <span id="phoneNumber">-</span>
-                        <button class="btn-copy" onclick="salinTeks('phoneNumber')"><i class="fa-regular fa-copy"></i></button>
-                    </div>
-                    
-                    <div class="otp-box" id="smsBox">
-                        <span class="loading-dots" style="color:var(--text-sub); font-size: 13px;">Menunggu SMS</span>
+
+                <!-- BARIS TENGAH: Nomor HP -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div id="phoneNumber" style="font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 1px;">-</div>
+                    <button class="btn-mini salin" onclick="salinTeks('phoneNumber')"><i class="fa-regular fa-copy"></i> Salin</button>
+                </div>
+
+                <!-- BARIS BAWAH: Kotak OTP -->
+                <div style="background: #0b0c16; border: 1px solid #222448; border-radius: 8px; padding: 12px; text-align: center;">
+                    <div id="smsBox" style="font-size: 16px; font-weight: bold; color: var(--accent-green); word-break: break-all;">
+                        Menunggu pesanan...
                     </div>
                 </div>
+
             </div>
-            <input type="hidden" id="activationId">
         </div>
     </div>
     
+    <!-- TOAST ELEMENT -->
     <div class="toast" id="toastNotif">Aksi Berhasil! ✨</div>
 
+    <!-- LOGIC SCRIPTS -->
     <script>
         const baseUrl = "https://vak-sms.com/stubs/handler_api.php";
         
@@ -189,7 +183,7 @@
                 } else {
                     document.getElementById('smsBox').innerHTML = `<span class="loading-dots" style="color:var(--text-sub); font-size: 13px;">Melanjutkan sinkronisasi</span>`;
                     if(autoSmsInterval) clearInterval(autoSmsInterval);
-                    autoSmsInterval = setInterval(otomatisCekSMS, 1500); // Interval 1.5 detik
+                    autoSmsInterval = setInterval(otomatisCekSMS, 1500);
                 }
                 mulaiHitungMundurLokal(parseInt(savedEndTime));
             }
@@ -238,7 +232,6 @@
             dataHarga.forEach(h => { dropdown.innerHTML += `<option value="${h.val}">${h.text}</option>`; });
         }
 
-        // Sequential Fallback Method (Antrean Berurutan Cegah Double Order)
         async function fetchApi(params) {
             const key = getApiKey();
             if (!key) throw new Error("API Key kosong!");
@@ -284,7 +277,7 @@
                     document.getElementById('infoStokTxt').innerHTML = `<span style="color:var(--accent-green);">Total: ${data["6"][service].count} | Trmurah: $${data["6"][service].cost}</span>`;
                 } else document.getElementById('infoStokTxt').innerHTML = `<span style="color:var(--accent-red);">Stok Kosong!</span>`;
             } catch (e) { document.getElementById('infoStokTxt').innerHTML = "Gagal memuat status."; }
-            btn.innerHTML = "<i class='fa-solid fa-box'></i> Cek Cepat"; btn.disabled = false;
+            btn.innerHTML = "<i class='fa-solid fa-box'></i> Cek Stok Total"; btn.disabled = false;
         }
 
         async function pesanNomor() {
@@ -310,9 +303,9 @@
                     document.getElementById('activationId').value = parts[1];
                     document.getElementById('activeIdDisp').innerText = "ID: " + parts[1];
                     document.getElementById('phoneNumber').innerText = parts[2];
-                    document.getElementById('smsBox').innerHTML = `<span class="loading-dots" style="color:var(--text-sub); font-size: 13px;">Otomatis sinkron Webhook</span>`;
+                    document.getElementById('smsBox').innerHTML = `<span class="loading-dots" style="color:var(--accent-green); font-size: 13px;">Otomatis sinkron Webhook</span>`;
                     
-                    let endTime = Date.now() + (20 * 60 * 1000); // Simulasi 20 Menit
+                    let endTime = Date.now() + (20 * 60 * 1000); // 20 Menit
                     localStorage.setItem('vakActiveId', parts[1]);
                     localStorage.setItem('vakActiveNumber', parts[2]);
                     localStorage.setItem('vakEndTime', endTime.toString());
@@ -323,16 +316,15 @@
                     cekSaldo();
                     
                     if(autoSmsInterval) clearInterval(autoSmsInterval);
-                    autoSmsInterval = setInterval(otomatisCekSMS, 1500); // Kecepatan Polling 1.5 Detik
+                    autoSmsInterval = setInterval(otomatisCekSMS, 1500);
 
                 } else if(text.trim() === "NO_NUMBERS") alert(`Stok kosong untuk filter tersebut.`);
                 else if(text.trim() === "NO_BALANCE") alert("Saldo tidak mencukupi.");
                 else alert("Pesan dari Server: " + text);
             } catch (e) { alert("Kesalahan jaringan: " + e.message); } 
-            finally { btn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> ORDER SEKARANG'; btn.disabled = false; }
+            finally { btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> ORDER NOMOR'; btn.disabled = false; }
         }
 
-        // Hitung Mundur JS
         function mulaiHitungMundurLokal(endTime) {
             if(countdownTimer) clearInterval(countdownTimer);
             countdownTimer = setInterval(() => {
