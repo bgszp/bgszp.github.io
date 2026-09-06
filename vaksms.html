@@ -155,15 +155,16 @@
         const urlOffers = `${baseUrl}/activations/offers?services=${service}&countries=${country}`;
 
         try {
-            // Sesuai dokumentasi, endpoint ini memakai request Header
-            let res = await fetch(urlOffers, {
+            // Bypass menggunakan corsproxy untuk memastikan GitHub Pages bisa kirim Header
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(urlOffers)}`;
+            let res = await fetch(proxyUrl, {
                 method: 'GET',
                 headers: {
                     'Authorization': key
                 }
             });
 
-            if (!res.ok) throw new Error("Gagal mengambil data stok");
+            if (!res.ok) throw new Error("Gagal");
             
             let data = await res.json();
             
@@ -171,12 +172,14 @@
                 let info = data.data[service][country];
                 let total = info.counts.total;
                 let price = info.prices.default;
-                document.getElementById('infoStok').innerHTML = `Stok: <b class="text-success">${total}</b> | Harga: <b class="text-warning">$${price}</b>`;
+                
+                // KUTIPAN YANG DIPERBAIKI (Di sinilah error sebelumnya terjadi)
+                document.getElementById('infoStok').innerHTML = `Stok: <b class='text-success'>${total}</b> | Harga: <b class='text-warning'>$${price}</b>`;
             } else {
-                document.getElementById('infoStok').innerHTML = "<b class="text-danger">Stok Habis / Tidak Ditemukan</b>";
+                document.getElementById('infoStok').innerHTML = "<b class='text-danger'>Stok Habis / Tidak Ditemukan</b>";
             }
         } catch (e) {
-            document.getElementById('infoStok').innerHTML = "Error Cek Stok (Mungkin diblokir CORS)";
+            document.getElementById('infoStok').innerHTML = "<b class='text-danger'>Error mengecek stok</b>";
         } finally {
             btn.innerText = "Cek Stok";
             btn.disabled = false;
