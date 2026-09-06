@@ -44,10 +44,28 @@
                     </select>
                 </div>
                 
-                <div class="mb-3">
-                    <label class="form-label">Negara</label>
-                    <input type="text" class="form-control fw-bold" value="Indonesia" disabled>
-                    <input type="hidden" id="countryCode" value="6">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label">Negara</label>
+                        <input type="text" class="form-control fw-bold" value="Indonesia" disabled>
+                        <input type="hidden" id="countryCode" value="6">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Operator</label>
+                        <select id="operatorCode" class="form-select fw-bold">
+                            <option value="">Acak (Any)</option>
+                            <option value="axis">Axis</option>
+                            <option value="bolt">Bolt</option>
+                            <option value="im3Ooredoo">IM3 Ooredoo</option>
+                            <option value="indosat">Indosat</option>
+                            <option value="psn">PSN</option>
+                            <option value="smartfren">Smartfren</option>
+                            <option value="telkom">Telkom</option>
+                            <option value="telkomsel">Telkomsel</option>
+                            <option value="three">Three</option>
+                            <option value="xlAxiata">XL Axiata</option>
+                        </select>
+                    </div>
                 </div>
 
                 <button class="btn btn-primary w-100 fw-bold mb-4" onclick="pesanNomor()" id="btnPesan" style="background-color: #e94560; border:none;">Order Nomor</button>
@@ -144,16 +162,18 @@
         if (!getApiKey()) return alert("Masukkan API Key!");
         const service = document.getElementById('serviceCode').value;
         const country = document.getElementById('countryCode').value;
+        const operator = document.getElementById('operatorCode').value;
         
         const btn = document.getElementById('btnPesan');
         btn.innerText = "Memproses...";
         btn.disabled = true;
 
+        let optParam = operator ? `&operator=${operator}` : "";
+
         try {
-            const res = await fetchApi(`action=getNumber&service=${service}&country=${country}`);
+            const res = await fetchApi(`action=getNumber&service=${service}&country=${country}${optParam}`);
             const text = await res.text();
             
-            // Kembalikan tombol ke kondisi semula sebelum alert muncul
             btn.innerText = "Order Nomor";
             btn.disabled = false;
 
@@ -164,7 +184,7 @@
                 document.getElementById('smsBox').value = "Menunggu SMS...";
                 cekSaldo();
             } else if(text.trim() === "NO_NUMBERS") {
-                alert("Stok nomor sedang kosong dari pusat Vak-SMS. Coba beberapa saat lagi.");
+                alert(`Stok nomor ${operator ? 'untuk operator ' + operator : ''} sedang kosong. Coba operator lain.`);
             } else if(text.trim() === "NO_BALANCE") {
                 alert("Saldo Vak-SMS Anda tidak mencukupi.");
             } else {
