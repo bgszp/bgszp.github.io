@@ -12,7 +12,6 @@
         .form-control:focus, .form-select:focus { background-color: #1a1a2e; color: #fff; border-color: #e94560; box-shadow: none; }
         .form-control:disabled, .form-control[readonly] { background-color: #11111d; color: #6c757d; }
         .text-accent { color: #e94560; }
-        .stok-box { background: #11111d; border: 1px solid #0f3460; }
     </style>
 </head>
 <body>
@@ -54,10 +53,16 @@
                     </div>
                 </div>
 
-                <!-- Info Harga & Stok -->
-                <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded stok-box">
-                    <span id="infoStok" class="text-info fs-6">Klik cek harga & stok...</span>
-                    <button class="btn btn-sm btn-outline-info fw-bold" onclick="cekStok()" id="btnCekStok">Cek Stok</button>
+                <!-- Pilihan Stok & Harga -->
+                <div class="mb-3">
+                    <label class="form-label text-info fw-bold">Daftar Stok & Harga</label>
+                    <div class="input-group">
+                        <select id="priceTier" class="form-select fw-bold text-warning">
+                            <option value="">(Klik Cek Stok Dahulu)</option>
+                        </select>
+                        <button class="btn btn-outline-info fw-bold" onclick="cekStok()" id="btnCekStok">Cek Stok</button>
+                    </div>
+                    <small class="text-muted">Pilih harga spesifik sebelum order.</small>
                 </div>
 
                 <button class="btn btn-primary w-100 fw-bold mb-4" onclick="pesanNomor()" id="btnPesan" style="background-color: #e94560; border:none;">Order Nomor</button>
@@ -113,10 +118,10 @@
     }
 
     function resetStok() {
-        document.getElementById('infoStok').innerHTML = "Klik cek harga & stok...";
+        document.getElementById('priceTier').innerHTML = '<option value="">(Klik Cek Stok Dahulu)</option>';
     }
 
-    // Proxy khusus URL biasa tanpa harus melempar header khusus
+    // Proxy umum untuk query parameters (getBalance, getNumber, dll)
     async function fetchApi(params) {
         const key = getApiKey();
         if (!key) throw new Error("API Key kosong!");
@@ -141,34 +146,50 @@
         throw new Error("Gagal terhubung ke jaringan.");
     }
 
-    // Fungsi Cek Stok diubah menggunakan endpoint "getPrices"
+    // Fungsi khusus untuk membaca struktur MAP pada /activations/offers
     async function cekStok() {
-        if (!getApiKey()) return alert("Masukkan API Key terlebih dahulu!");
+        const key = getApiKey();
+        if (!key) return alert("Masukkan API Key terlebih dahulu!");
         
         const service = document.getElementById('serviceCode').value;
         const country = document.getElementById('countryCode').value;
         const btn = document.getElementById('btnCekStok');
+        const priceDropdown = document.getElementById('priceTier');
         
         btn.innerText = "Loading...";
         btn.disabled = true;
+        priceDropdown.innerHTML = '<option value="">Memuat data...</option>';
+
+        const targetUrl = `${baseUrl}/activations/offers?services=${service}&countries=${country}`;
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
         try {
-            // Menggunakan getPrices yang bekerja sempurna dengan public proxy
-            let res = await fetchApi(`action=getPrices&service=${service}&country=${country}`);
+            // Penggunaan Header Authorization sesuai dokumentasi API
+            let res = await fetch(proxyUrl, {
+                method: 'GET',
+                headers: { 'Authorization': key }
+            });
+
+            if (!res.ok) throw new Error("Respons jaringan bermasalah");
+            
             let data = await res.json();
             
-            // Format respons Vak-SMS getPrices: {"countryID": {"serviceCode": {"count": 100, "cost": "2.0"}}}
-            if(data && data[country] && data[country][service]) {
-                let info = data[country][service];
-                let total = info.count;
-                let price = info.cost;
+            if(data && data.data && data.data[service] && data.data[service][country]) {
+                let mapData = data.data[service][country].map;
                 
-                document.getElementById('infoStok').innerHTML = `Stok: <b class='text-success'>${total}</b> | Harga: <b class='text-warning'>$${price}</b>`;
+                // Kosongkan dan isi ulang dropdown dengan data map
+                priceDropdown.innerHTML = '';
+                let mapKeys = Object.keys(mapData).sort((a,b) => parseFloat(a) - parseFloat(b)); // Urutkan harga termurah
+                
+                for (let price of mapKeys) {
+                    let stock = mapData[price];
+                    priceDropdown.innerHTML += `<option value="${price}">Harga: $${price} | Stok: ${stock} pc</option>`;
+                }
             } else {
-                document.getElementById('infoStok').innerHTML = "<b class='text-danger'>Stok Habis / Tidak Ditemukan</b>";
+                priceDropdown.innerHTML = '<option value="">Stok Habis / Tidak Ditemukan</option>';
             }
         } catch (e) {
-            document.getElementById('infoStok').innerHTML = "<b class='text-danger'>Error mengecek stok</b>";
+            priceDropdown.innerHTML = '<option value="">Error mengecek stok (CORS)</option>';
         } finally {
             btn.innerText = "Cek Stok";
             btn.disabled = false;
@@ -195,13 +216,17 @@
         if (!getApiKey()) return alert("Masukkan API Key!");
         const service = document.getElementById('serviceCode').value;
         const country = document.getElementById('countryCode').value;
+        const maxPrice = document.getElementById('priceTier').value; // Mengambil harga spesifik
         
         const btn = document.getElementById('btnPesan');
         btn.innerText = "Memproses...";
         btn.disabled = true;
 
+        // Menyisipkan parameter harga maksimal jika pengguna sudah memilih di dropdown
+        let priceParam = maxPrice ? `&maxPrice=${maxPrice}` : "";
+
         try {
-            const res = await fetchApi(`action=getNumber&service=${service}&country=${country}`);
+            const res = await fetchApi(`action=getNumber&service=${service}&country=${country}${priceParam}`);
             const text = await res.text();
             
             btn.innerText = "Order Nomor";
@@ -214,7 +239,7 @@
                 document.getElementById('smsBox').value = "Menunggu SMS...";
                 cekSaldo();
             } else if(text.trim() === "NO_NUMBERS") {
-                alert("Stok nomor sedang kosong dari pusat Vak-SMS. Silakan cek stok terlebih dahulu.");
+                alert("Stok nomor untuk harga yang Anda pilih sedang kosong. Silakan pilih harga lain dari dropdown.");
             } else if(text.trim() === "NO_BALANCE") {
                 alert("Saldo Vak-SMS Anda tidak mencukupi.");
             } else {
