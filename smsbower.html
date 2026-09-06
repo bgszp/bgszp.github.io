@@ -115,7 +115,7 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
             └> Sistem Panel SMSBower Diinisialisasi.<br>
-            └> Auto-Blokir 24 Jam (Firebase Online) Aktif.
+            └> Auto-Blokir 3x24 Jam (Firebase Online) Aktif.
         </div>
     </div>
     
@@ -139,7 +139,7 @@
         const db = getDatabase(app);
 
         const BOWER_NILAI_KURS = 17815; 
-        const BOWER_ALLOWED_PROVIDERS = [2295, 3160, 3309, 3340, 2738, 3435, 3029, 1329, 3406, 3327, 3435, 3448, 2738, 3461];
+        const BOWER_ALLOWED_PROVIDERS = [2295, 3160, 3309, 3340, 2738, 3435, 3029, 1329, 3406];
 
         let bower_daftarOrderan = []; 
         let bower_daftarServerTersedia = []; 
@@ -306,7 +306,8 @@
                             let data = snapshot.val();
                             let ageHours = (Date.now() - data.timestamp) / (1000 * 60 * 60);
 
-                            if (ageHours < 24) {
+                            // BATAS WAKTU DIUBAH MENJADI 72 JAM (3x24 Jam)
+                            if (ageHours < 72) {
                                 btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
                                 await apiSMSBower(`orders/cancel`, 'POST', { id: createdOrder.id }).catch(e=>{});
                                 await new Promise(r => setTimeout(r, 1500)); 
@@ -369,7 +370,7 @@
         
         window.bower_blokirManual = async function(index) {
             const item = bower_daftarOrderan[index];
-            if (!confirm(`Blokir nomor ${item.phone} agar tidak muncul lagi selama 24 jam? Pesanan akan dibatalkan otomatis.`)) return;
+            if (!confirm(`Blokir nomor ${item.phone} agar tidak muncul lagi selama 3x24 jam? Pesanan akan dibatalkan otomatis.`)) return;
             
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
@@ -378,7 +379,7 @@
                 bower_renderUILayout(); 
                 bower_simpanDaftarOrderanKeLokal(); 
                 window.bower_ambilSaldoLive(); 
-                bower_showToast("Nomor Diblokir!"); 
+                bower_showToast("Nomor Diblokir 3 Hari!"); 
             } catch (e) {
                 alert("Gagal memblokir: " + e.message);
             }
@@ -446,29 +447,27 @@
                 }
 
                 countAktif++; 
-                let sisa = Math.max(0, 300 - sec); // Hitung mundur 5 menit
+                let sisa = Math.max(0, 300 - sec); 
                 let cool = Math.max(0, 120 - sec); 
-                let sisaMax = Math.max(0, 1500 - sec); // Hitung mundur 25 Menit (1500 detik)
+                let sisaMax = Math.max(0, 1500 - sec); 
                 
                 if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) { cool = 0; }
 
                 let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`; let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
                 
-                let btnBlokirManual = item.status === "pending" ? `<button onclick="bower_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir 24 Jam"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
+                let btnBlokirManual = item.status === "pending" ? `<button onclick="bower_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir 3x24 Jam"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
                 
-                // === BADGE WAKTU MAKSIMAL 25 MENIT ===
                 let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal SMSBower"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
 
                 if (item.status === "received") { 
                     textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
-                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
+                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
                     btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="bower_eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button><button onclick="bower_eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button></div>`;
                 } else if (item.status === "pending") {
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="bower_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
-                // badgeMaxTime disisipkan ke dalam flex container utama (samping Blokir)
                 htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span style="display:flex; align-items:center;">${item.layanan} ${labelWarning} ${btnBlokirManual} ${badgeMaxTime}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
             });
 
