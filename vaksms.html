@@ -42,7 +42,7 @@
                 <div class="row mb-3">
                     <div class="col-6">
                         <label class="form-label">Pilih Layanan</label>
-                        <select id="serviceCode" class="form-select fw-bold" onchange="resetStok()">
+                        <select id="serviceCode" class="form-select fw-bold">
                             <option value="ka">Shopee</option>
                             <option value="wa">WhatsApp</option>
                         </select>
@@ -72,15 +72,18 @@
                         </select>
                     </div>
                     <div class="col-6">
-                        <label class="form-label text-warning fw-bold">Target Harga (Max)</label>
-                        <input type="number" id="maxPrice" step="0.0001" class="form-control fw-bold" placeholder="Cth: 0.0187">
+                        <label class="form-label text-warning fw-bold">Target Harga (Sinkron)</label>
+                        <select id="maxPrice" class="form-select fw-bold text-warning">
+                            <option value="">Harga Default / Acak</option>
+                            <option value="0.01">$0.01</option>
+                            <option value="0.0187">$0.0187</option>
+                            <option value="0.0188">$0.0188</option>
+                            <option value="0.0559">$0.0559</option>
+                            <option value="0.057">$0.057</option>
+                            <option value="0.451">$0.451</option>
+                            <option value="0.4698">$0.4698</option>
+                        </select>
                     </div>
-                </div>
-
-                <!-- Info Harga Default & Stok -->
-                <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded stok-box">
-                    <span id="infoStok" class="text-light fs-6">Klik cek stok default...</span>
-                    <button class="btn btn-sm btn-outline-info fw-bold" onclick="cekStok()" id="btnCekStok">Cek Stok</button>
                 </div>
 
                 <button class="btn btn-primary w-100 fw-bold mb-4" onclick="pesanNomor()" id="btnPesan" style="background-color: #e94560; border:none;">Order Nomor</button>
@@ -135,10 +138,6 @@
         document.getElementById('balanceInfo').innerText = "...";
     }
 
-    function resetStok() {
-        document.getElementById('infoStok').innerHTML = "Klik cek stok default...";
-    }
-
     async function fetchApi(params) {
         const key = getApiKey();
         if (!key) throw new Error("API Key kosong!");
@@ -161,34 +160,6 @@
             } catch(e) {}
         }
         throw new Error("Gagal terhubung ke jaringan.");
-    }
-
-    async function cekStok() {
-        if (!getApiKey()) return alert("Masukkan API Key terlebih dahulu!");
-        
-        const service = document.getElementById('serviceCode').value;
-        const country = document.getElementById('countryCode').value;
-        const btn = document.getElementById('btnCekStok');
-        
-        btn.innerText = "Loading...";
-        btn.disabled = true;
-
-        try {
-            let res = await fetchApi(`action=getPrices&service=${service}&country=${country}`);
-            let data = await res.json();
-            
-            if(data && data[country] && data[country][service]) {
-                let info = data[country][service];
-                document.getElementById('infoStok').innerHTML = `Tersedia: <b class='text-success'>${info.count} pc</b> | Hrg Default: <b class='text-warning'>$${info.cost}</b>`;
-            } else {
-                document.getElementById('infoStok').innerHTML = "<b class='text-danger'>Stok Kosong</b>";
-            }
-        } catch (e) {
-            document.getElementById('infoStok').innerHTML = "<b class='text-danger'>Error mengecek stok</b>";
-        } finally {
-            btn.innerText = "Cek Stok";
-            btn.disabled = false;
-        }
     }
 
     async function cekSaldo() {
@@ -236,7 +207,7 @@
                 document.getElementById('smsBox').value = "Menunggu SMS...";
                 cekSaldo();
             } else if(text.trim() === "NO_NUMBERS") {
-                alert("Stok kosong untuk kriteria tersebut (Operator/Harga). Silakan ubah target harga/operator.");
+                alert("Stok kosong untuk harga/operator tersebut. Coba pilih harga yang lain.");
             } else if(text.trim() === "NO_BALANCE") {
                 alert("Saldo Vak-SMS Anda tidak mencukupi.");
             } else {
