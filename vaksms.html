@@ -116,6 +116,7 @@
         document.getElementById('infoStok').innerHTML = "Klik cek harga & stok...";
     }
 
+    // Proxy khusus URL biasa tanpa harus melempar header khusus
     async function fetchApi(params) {
         const key = getApiKey();
         if (!key) throw new Error("API Key kosong!");
@@ -140,10 +141,9 @@
         throw new Error("Gagal terhubung ke jaringan.");
     }
 
-    // Fungsi Cek Stok Menggunakan HTTP Header Authorization
+    // Fungsi Cek Stok diubah menggunakan endpoint "getPrices"
     async function cekStok() {
-        const key = getApiKey();
-        if (!key) return alert("Masukkan API Key terlebih dahulu!");
+        if (!getApiKey()) return alert("Masukkan API Key terlebih dahulu!");
         
         const service = document.getElementById('serviceCode').value;
         const country = document.getElementById('countryCode').value;
@@ -152,28 +152,17 @@
         btn.innerText = "Loading...";
         btn.disabled = true;
 
-        const urlOffers = `${baseUrl}/activations/offers?services=${service}&countries=${country}`;
-
         try {
-            // Bypass menggunakan corsproxy untuk memastikan GitHub Pages bisa kirim Header
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(urlOffers)}`;
-            let res = await fetch(proxyUrl, {
-                method: 'GET',
-                headers: {
-                    'Authorization': key
-                }
-            });
-
-            if (!res.ok) throw new Error("Gagal");
-            
+            // Menggunakan getPrices yang bekerja sempurna dengan public proxy
+            let res = await fetchApi(`action=getPrices&service=${service}&country=${country}`);
             let data = await res.json();
             
-            if(data && data.data && data.data[service] && data.data[service][country]) {
-                let info = data.data[service][country];
-                let total = info.counts.total;
-                let price = info.prices.default;
+            // Format respons Vak-SMS getPrices: {"countryID": {"serviceCode": {"count": 100, "cost": "2.0"}}}
+            if(data && data[country] && data[country][service]) {
+                let info = data[country][service];
+                let total = info.count;
+                let price = info.cost;
                 
-                // KUTIPAN YANG DIPERBAIKI (Di sinilah error sebelumnya terjadi)
                 document.getElementById('infoStok').innerHTML = `Stok: <b class='text-success'>${total}</b> | Harga: <b class='text-warning'>$${price}</b>`;
             } else {
                 document.getElementById('infoStok').innerHTML = "<b class='text-danger'>Stok Habis / Tidak Ditemukan</b>";
