@@ -16,12 +16,11 @@
         .search-input:focus { border-color: var(--accent-cyan); }
         .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
         .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
-        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-        .btn-batal { background: var(--accent-red); color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px; flex-shrink: 0; }
+        .btn-batal { background: var(--accent-red); color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; width: 100%; margin-top: 10px;}
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
         .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
-        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; }
         
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; transition: all 0.3s; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
@@ -98,7 +97,7 @@
         </div>
 
         <!-- ACTIVE DATA SECTION -->
-        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;" id="wadahAktif" style="display: none;">
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;" id="wadahAktif">
             <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor Aktif:</span>
                 <span id="activeIdDisp" style="font-size: 10px; color: var(--text-sub);">ID: -</span>
@@ -128,7 +127,7 @@
                     <button class="btn-action-half btn-resend" id="btnSms" onclick="cekSMS()"><i class="fa-solid fa-rotate-right"></i> Cek SMS</button>
                     <button class="btn-action-half btn-selesai" onclick="ubahStatus(6)"><i class="fa-solid fa-check-double"></i> Selesai</button>
                 </div>
-                <button class="btn-batal mt-2" onclick="ubahStatus(8)"><i class="fa-solid fa-xmark"></i> Batalkan / Refund</button>
+                <button class="btn-batal" onclick="ubahStatus(8)"><i class="fa-solid fa-xmark"></i> Batalkan / Refund</button>
             </div>
         </div>
     </div>
@@ -140,6 +139,7 @@
     <script>
         const baseUrl = "https://vak-sms.com/stubs/handler_api.php";
 
+        // Auto load saat web terbuka
         window.onload = () => {
             const savedKey = localStorage.getItem('vakApiKey');
             if (savedKey) {
@@ -148,6 +148,7 @@
             }
         };
 
+        // Buka Tutup Panel Config
         function toggleElemen(id) {
             const el = document.getElementById(id);
             el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
@@ -160,9 +161,11 @@
             setTimeout(() => t.classList.remove('show'), 1500);
         }
 
+        // Fungsi Salin (Bisa menyalin text/value)
         function salinTeks(idElemen) {
-            const teks = document.getElementById(idElemen).innerText;
-            if(teks && teks !== "-") {
+            const el = document.getElementById(idElemen);
+            const teks = el.innerText || el.value;
+            if(teks && teks !== "-" && teks !== "Menunggu SMS...") {
                 navigator.clipboard.writeText(teks);
                 tampilToast('Tersalin!');
             }
@@ -174,6 +177,8 @@
                 localStorage.setItem('vakApiKey', key);
                 tampilToast('API Key Disimpan!');
                 cekSaldo();
+            } else {
+                tampilToast('Key tidak boleh kosong!');
             }
         }
 
@@ -192,80 +197,7 @@
             document.getElementById('maxPrice').innerHTML = '<option value="">(Klik Load Harga Dahulu)</option>';
         }
 
-        async function fetchApi(params) {
-            const key = getApiKey();
-            if (!key) throw new Error("API Key kosong!");
-            const targetUrl = `${baseUrl}?api_key=${key}&${params}`;
-            
-            try {
-                let res = await fetch(targetUrl);
-                if (res.ok) return res;
-            } catch(e) {}
-
-            const proxies = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
-            ];
-
-            for (let proxy of proxies) {
-                try {
-    <!-- LOGIC SCRIPTS -->
-    <script>
-        const baseUrl = "https://vak-sms.com/stubs/handler_api.php";
-
-        window.onload = () => {
-            const savedKey = localStorage.getItem('vakApiKey');
-            if (savedKey) {
-                document.getElementById('apiKey').value = savedKey;
-                cekSaldo();
-            }
-        };
-
-        function toggleElemen(id) {
-            const el = document.getElementById(id);
-            el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
-        }
-
-        function tampilToast(pesan) {
-            const t = document.getElementById('toastNotif');
-            t.innerText = pesan;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 1500);
-        }
-
-        function salinTeks(idElemen) {
-            const teks = document.getElementById(idElemen).innerText;
-            if(teks && teks !== "-") {
-                navigator.clipboard.writeText(teks);
-                tampilToast('Tersalin!');
-            }
-        }
-
-        function saveApiKey() {
-            const key = document.getElementById('apiKey').value.trim();
-            if (key) {
-                localStorage.setItem('vakApiKey', key);
-                tampilToast('API Key Disimpan!');
-                cekSaldo();
-            }
-        }
-
-        function hapusApiKey() {
-            localStorage.removeItem('vakApiKey');
-            document.getElementById('apiKey').value = '';
-            document.getElementById('balanceInfo').innerText = "$0.00";
-            tampilToast('API Key Dihapus!');
-        }
-
-        function getApiKey() {
-            return document.getElementById('apiKey').value.trim();
-        }
-
-        function resetStok() {
-            document.getElementById('maxPrice').innerHTML = '<option value="">(Klik Load Harga Dahulu)</option>';
-        }
-
-        // Fungsi fetch standar untuk API V0 (lolos proxy karena pakai parameter URL)
+        // Fungsi Fetch Standar dengan Bypass (API V0)
         async function fetchApi(params) {
             const key = getApiKey();
             if (!key) throw new Error("API Key kosong!");
@@ -306,7 +238,7 @@
             }
         }
 
-        // FUNGSI CEK HARGA & STOK DENGAN FALLBACK
+        // FUNGSI CEK HARGA & STOK
         async function cekStok() {
             if (!getApiKey()) { tampilToast("Masukkan API Key!"); return; }
             
@@ -316,9 +248,10 @@
             const priceDropdown = document.getElementById('maxPrice');
             
             btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i>";
+            btn.disabled = true;
             priceDropdown.innerHTML = '<option value="">Memuat data...</option>';
 
-            // Langkah 1: Coba Endpoint V1 (Detail Harga) - Bisa diblokir proxy
+            // LANGKAH 1: Coba Tarik Detail Harga Berjenjang
             const targetUrlV1 = `${baseUrl}/activations/offers?services=${service}&countries=${country}`;
             const proxyUrlV1 = `https://corsproxy.io/?${encodeURIComponent(targetUrlV1)}`;
 
@@ -341,13 +274,14 @@
                     }
                     tampilToast("Harga detail dimuat!");
                     btn.innerHTML = "<i class='fa-solid fa-tags'></i> Load Harga";
-                    return; // Jika berhasil, hentikan fungsi di sini
+                    btn.disabled = false;
+                    return; // Selesai jika berhasil
                 }
             } catch (e) {
-                console.log("Gagal memuat detail harga (CORS/Proxy). Mencoba fallback ke V0...");
+                console.log("Proxy Header gagal, menggunakan API biasa (V0).");
             }
 
-            // Langkah 2: Fallback ke Endpoint V0 (Harga Default) - Lolos proxy
+            // LANGKAH 2: Jika Gagal (Karena Proxy Header), Tarik Harga Default API V0
             try {
                 let resV0 = await fetchApi(`action=getPrices&service=${service}&country=${country}`);
                 let dataV0 = await resV0.json();
@@ -365,6 +299,7 @@
             }
 
             btn.innerHTML = "<i class='fa-solid fa-tags'></i> Load Harga";
+            btn.disabled = false;
         }
 
         // FUNGSI ORDER NOMOR
@@ -396,14 +331,14 @@
                     tampilToast("Berhasil Order!");
                     cekSaldo();
                 } else if(text.trim() === "NO_NUMBERS") {
-                    alert("Stok kosong untuk kriteria tersebut. Ubah harga/operator.");
+                    alert("Stok kosong untuk kriteria tersebut. Coba tanpa Operator atau pilih harga lain.");
                 } else if(text.trim() === "NO_BALANCE") {
                     alert("Saldo tidak mencukupi.");
                 } else {
                     alert("Gagal order: " + text);
                 }
             } catch (e) {
-                alert(e.message);
+                alert("Kesalahan jaringan: " + e.message);
             } finally {
                 btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> ORDER NOMOR';
                 btn.disabled = false;
@@ -440,7 +375,7 @@
             }
         }
 
-        // FUNGSI BATAL/SELESAI
+        // FUNGSI BATAL / SELESAI
         async function ubahStatus(statusCode) {
             const id = document.getElementById('activationId').value;
             if(!id) { tampilToast("Tidak ada aktifitas!"); return; }
@@ -471,6 +406,5 @@
             document.getElementById('smsBox').innerText = "Menunggu SMS...";
         }
     </script>
-
 </body>
 </html>
