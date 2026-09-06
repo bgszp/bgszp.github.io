@@ -17,11 +17,10 @@
 <body>
 
 <div class="container py-4">
-    <h3 class="text-center mb-4 fw-bold">Panel <span class="text-accent">Vak-SMS Khusus ID</span></h3>
+    <h3 class="text-center mb-4 fw-bold">Panel <span class="text-accent">Vak-SMS ID</span></h3>
 
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <!-- Pengaturan API & Saldo -->
             <div class="card p-3">
                 <div class="mb-3">
                     <label class="form-label text-accent fw-bold">API Key Vak-SMS</label>
@@ -36,7 +35,6 @@
                 </div>
             </div>
 
-            <!-- Form Pemesanan -->
             <div class="card p-3">
                 <div class="mb-3">
                     <label class="form-label">Pilih Layanan</label>
@@ -56,7 +54,6 @@
                 
                 <hr class="border-secondary mb-4">
 
-                <!-- Output Hasil -->
                 <div class="mb-2">
                     <label class="form-label">ID Aktivasi</label>
                     <input type="text" id="activationId" class="form-control text-center text-muted" readonly placeholder="-">
@@ -70,7 +67,6 @@
                     <textarea id="smsBox" class="form-control text-center fs-5 fw-bold" rows="2" readonly placeholder="Belum ada SMS"></textarea>
                 </div>
 
-                <!-- Kontrol -->
                 <div class="d-flex gap-2">
                     <button class="btn btn-success flex-fill fw-bold" onclick="cekSMS()" id="btnSms">Cek SMS</button>
                     <button class="btn btn-danger flex-fill fw-bold" onclick="ubahStatus(8)">Batal</button>
@@ -104,34 +100,28 @@
         document.getElementById('balanceInfo').innerText = "...";
     }
 
-    // Fungsi fetch dengan Multiple Fallback Proxy
     async function fetchApi(params) {
         const key = getApiKey();
         if (!key) throw new Error("API Key kosong!");
-        
         const targetUrl = `${baseUrl}?api_key=${key}&${params}`;
         
-        // Coba koneksi langsung terlebih dahulu
         try {
             let res = await fetch(targetUrl);
             if (res.ok) return res;
-        } catch(e) { console.log("Koneksi langsung diblokir CORS, mencoba proxy..."); }
+        } catch(e) {}
 
-        // Jika gagal, gunakan daftar proxy bergantian
         const proxies = [
-            `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
             `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-            `https://thingproxy.freeboard.io/fetch/${targetUrl}`
+            `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
         ];
 
         for (let proxy of proxies) {
             try {
                 let res = await fetch(proxy);
                 if (res.ok) return res;
-            } catch(e) { console.log(`Proxy gagal: ${proxy}`); }
+            } catch(e) {}
         }
-        
-        throw new Error("Gagal terhubung ke API Vak-SMS. Jaringan Anda mungkin memblokir proxy.");
+        throw new Error("Gagal terhubung ke jaringan.");
     }
 
     async function cekSaldo() {
@@ -142,10 +132,8 @@
             const text = await res.text();
             if(text.includes("ACCESS_BALANCE")) {
                 document.getElementById('balanceInfo').innerText = "$" + text.split(":")[1];
-            } else if(text.includes("<html")) {
-                document.getElementById('balanceInfo').innerText = "Ditolak Web";
             } else {
-                document.getElementById('balanceInfo').innerText = text; // Menampilkan pesan error asli (misal: BAD_KEY)
+                document.getElementById('balanceInfo').innerText = text;
             }
         } catch (e) {
             document.getElementById('balanceInfo').innerText = "Gagal koneksi";
@@ -162,28 +150,30 @@
         btn.disabled = true;
 
         try {
-            const res = await fetchApi(`action=getNumberV2&service=${service}&country=${country}`);
+            const res = await fetchApi(`action=getNumber&service=${service}&country=${country}`);
             const text = await res.text();
             
-            try {
-                const data = JSON.parse(text);
-                if(data.activationId) {
-                    document.getElementById('activationId').value = data.activationId;
-                    document.getElementById('phoneNumber').value = data.phoneNumber;
-                    document.getElementById('smsBox').value = "Menunggu SMS...";
-                    cekSaldo();
-                } else {
-                    alert("Gagal order. Pastikan stok nomor tersedia.");
-                }
-            } catch(e) {
-                // Jika balasan bukan JSON (misal teks NO_BALANCE)
+            // Kembalikan tombol ke kondisi semula sebelum alert muncul
+            btn.innerText = "Order Nomor";
+            btn.disabled = false;
+
+            if(text.includes("ACCESS_NUMBER")) {
+                let parts = text.split(":");
+                document.getElementById('activationId').value = parts[1];
+                document.getElementById('phoneNumber').value = parts[2];
+                document.getElementById('smsBox').value = "Menunggu SMS...";
+                cekSaldo();
+            } else if(text.trim() === "NO_NUMBERS") {
+                alert("Stok nomor sedang kosong dari pusat Vak-SMS. Coba beberapa saat lagi.");
+            } else if(text.trim() === "NO_BALANCE") {
+                alert("Saldo Vak-SMS Anda tidak mencukupi.");
+            } else {
                 alert("Gagal order: " + text);
             }
         } catch (e) {
-            alert(e.message);
-        } finally {
             btn.innerText = "Order Nomor";
             btn.disabled = false;
+            alert(e.message);
         }
     }
 
@@ -196,17 +186,14 @@
         btn.disabled = true;
         
         try {
-            const res = await fetchApi(`action=getStatusV2&id=${id}`);
+            const res = await fetchApi(`action=getStatus&id=${id}`);
             const text = await res.text();
             
-            try {
-                const data = JSON.parse(text);
-                if(data.sms && data.sms.code) {
-                    document.getElementById('smsBox').value = `${data.sms.code}`;
-                } else {
-                    document.getElementById('smsBox').value = "Belum ada SMS masuk...";
-                }
-            } catch(e) {
+            if(text.includes("STATUS_OK")) {
+                document.getElementById('smsBox').value = text.split(":")[1];
+            } else if(text === "STATUS_WAIT_CODE") {
+                document.getElementById('smsBox').value = "Belum ada SMS masuk...";
+            } else {
                 document.getElementById('smsBox').value = "Status: " + text;
             }
         } catch (e) {
@@ -233,9 +220,6 @@
                 cekSaldo();
             } else if (text.includes("ACCESS_READY")) {
                 alert("Status diubah ke Selesai.");
-                document.getElementById('activationId').value = "";
-                document.getElementById('phoneNumber').value = "";
-                document.getElementById('smsBox').value = "";
             } else {
                 alert("Gagal mengubah status: " + text);
             }
