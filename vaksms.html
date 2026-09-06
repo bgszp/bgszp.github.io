@@ -388,33 +388,52 @@
             }
         }
 
-        // FUNGSI BATAL / BAN / SELESAI
+        // FUNGSI BATAL / BAN / SELESAI (MENGGUNAKAN NATIVE API)
         async function ubahStatus(statusCode, isBan) {
             const id = document.getElementById('activationId').value;
             if(!id) { tampilToast("Tidak ada aktifitas!"); return; }
             
             try {
-                const res = await fetchApi(`action=setStatus&id=${id}&status=${statusCode}`);
-                const text = await res.text();
+                // Mengambil API Key dan menentukan status ('bad' untuk Ban, 'end' untuk Batal/Selesai)
+                const key = getApiKey();
+                const statusStr = isBan ? 'bad' : 'end'; 
+                const targetUrl = `https://vak-sms.com/api/setStatus/?apiKey=${key}&status=${statusStr}&idNum=${id}`;
                 
-                if(text.includes("ACCESS_CANCEL")) {
+                // Menembak 3 proxy secara paralel agar instan
+                const requests = [
+                    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`),
+                    fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`),
+                    fetch(targetUrl)
+                ];
+
+                const res = await Promise.any(requests.map(p => p.then(r => {
+                    if (!r.ok) throw new Error('Not OK');
+                    return r;
+                })));
+                
+                // API Native membalas dalam format JSON
+                const data = await res.json(); 
+                
+                // Jika sukses, Vak-SMS akan merespon {"status": "end"} atau {"status": "bad"}
+                if(data.status) {
                     if (isBan) {
-                        tampilToast("Nomor Diblokir & Dibatalkan!");
+                        tampilToast("Nomor Diblokir (Ban)!");
                     } else {
-                        tampilToast("Pesanan Dibatalkan!");
+                        tampilToast("Pesanan Dibatalkan / Selesai!");
                     }
                     resetTampilanAktif();
                     cekSaldo();
-                } else if (text.includes("ACCESS_READY")) {
-                    tampilToast("Status Diselesaikan!");
-                    resetTampilanAktif();
+                } else if (data.error) {
+                    // Menangkap error jika nomor sudah tidak bisa dibatalkan
+                    alert("Pesan dari Server: " + data.error);
                 } else {
-                    alert("Respon Server: " + text);
+                    alert("Respon tidak dikenal!");
                 }
             } catch (e) {
-                tampilToast("Error sistem saat mengubah status.");
+                tampilToast("Error jaringan saat mengubah status.");
             }
         }
+
 
         function resetTampilanAktif() {
             if(autoSmsInterval) clearInterval(autoSmsInterval);
