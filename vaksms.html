@@ -64,7 +64,7 @@
             <label class="form-label">🛒 Setup Layanan API</label>
             <div class="unified-order-box">
                 <!-- Pilihan Layanan -->
-                <select id="serviceCode" class="unified-select-op" onchange="resetStok()" style="margin-bottom: 6px;">
+                <select id="serviceCode" class="unified-select-op" style="margin-bottom: 6px;">
                     <option value="ka" selected>Layanan: Shopee</option>
                     <option value="wa">Layanan: WhatsApp</option>
                 </select>
@@ -80,14 +80,24 @@
                         <option value="axis">Axis</option>
                         <option value="smartfren">Smartfren</option>
                     </select>
-                    <button class="btn-copy-static" onclick="cekStok()" id="btnCekStok" style="background:#1d3f31; border-color:#2e6f4e; color:var(--accent-green);">
-                        <i class="fa-solid fa-tags"></i> Load Harga
+                    <button class="btn-copy-static" onclick="cekStokTotal()" id="btnCekStok" style="background:#1d3f31; border-color:#2e6f4e; color:var(--accent-green);">
+                        <i class="fa-solid fa-box"></i> Cek Stok
                     </button>
                 </div>
 
-                <!-- Pilihan Harga Dinamis -->
+                <!-- Pilihan Harga Dinamis & Statis -->
                 <select id="maxPrice" class="unified-select-op" style="margin-top: 6px; color: #d4af37;">
-                    <option value="">(Klik Load Harga Dahulu)</option>
+                    <option value="">Harga Acak (Paling Murah)</option>
+                    <option value="0.0100">Target Harga: $0.0100</option>
+                    <option value="0.0187">Target Harga: $0.0187</option>
+                    <option value="0.0188">Target Harga: $0.0188</option>
+                    <option value="0.0200">Target Harga: $0.0200</option>
+                    <option value="0.0300">Target Harga: $0.0300</option>
+                    <option value="0.0497">Target Harga: $0.0497</option>
+                    <option value="0.0559">Target Harga: $0.0559</option>
+                    <option value="0.0570">Target Harga: $0.0570</option>
+                    <option value="0.4510">Target Harga: $0.4510</option>
+                    <option value="0.4698">Target Harga: $0.4698</option>
                 </select>
 
             </div>
@@ -158,10 +168,9 @@
             const t = document.getElementById('toastNotif');
             t.innerText = pesan;
             t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 1500);
+            setTimeout(() => t.classList.remove('show'), 2000);
         }
 
-        // Fungsi Salin (Bisa menyalin text/value)
         function salinTeks(idElemen) {
             const el = document.getElementById(idElemen);
             const teks = el.innerText || el.value;
@@ -193,11 +202,7 @@
             return document.getElementById('apiKey').value.trim();
         }
 
-        function resetStok() {
-            document.getElementById('maxPrice').innerHTML = '<option value="">(Klik Load Harga Dahulu)</option>';
-        }
-
-        // Fungsi Fetch Standar dengan Bypass (API V0)
+        // Fetch Anti-CORS dengan Proxy
         async function fetchApi(params) {
             const key = getApiKey();
             if (!key) throw new Error("API Key kosong!");
@@ -238,67 +243,32 @@
             }
         }
 
-        // FUNGSI CEK HARGA & STOK
-        async function cekStok() {
+        // Fungsi Cek Stok Keseluruhan (Tanpa merusak Dropdown Harga)
+        async function cekStokTotal() {
             if (!getApiKey()) { tampilToast("Masukkan API Key!"); return; }
             
             const service = document.getElementById('serviceCode').value;
             const country = "6"; // ID Indonesia
             const btn = document.getElementById('btnCekStok');
-            const priceDropdown = document.getElementById('maxPrice');
             
             btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i>";
             btn.disabled = true;
-            priceDropdown.innerHTML = '<option value="">Memuat data...</option>';
-
-            // LANGKAH 1: Coba Tarik Detail Harga Berjenjang
-            const targetUrlV1 = `${baseUrl}/activations/offers?services=${service}&countries=${country}`;
-            const proxyUrlV1 = `https://corsproxy.io/?${encodeURIComponent(targetUrlV1)}`;
 
             try {
-                let resV1 = await fetch(proxyUrlV1, {
-                    method: 'GET',
-                    headers: { 'Authorization': getApiKey() }
-                });
+                let res = await fetchApi(`action=getPrices&service=${service}&country=${country}`);
+                let data = await res.json();
                 
-                let dataV1 = await resV1.json();
-                
-                if(dataV1 && dataV1.data && dataV1.data[service] && dataV1.data[service][country]) {
-                    let mapData = dataV1.data[service][country].map;
-                    let mapKeys = Object.keys(mapData).sort((a,b) => parseFloat(a) - parseFloat(b));
-                    
-                    priceDropdown.innerHTML = '<option value="">Pilih Harga Target / Acak</option>';
-                    for (let price of mapKeys) {
-                        let stock = mapData[price];
-                        priceDropdown.innerHTML += `<option value="${price}">$${price} (Sisa: ${stock} pc)</option>`;
-                    }
-                    tampilToast("Harga detail dimuat!");
-                    btn.innerHTML = "<i class='fa-solid fa-tags'></i> Load Harga";
-                    btn.disabled = false;
-                    return; // Selesai jika berhasil
-                }
-            } catch (e) {
-                console.log("Proxy Header gagal, menggunakan API biasa (V0).");
-            }
-
-            // LANGKAH 2: Jika Gagal (Karena Proxy Header), Tarik Harga Default API V0
-            try {
-                let resV0 = await fetchApi(`action=getPrices&service=${service}&country=${country}`);
-                let dataV0 = await resV0.json();
-                
-                if(dataV0 && dataV0[country] && dataV0[country][service]) {
-                    let info = dataV0[country][service];
-                    priceDropdown.innerHTML = '<option value="">Harga Default / Acak</option>';
-                    priceDropdown.innerHTML += `<option value="${info.cost}">$${info.cost} (Sisa: ${info.count} pc)</option>`;
-                    tampilToast("Harga default dimuat!");
+                if(data && data[country] && data[country][service]) {
+                    let info = data[country][service];
+                    tampilToast(`Tersedia: ${info.count} Nomor`);
                 } else {
-                    priceDropdown.innerHTML = '<option value="">Stok Habis</option>';
+                    tampilToast("Stok saat ini kosong.");
                 }
             } catch (e) {
-                priceDropdown.innerHTML = '<option value="">Gagal memuat koneksi</option>';
+                tampilToast("Gagal memuat koneksi.");
             }
 
-            btn.innerHTML = "<i class='fa-solid fa-tags'></i> Load Harga";
+            btn.innerHTML = "<i class='fa-solid fa-box'></i> Cek Stok";
             btn.disabled = false;
         }
 
@@ -331,9 +301,9 @@
                     tampilToast("Berhasil Order!");
                     cekSaldo();
                 } else if(text.trim() === "NO_NUMBERS") {
-                    alert("Stok kosong untuk kriteria tersebut. Coba tanpa Operator atau pilih harga lain.");
+                    alert(`Stok nomor habis untuk: ${operator || 'Semua Operator'} di harga $${maxPrice || 'Default'}. Silakan pilih harga atau operator lain.`);
                 } else if(text.trim() === "NO_BALANCE") {
-                    alert("Saldo tidak mencukupi.");
+                    alert("Saldo Vak-SMS Anda tidak mencukupi.");
                 } else {
                     alert("Gagal order: " + text);
                 }
