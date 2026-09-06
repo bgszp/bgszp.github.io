@@ -32,7 +32,7 @@
         .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; display: block; }
         
-        /* Animasi loading sederhana */
+        /* Animasi loading titik */
         .loading-dots:after { content: '.'; animation: dots 1.5s steps(5, end) infinite; }
         @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: var(--accent-green); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 var(--accent-green), .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 var(--accent-green), .5em 0 0 var(--accent-green); } }
     </style>
@@ -68,14 +68,12 @@
         <div class="dropdown-box-wrapper">
             <label class="form-label">🛒 Setup Layanan API</label>
             <div class="unified-order-box">
-                <!-- Pilihan Layanan -->
                 <select id="serviceCode" class="unified-select-op" onchange="renderDaftarHarga()" style="margin-bottom: 6px;">
                     <option value="ka" selected>Layanan: Shopee (Indonesia)</option>
                     <option value="wa">Layanan: WhatsApp (Indonesia)</option>
                 </select>
 
                 <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-                    <!-- Operator -->
                     <select id="operatorCode" class="unified-select-op" style="flex: 1;">
                         <option value="">Operator: Acak</option>
                         <option value="telkomsel">Telkomsel</option>
@@ -87,10 +85,7 @@
                     </select>
                 </div>
 
-                <!-- Pilihan Harga Lokal -->
-                <select id="maxPrice" class="unified-select-op" style="color: #d4af37;">
-                    <!-- Diisi otomatis oleh JavaScript -->
-                </select>
+                <select id="maxPrice" class="unified-select-op" style="color: #d4af37;"></select>
             </div>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
@@ -127,13 +122,13 @@
                 <div class="box-copy-statik">
                     <div style="width: 100%;">
                         <div style="font-size:9px; color:#8b8da9;">SMS / OTP:</div>
-                        <div id="smsBox" style="font-size:16px; font-weight:bold; color:var(--accent-green); margin-top:2px; word-break: break-all;">Belum ada pesanan...</div>
+                        <div id="smsBox" style="font-size:16px; font-weight:bold; color:var(--accent-green); margin-top:2px; word-break: break-all;">Menunggu SMS...</div>
                     </div>
                 </div>
 
                 <!-- Action Buttons: SMS & Selesai -->
                 <div style="display:flex; gap: 8px; margin-top: 10px;">
-                    <button class="btn-action-half btn-resend" id="btnSms" onclick="cekSMSManual()"><i class="fa-solid fa-rotate-right"></i> Cek Cepat</button>
+                    <button class="btn-action-half btn-resend" id="btnSms" onclick="cekSMSManual()"><i class="fa-solid fa-rotate-right"></i> Cek SMS</button>
                     <button class="btn-action-half btn-selesai" onclick="ubahStatus(6, false)"><i class="fa-solid fa-check-double"></i> Selesai</button>
                 </div>
                 <!-- Action Buttons: Batal & Ban -->
@@ -151,9 +146,9 @@
     <!-- LOGIC SCRIPTS -->
     <script>
         const baseUrl = "https://vak-sms.com/stubs/handler_api.php";
-        const MY_WORKER_URL = "https://vaksms-webhook.tiktiksatu001.workers.dev"; // URL Cloudflare Worker Anda
-        let autoSmsInterval = null; // Variabel untuk menyimpan interval auto-cek SMS
+        let autoSmsInterval = null; 
 
+        // HARGA STATIS SESUAI WEB ASLI VAK-SMS
         const priceList = {
             "ka": [
                 { val: "", text: "🎯 Harga Default / Bebas" },
@@ -200,7 +195,7 @@
         function salinTeks(idElemen) {
             const el = document.getElementById(idElemen);
             const teks = el.innerText || el.value;
-            if(teks && !teks.includes("Mencari") && teks !== "-" && teks !== "Belum ada pesanan...") {
+            if(teks && !teks.includes("Otomatis") && teks !== "-" && teks !== "Menunggu SMS...") {
                 navigator.clipboard.writeText(teks);
                 tampilToast('Tersalin!');
             }
@@ -231,9 +226,13 @@
             const dropdown = document.getElementById('maxPrice');
             dropdown.innerHTML = "";
             let dataHarga = priceList[srv] || priceList["ka"];
-            dataHarga.forEach(h => { dropdown.innerHTML += `<option value="${h.val}">${h.text}</option>`; });
+            dataHarga.forEach(h => {
+                dropdown.innerHTML += `<option value="${h.val}">${h.text}</option>`;
+            });
+            document.getElementById('infoStokTxt').innerHTML = "Info: Cek status stok saat ini";
         }
 
+        // FETCH SUPER CEPAT (Metode Balapan Proxy)
         async function fetchApi(params) {
             const key = getApiKey();
             if (!key) throw new Error("API Key kosong!");
@@ -251,7 +250,9 @@
                     return r;
                 })));
                 return res;
-            } catch (e) { throw new Error("Gagal terhubung ke jaringan proxy."); }
+            } catch (e) {
+                throw new Error("Gagal terhubung ke jaringan proxy.");
+            }
         }
 
         async function cekSaldo() {
@@ -265,7 +266,9 @@
                 } else {
                     document.getElementById('balanceInfo').innerText = "Err";
                 }
-            } catch (e) { document.getElementById('balanceInfo').innerText = "Err"; }
+            } catch (e) {
+                document.getElementById('balanceInfo').innerText = "Err";
+            }
         }
 
         async function cekStokTotal() {
@@ -283,7 +286,9 @@
                 } else {
                     document.getElementById('infoStokTxt').innerHTML = `<span style="color:var(--accent-red);">Stok Sedang Kosong!</span>`;
                 }
-            } catch (e) { document.getElementById('infoStokTxt').innerHTML = "Gagal memuat status."; }
+            } catch (e) {
+                document.getElementById('infoStokTxt').innerHTML = "Gagal memuat status.";
+            }
 
             btn.innerHTML = "<i class='fa-solid fa-box'></i> Cek Stok Total";
             btn.disabled = false;
@@ -313,17 +318,17 @@
                     document.getElementById('activationId').value = parts[1];
                     document.getElementById('activeIdDisp').innerText = "ID: " + parts[1];
                     document.getElementById('phoneNumber').innerText = parts[2];
-                    document.getElementById('smsBox').innerHTML = `<span class="loading-dots">Otomatis mencari SMS via Worker</span>`;
+                    document.getElementById('smsBox').innerHTML = `<span class="loading-dots">Otomatis mencari SMS</span>`;
                     
                     tampilToast("Berhasil Order!");
                     cekSaldo();
                     
-                    // MEMULAI AUTO CHECK SMS KE CLOUDFLARE WORKER SETIAP 5 DETIK
+                    // MEMULAI AUTO CHECK SMS SETIAP 4 DETIK LANGSUNG KE VAK-SMS (TANPA WORKER)
                     if(autoSmsInterval) clearInterval(autoSmsInterval);
-                    autoSmsInterval = setInterval(otomatisCekSMS, 5000);
+                    autoSmsInterval = setInterval(otomatisCekSMS, 4000);
 
                 } else if(text.trim() === "NO_NUMBERS") {
-                    alert(`Stok kosong untuk tier harga tersebut. Coba pilih tier harga yang lain.`);
+                    alert(`Stok kosong untuk: ${operator || 'Semua Operator'} di tier harga tersebut. Coba pilih tier harga yang lain.`);
                 } else if(text.trim() === "NO_BALANCE") {
                     alert("Saldo Vak-SMS Anda tidak mencukupi.");
                 } else {
@@ -337,7 +342,7 @@
             }
         }
 
-        // FUNGSI CEK SMS OTOMATIS (Membaca dari Cloudflare Worker)
+        // FUNGSI CEK SMS OTOMATIS (Jalan di Latar Belakang Setiap 4 Detik)
         async function otomatisCekSMS() {
             const id = document.getElementById('activationId').value;
             if(!id) {
@@ -346,19 +351,21 @@
             }
             
             try {
-                const res = await fetch(`${MY_WORKER_URL}/get-sms?id=${id}`);
-                const data = await res.json();
+                const res = await fetchApi(`action=getStatus&id=${id}`);
+                const text = await res.text();
                 
-                if(data.status === "OK") {
-                    document.getElementById('smsBox').innerText = data.otp;
+                if(text.includes("STATUS_OK")) {
+                    document.getElementById('smsBox').innerText = text.split(":")[1];
                     tampilToast("SMS Masuk!");
-                    if(autoSmsInterval) clearInterval(autoSmsInterval); 
+                    if(autoSmsInterval) clearInterval(autoSmsInterval);
+                } else if(text === "STATUS_CANCEL") {
+                    if(autoSmsInterval) clearInterval(autoSmsInterval);
+                    resetTampilanAktif();
                 }
-                // Jika WAITING, biarkan saja loading berjalan
             } catch (e) { console.log("Gagal auto cek SMS"); }
         }
 
-        // FUNGSI CEK SMS MANUAL (Tombol Cek Cepat)
+        // FUNGSI CEK SMS MANUAL
         async function cekSMSManual() {
             const id = document.getElementById('activationId').value;
             if(!id) { tampilToast("Belum order nomor!"); return; }
@@ -368,38 +375,36 @@
             btn.disabled = true;
             
             try {
-                const res = await fetch(`${MY_WORKER_URL}/get-sms?id=${id}`);
-                const data = await res.json();
+                const res = await fetchApi(`action=getStatus&id=${id}`);
+                const text = await res.text();
                 
-                if(data.status === "OK") {
-                    document.getElementById('smsBox').innerText = data.otp;
+                if(text.includes("STATUS_OK")) {
+                    document.getElementById('smsBox').innerText = text.split(":")[1];
                     tampilToast("SMS Masuk!");
                     if(autoSmsInterval) clearInterval(autoSmsInterval);
-                } else if(data.status === "WAITING") {
+                } else if(text === "STATUS_WAIT_CODE") {
                     tampilToast("Belum ada SMS");
                 } else {
-                    document.getElementById('smsBox').innerText = "Error mengambil data.";
+                    document.getElementById('smsBox').innerText = "Status: " + text;
                 }
             } catch (e) {
-                tampilToast("Gagal cek SMS ke Worker.");
+                tampilToast("Gagal cek SMS.");
             } finally {
-                btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Cek Cepat';
+                btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Cek SMS';
                 btn.disabled = false;
             }
         }
 
-        // FUNGSI BATAL / BAN / SELESAI (MENGGUNAKAN NATIVE API)
+        // FUNGSI BATAL / BAN / SELESAI MENGGUNAKAN API NATIVE (Bebas BAD_ACTION)
         async function ubahStatus(statusCode, isBan) {
             const id = document.getElementById('activationId').value;
             if(!id) { tampilToast("Tidak ada aktifitas!"); return; }
             
             try {
-                // Mengambil API Key dan menentukan status ('bad' untuk Ban, 'end' untuk Batal/Selesai)
                 const key = getApiKey();
                 const statusStr = isBan ? 'bad' : 'end'; 
                 const targetUrl = `https://vak-sms.com/api/setStatus/?apiKey=${key}&status=${statusStr}&idNum=${id}`;
                 
-                // Menembak 3 proxy secara paralel agar instan
                 const requests = [
                     fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`),
                     fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`),
@@ -411,10 +416,8 @@
                     return r;
                 })));
                 
-                // API Native membalas dalam format JSON
                 const data = await res.json(); 
                 
-                // Jika sukses, Vak-SMS akan merespon {"status": "end"} atau {"status": "bad"}
                 if(data.status) {
                     if (isBan) {
                         tampilToast("Nomor Diblokir (Ban)!");
@@ -424,7 +427,6 @@
                     resetTampilanAktif();
                     cekSaldo();
                 } else if (data.error) {
-                    // Menangkap error jika nomor sudah tidak bisa dibatalkan
                     alert("Pesan dari Server: " + data.error);
                 } else {
                     alert("Respon tidak dikenal!");
@@ -434,13 +436,12 @@
             }
         }
 
-
         function resetTampilanAktif() {
             if(autoSmsInterval) clearInterval(autoSmsInterval);
             document.getElementById('activationId').value = "";
             document.getElementById('activeIdDisp').innerText = "ID: -";
             document.getElementById('phoneNumber').innerText = "-";
-            document.getElementById('smsBox').innerText = "Belum ada pesanan...";
+            document.getElementById('smsBox').innerText = "Menunggu SMS...";
         }
     </script>
 </body>
