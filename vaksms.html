@@ -3,102 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kerangka UI Panel</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <title>Vak-SMS IDN (Shopee & WA)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
-        * { box-sizing: border-box; transition: all 0.2s ease; }
-        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
-        .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
-        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
-        .search-input:focus { border-color: var(--accent-cyan); }
-        .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
-        .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
-        .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
-        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
-        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
-        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .btn-resend { background: #4a3c8c; color: #fff; }
-        .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
-        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; }
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
-        .unified-order-box { display: flex; flex-direction: column; gap: 6px; background: #0b0c16; border: 1px solid #4a3c8c; border-radius: 10px; padding: 8px; }
-        .unified-select-op { border: none; background: #121324; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 10px; border-radius: 6px; outline: none; cursor: pointer; width: 100%; }
-        .dropdown-selected-bar { background: #121324; border: none; border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
-        .dropdown-list-options { display: none; margin-top: 8px; background: #121324; border: 1px solid #3d3463; border-radius: 10px; max-height: 250px; overflow-y: auto; }
-        .dropdown-list-options.active { display: block; }
-        .dropdown-item-row { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1b35; cursor: pointer; font-size: 13px; }
-        .dropdown-item-row.selected { background: #25204d; border-left: 3px solid var(--accent-purple); }
-        .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; }
-        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; display: block; }
+        body { background-color: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
+        .card { background-color: #16213e; border: none; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.3); margin-bottom: 20px; }
+        .form-control, .form-select { background-color: #1a1a2e; border: 1px solid #0f3460; color: #fff; }
+        .form-control:focus, .form-select:focus { background-color: #1a1a2e; color: #fff; border-color: #e94560; box-shadow: none; }
+        .form-control:disabled { background-color: #11111d; color: #6c757d; }
+        .text-accent { color: #e94560; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- HEADER SALDO -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel UI Template</h3>
-            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
-                👛 <span>Rp 0</span>
-                <span style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
-            </div>
-        </div>
 
-        <!-- SETTING PANEL (DROPDOWN) -->
-        <div style="margin-bottom: 12px;">
-            <div class="pemicu-dropdown">
-                <span>🔑 Label Pengaturan API</span>
-                <span style="font-size: 10px;">▼</span>
-            </div>
-        </div>
+<div class="container py-4">
+    <h3 class="text-center mb-4 fw-bold">Panel <span class="text-accent">Vak-SMS Khusus ID</span></h3>
 
-        <!-- AREA FORM SELEKSI (KHUSUS SHOPEE & WHATSAPP) -->
-        <div class="dropdown-box-wrapper">
-            <label class="form-label">🛒 Setup Layanan Utama (Indonesia)</label>
-            <div class="unified-order-box">
-                <select class="unified-select-op">
-                    <option value="ka" selected>Shopee</option>
-                    <option value="wa">WhatsApp</option>
-                </select>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <!-- Pengaturan API & Saldo -->
+            <div class="card p-3">
+                <div class="mb-3">
+                    <label class="form-label text-accent fw-bold">API Key Vak-SMS</label>
+                    <div class="input-group">
+                        <input type="password" id="apiKey" class="form-control" placeholder="Masukkan API Key">
+                        <button class="btn btn-outline-danger" onclick="hapusApiKey()">Hapus</button>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center p-3 rounded" style="background: #0f3460;">
+                    <h5 class="m-0">Saldo: <span id="balanceInfo" class="text-success fw-bold">$0.00</span></h5>
+                    <button class="btn btn-sm btn-light" onclick="cekSaldo()">Refresh</button>
+                </div>
+            </div>
+
+            <!-- Form Pemesanan -->
+            <div class="card p-3">
+                <div class="mb-3">
+                    <label class="form-label">Pilih Layanan</label>
+                    <select id="serviceCode" class="form-select fw-bold">
+                        <option value="ka">Shopee</option>
+                        <option value="wa">WhatsApp</option>
+                    </select>
+                </div>
                 
-                <div class="dropdown-selected-bar">
-                    <span style="color: #fff;">Pilih Operator...</span>
-                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah</span>
+                <div class="mb-3">
+                    <label class="form-label">Negara</label>
+                    <input type="text" class="form-control fw-bold" value="Indonesia" disabled>
+                    <input type="hidden" id="countryCode" value="6">
                 </div>
-            </div>
-            <!-- Tombol normal, tidak stuck di "Memproses" -->
-            <button class="btn-pesan-sekarang">
-                <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
-            </button>
-        </div>
 
-        <!-- DAFTAR KARTU AKTIF -->
-        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
-            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span>📱 Daftar Kartu Aktif:</span>
-                <button style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer;">🧹 Bersihkan</button>
-            </div>
-            
-            <!-- Contoh Desain Kartu -->
-            <div class="card-order">
-                <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;">
-                    <span>Shopee (Telkomsel)</span><span>⏱️ 4m 30s</span>
+                <button class="btn btn-primary w-100 fw-bold mb-4" onclick="pesanNomor()" id="btnPesan" style="background-color: #e94560; border:none;">Order Nomor</button>
+                
+                <hr class="border-secondary mb-4">
+
+                <!-- Output Hasil -->
+                <div class="mb-2">
+                    <label class="form-label">ID Aktivasi</label>
+                    <input type="text" id="activationId" class="form-control text-center text-muted" readonly placeholder="-">
                 </div>
-                <div class="box-copy-statik">
-                    <div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">081234567890</div></div>
-                    <button class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button>
+                <div class="mb-2">
+                    <label class="form-label text-accent fw-bold">Nomor HP</label>
+                    <input type="text" id="phoneNumber" class="form-control text-center fs-4 fw-bold text-success" readonly placeholder="-">
                 </div>
-                <div style="display:flex; gap: 8px; margin-top: 10px;">
-                    <button class="btn-batal" style="background:var(--accent-red);">❌ Batalkan Pesanan</button>
+                <div class="mb-4">
+                    <label class="form-label text-warning fw-bold">SMS / OTP</label>
+                    <textarea id="smsBox" class="form-control text-center fs-5 fw-bold" rows="2" readonly placeholder="Belum ada SMS"></textarea>
+                </div>
+
+                <!-- Kontrol -->
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success flex-fill fw-bold" onclick="cekSMS()" id="btnSms">Cek SMS</button>
+                    <button class="btn btn-danger flex-fill fw-bold" onclick="ubahStatus(8)">Batal</button>
+                    <button class="btn btn-info flex-fill fw-bold text-white" onclick="ubahStatus(6)">Selesai</button>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<script>
+    const baseUrl = "https://vak-sms.com/stubs/handler_api.php";
+
+    window.onload = () => {
+        const savedKey = localStorage.getItem('vakApiKey');
+        if (savedKey) {
+            document.getElementById('apiKey').value = savedKey;
+            cekSaldo();
+        }
+    };
+
+    function getApiKey() {
+        const key = document.getElementById('apiKey').value.trim();
+        if (key) localStorage.setItem('vakApiKey', key);
+        return key;
+    }
+
+    function hapusApiKey() {
+        localStorage.removeItem('vakApiKey');
+        document.getElementById('apiKey').value = '';
+        document.getElementById('balanceInfo').innerText = "$0.00";
+    }
+
+    // Proxy publik untuk membypass blokir CORS di HP/Browser lokal
+    // Jika tidak mau pakai proxy, hapus 'https://api.allorigins.win/raw?url='
+    async function fetchApi(params) {
+        const key = getApiKey();
+        if (!key) throw new Error("API Key kosong!");
+        const targetUrl = encodeURIComponent(`${baseUrl}?api_key=${key}&${params}`);
+        const proxyUrl = `https://api.allorigins.win/raw?url=${targetUrl}`;
+        
+        let res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res;
+    }
+
+    async function cekSaldo() {
+        if (!getApiKey()) return alert("Masukkan API Key terlebih dahulu!");
+        document.getElementById('balanceInfo').innerText = "...";
+        try {
+            const res = await fetchApi('action=getBalance');
+            const text = await res.text();
+            if(text.includes("ACCESS_BALANCE")) document.getElementById('balanceInfo').innerText = "$" + text.split(":")[1];
+            else document.getElementById('balanceInfo').innerText = text;
+        } catch (e) {
+            document.getElementById('balanceInfo').innerText = "Gagal koneksi";
+        }
+    }
+
+    async function pesanNomor() {
+        if (!getApiKey()) return alert("Masukkan API Key!");
+        const service = document.getElementById('serviceCode').value;
+        const country = document.getElementById('countryCode').value;
+        
+        const btn = document.getElementById('btnPesan');
+        btn.innerText = "Memproses...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetchApi(`action=getNumberV2&service=${service}&country=${country}`);
+            const data = await res.json();
+            
+            if(data.activationId) {
+                document.getElementById('activationId').value = data.activationId;
+                document.getElementById('phoneNumber').value = data.phoneNumber;
+                document.getElementById('smsBox').value = "Menunggu SMS...";
+                cekSaldo();
+            } else {
+                alert("Gagal order. Respons API: " + JSON.stringify(data));
+            }
+        } catch (e) {
+            alert("Error: Gagal memproses order. Pastikan API key benar dan koneksi stabil.");
+        } finally {
+            btn.innerText = "Order Nomor";
+            btn.disabled = false;
+        }
+    }
+
+    async function cekSMS() {
+        const id = document.getElementById('activationId').value;
+        if(!id) return alert("Belum ada nomor yang aktif!");
+        
+        const btn = document.getElementById('btnSms');
+        btn.innerText = "Mengecek...";
+        
+        try {
+            const res = await fetchApi(`action=getStatusV2&id=${id}`);
+            const data = await res.json();
+            if(data.sms && data.sms.code) {
+                document.getElementById('smsBox').value = `${data.sms.code} \n(${data.sms.text})`;
+            } else {
+                document.getElementById('smsBox').value = "Belum ada SMS masuk...";
+            }
+        } catch (e) {
+            alert("Gagal mengecek SMS.");
+        } finally {
+            btn.innerText = "Cek SMS";
+        }
+    }
+
+    async function ubahStatus(statusCode) {
+        const id = document.getElementById('activationId').value;
+        if(!id) return alert("Belum ada ID aktif!");
+        
+        try {
+            const res = await fetchApi(`action=setStatus&id=${id}&status=${statusCode}`);
+            const text = await res.text();
+            
+            if(text.includes("ACCESS_CANCEL")) {
+                alert("Pesanan Dibatalkan.");
+                document.getElementById('activationId').value = "";
+                document.getElementById('phoneNumber').value = "";
+                document.getElementById('smsBox').value = "";
+                cekSaldo();
+            } else if (text.includes("ACCESS_READY")) {
+                alert("Status diubah ke Selesai.");
+            } else {
+                alert("Gagal mengubah status: " + text);
+            }
+        } catch (e) {
+            alert("Error mengubah status.");
+        }
+    }
+</script>
 </body>
 </html>
