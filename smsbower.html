@@ -1,137 +1,4 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMSBower Multi Panel</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-    <style>
-        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
-        * { box-sizing: border-box; transition: all 0.2s ease; }
-        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
-        
-        .badge-rank { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; color: #fff; margin-right: 6px; display: inline-block; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
-        .badge-gold { background: linear-gradient(135deg, #d4af37, #aa7c11); border: 1px solid #e8c557; }
-        .badge-silver { background: linear-gradient(135deg, #b5b5b5, #757575); border: 1px solid #d4d4d4; }
-        .badge-bronze { background: linear-gradient(135deg, #cd7f32, #8d5524); border: 1px solid #e09b59; }
-
-        .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
-        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
-        .search-input:focus { border-color: var(--accent-cyan); }
-        .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
-        .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
-        .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
-        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
-        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
-        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .btn-resend { background: #4a3c8c; color: #fff; }
-        .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
-        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; }
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
-        .unified-order-box { display: flex; flex-direction: column; gap: 6px; background: #0b0c16; border: 1px solid #4a3c8c; border-radius: 10px; padding: 8px; }
-        .unified-select-op { border: none; background: #121324; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 10px; border-radius: 6px; outline: none; cursor: pointer; width: 100%; }
-        .dropdown-selected-bar { background: #121324; border: none; border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
-        .dropdown-list-options { display: none; margin-top: 8px; background: #121324; border: 1px solid #3d3463; border-radius: 10px; max-height: 250px; overflow-y: auto; }
-        .dropdown-list-options.active { display: block; }
-        .dropdown-item-row { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1b35; cursor: pointer; font-size: 13px; }
-        .dropdown-item-row.selected { background: #25204d; border-left: 3px solid var(--accent-purple); }
-        .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; }
-        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; display: block; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (Shopee & WA)</h3>
-            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
-                👛 <span id="bower_txtSaldoLive">Rp 0</span>
-                <span onclick="bower_refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 12px;">
-            <div class="pemicu-dropdown" onclick="bower_toggleApiKeyDropdown()">
-                <span>🔑 Konfigurasi API Key (SMSBower)</span>
-                <span id="bower_panahApiKey" style="font-size: 10px;">▼</span>
-            </div>
-            <div id="bower_wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
-                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 SMSBower API Key:</label>
-                <div style="display: flex; gap: 6px;">
-                    <input type="password" id="bower_otpKey" placeholder="API Key SMSBower" class="search-input" style="margin-bottom:0;">
-                    <button onclick="bower_simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
-                </div>
-                <small id="bower_statusKey" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
-            </div>
-        </div>
-
-        <div class="dropdown-box-wrapper">
-            <label class="form-label">🛒 Setup Layanan Utama</label>
-            <div class="unified-order-box">
-                <select id="bower_dropdownLayanan" class="unified-select-op" onchange="bower_muatProdukLayanan(true)">
-                    <option value="ka" selected>Shopee (Indonesia)</option>
-                    <option value="wa">WhatsApp (Indonesia)</option>
-                </select>
-
-                <select id="bower_dropdownOperator" class="unified-select-op" style="color: #ffb86c;">
-                    <option value="any" selected>⚡ Semua Operator (Acak)</option>
-                    <option value="telkomsel">Telkomsel</option>
-                    <option value="indosat">Indosat</option>
-                    <option value="xl">XL / Axis</option>
-                    <option value="three">Three (Tri)</option>
-                    <option value="smartfren">Smartfren</option>
-                </select>
-                
-                <div class="dropdown-selected-bar" onclick="bower_toggleDropdownList()">
-                    <span id="bower_labelServerTerpilih" style="color: #fff;">Pilih Provider / Tier...</span>
-                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Tier</span>
-                </div>
-            </div>
-            <div id="bower_containerListDropdown" class="dropdown-list-options"></div>
-            <button class="btn-pesan-sekarang" id="bower_btnPesanAksi" onclick="bower_eksekusiBeliTerpilih()" disabled>
-                <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
-            </button>
-        </div>
-
-        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
-            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span>📱 Nomor & OTP Aktif:</span>
-                <button onclick="bower_bersihkanAktif()" style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer;">🧹 Bersihkan</button>
-            </div>
-            <div id="bower_containerListOrder">
-                <div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
-            </div>
-        </div>
-
-        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
-            <div class="pemicu-dropdown" onclick="bower_toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
-                <span>📜 Riwayat Sukses (<span id="bower_countRiwayatBadge">0</span>)</span>
-                <span id="bower_panahRiwayat" style="font-size: 10px;">▼</span>
-            </div>
-            <div id="bower_wadahRiwayatDropdown" style="display: none; background: #0b0c16; padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
-                <div style="text-align: right; margin-bottom: 10px;">
-                    <span onclick="bower_hapusSemuaRiwayatBawah()" style="cursor: pointer; font-size: 10px; color: var(--accent-red); font-weight: bold;">🗑️ Hapus Riwayat</span>
-                </div>
-                <div id="bower_containerRiwayat">
-                    <div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>
-                </div>
-            </div>
-        </div>
-        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Panel SMSBower Diinisialisasi.<br>
-            └> Filter Operator Aktif.<br>
-            └> Auto-Blokir 3x24 Jam (Firebase) Aktif.
-        </div>
-    </div>
-    
-    <div class="toast" id="bower_toastNotif">Berhasil! ✨</div>
-
-    <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
         import { getDatabase, ref, get, set, child } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
@@ -150,6 +17,16 @@
 
         const BOWER_NILAI_KURS = 17815; 
         const BOWER_ALLOWED_PROVIDERS = [2295, 3160, 3309, 3340, 2738, 3435, 3029, 1329, 3406];
+
+        // === DATABASE AWALAN NOMOR (PREFIX) INDONESIA ===
+        const PREFIX_OPERATOR = {
+            "telkomsel": ["811", "812", "813", "821", "822", "851", "852", "853"],
+            "indosat": ["814", "815", "816", "855", "856", "857", "858"],
+            "xl": ["817", "818", "819", "859", "877", "878", "831", "832", "833", "838"], // Termasuk Axis
+            "three": ["895", "896", "897", "898", "899"],
+            "smartfren": ["881", "882", "883", "884", "885", "886", "887", "888", "889"]
+        };
+        // ================================================
 
         let bower_daftarOrderan = []; 
         let bower_daftarServerTersedia = []; 
@@ -286,7 +163,7 @@
             
             try {
                 let serviceId = document.getElementById("bower_dropdownLayanan").value;
-                let opId = document.getElementById("bower_dropdownOperator").value; // AMBIL VALUE OPERATOR
+                let opId = document.getElementById("bower_dropdownOperator").value;
                 
                 if (serviceId === "ka") {
                     bower_daftarOrderan.forEach(item => {
@@ -296,7 +173,8 @@
                     });
                 }
 
-                let maxRetries = 5; 
+                // Dinaikkan menjadi 8x percobaan agar filter telkomsel lebih maksimal
+                let maxRetries = 8; 
                 let attempt = 0;
                 let finalOrder = null;
                 let isRecycled = false;
@@ -305,7 +183,6 @@
                     attempt++;
                     if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                     
-                    // Payload dikirim beserta field operator
                     const responseData = await apiSMSBower('orders/create', 'POST', { 
                         provider_id: bower_produkTerpilihId, 
                         service: serviceId,
@@ -315,6 +192,20 @@
                     
                     if (createdOrder) {
                         let phone = createdOrder.phone_number;
+                        
+                        // 1. FILTER AWALAN NOMOR (PREFIX) SECARA LOKAL
+                        if (opId !== "any") {
+                            // Ambil 3 digit setelah kode negara (misal dari 62812 jadi 812)
+                            let prefix = phone.substring(2, 5); 
+                            if (!PREFIX_OPERATOR[opId].includes(prefix)) {
+                                btn.innerHTML = `⚠️ BUKAN ${opId.toUpperCase()}! GANTI...`;
+                                await apiSMSBower(`orders/cancel`, 'POST', { id: createdOrder.id }).catch(e=>{});
+                                await new Promise(r => setTimeout(r, 1500)); // Beri nafas API
+                                continue; 
+                            }
+                        }
+
+                        // 2. CEK DATABASE FIREBASE (NOMOR BEKAS)
                         const dbRef = ref(db);
                         const snapshot = await get(child(dbRef, `blocklist/${phone}`));
 
@@ -354,7 +245,7 @@
                     });
                     bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive();
                 } else {
-                    alert("Sistem membatalkan orderan 5x berturut-turut karena selalu dapat nomor bekas dari Firebase. Silakan ganti Provider.");
+                    alert("Gagal: Sistem membatalkan pesanan 8x berturut-turut karena terus mendapat nomor operator lain atau nomor bekas. Provider ini mungkin sedang kehabisan stok Telkomsel.");
                 }
 
             } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
@@ -519,5 +410,3 @@
             } 
         }
     </script>
-</body>
-</html>
