@@ -77,6 +77,15 @@
                     <option value="ka" selected>Shopee (Indonesia)</option>
                     <option value="wa">WhatsApp (Indonesia)</option>
                 </select>
+
+                <select id="bower_dropdownOperator" class="unified-select-op" style="color: #ffb86c;">
+                    <option value="any" selected>⚡ Semua Operator (Acak)</option>
+                    <option value="telkomsel">Telkomsel</option>
+                    <option value="indosat">Indosat</option>
+                    <option value="xl">XL / Axis</option>
+                    <option value="three">Three (Tri)</option>
+                    <option value="smartfren">Smartfren</option>
+                </select>
                 
                 <div class="dropdown-selected-bar" onclick="bower_toggleDropdownList()">
                     <span id="bower_labelServerTerpilih" style="color: #fff;">Pilih Provider / Tier...</span>
@@ -115,7 +124,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
             └> Sistem Panel SMSBower Diinisialisasi.<br>
-            └> Auto-Blokir 3x24 Jam (Firebase Online) Aktif.
+            └> Filter Operator Aktif.<br>
+            └> Auto-Blokir 3x24 Jam (Firebase) Aktif.
         </div>
     </div>
     
@@ -276,6 +286,7 @@
             
             try {
                 let serviceId = document.getElementById("bower_dropdownLayanan").value;
+                let opId = document.getElementById("bower_dropdownOperator").value; // AMBIL VALUE OPERATOR
                 
                 if (serviceId === "ka") {
                     bower_daftarOrderan.forEach(item => {
@@ -294,7 +305,12 @@
                     attempt++;
                     if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                     
-                    const responseData = await apiSMSBower('orders/create', 'POST', { provider_id: bower_produkTerpilihId, service: serviceId });
+                    // Payload dikirim beserta field operator
+                    const responseData = await apiSMSBower('orders/create', 'POST', { 
+                        provider_id: bower_produkTerpilihId, 
+                        service: serviceId,
+                        operator: opId
+                    });
                     const createdOrder = responseData.data?.orders?.[0];
                     
                     if (createdOrder) {
@@ -306,7 +322,6 @@
                             let data = snapshot.val();
                             let ageHours = (Date.now() - data.timestamp) / (1000 * 60 * 60);
 
-                            // BATAS WAKTU DIUBAH MENJADI 72 JAM (3x24 Jam)
                             if (ageHours < 72) {
                                 btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
                                 await apiSMSBower(`orders/cancel`, 'POST', { id: createdOrder.id }).catch(e=>{});
