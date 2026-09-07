@@ -126,8 +126,9 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Tombol Blokir / Ban tersinkronisasi server (Status: 8).<br>
-            └> Direct API Client-Side Aktif.
+            └> UI Disinkronkan dengan SMSBower.<br>
+            └> Direct API Client-Side Aktif.<br>
+            └> Status 8 (BAN) terpasang sempurna.
         </div>
     </div>
     
@@ -359,7 +360,7 @@
 
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
-                            // Otomatis BAN (status=8) nomor yang masuk daftar hitam agar tidak dikirim ulang oleh Vak-SMS
+                            // PERBAIKAN: Jika menolak nomor bekas, langsung eksekusi BAN (status 8) ke server Vak-SMS
                             await apiVakSms('setStatus', { id: actId, status: 8 }).catch(e=>{});
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
@@ -398,7 +399,7 @@
             } catch(e) { document.getElementById("vak_txtSaldoLive").innerText = "Error"; }
         }
 
-        // Fungsi Batal Pesanan Biasa -> Tetap pakai cancelActivation
+        // Batal Biasa (Tidak Blokir) tetap menggunakan cancelActivation
         window.vak_eksekusiBatalkanServer = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
@@ -408,14 +409,14 @@
             } catch (e) {}
         }
         
-        // Fungsi BLOKIR -> Terkoneksi menjadi BAN di server Vak-SMS (menggunakan setStatus: 8)
+        // FUNGSI BLOKIR MANUAL (Terkoneksi ke BAN Vak-SMS)
         window.vak_blokirManual = async function(index) {
             const item = vak_daftarOrderan[index];
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
                 
-                // EKSEKUSI BAN NOMOR KE SERVER VAK-SMS (Status 8)
+                // PERBAIKAN: Mengirimkan perintah setStatus=8 ke peladen Vak-SMS untuk BAN nomor
                 await apiVakSms('setStatus', { id: item.order_id, status: 8 });
                 
                 item.status = "cancelled"; 
