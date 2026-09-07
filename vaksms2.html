@@ -124,6 +124,11 @@
                 </div>
             </div>
         </div>
+        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
+            └> Sistem Panel Vak-SMS Beroperasi.<br>
+            └> MODE INVESTIGASI ERROR AKTIF.<br>
+            └> Fallback Dimatikan. Menunggu Respon API...
+        </div>
     </div>
     
     <div class="toast" id="bower_toastNotif">Berhasil! ✨</div>
@@ -188,7 +193,7 @@
             try {
                 const res = await fetch(targetUrl);
                 const dataText = await res.text();
-                try { return { isJson: true, data: JSON.parse(dataText) }; } 
+                try { return { isJson: true, data: JSON.parse(dataText), raw: dataText }; } 
                 catch(e) { return { isJson: false, raw: dataText }; }
             } catch (e) { throw new Error("Gagal terhubung ke Proxy Webhook."); }
         }
@@ -232,14 +237,28 @@
                 try {
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
                     
+                    // --- DIAGNOSTIK KETAT: MENCETAK SEMUA KEMUNGKINAN ERROR ---
                     if (resProd.data && resProd.data.is_debug_error) {
-                        throw new Error(`Fallback Triggered: Server masih memblokir.`);
+                        throw new Error(`[CF Error ${resProd.data.vak_status}] ${resProd.data.vak_response}`);
+                    }
+                    if (!resProd.isJson) { 
+                        throw new Error(`Bukan JSON: ${resProd.raw.substring(0,60)}`); 
                     }
                     if (resProd.data && resProd.data.title === "Unauthenticated") {
-                        throw new Error(`Fallback Triggered: Server masih memblokir.`);
+                        throw new Error(`Token Ditolak! API Key tidak terbaca server.`);
                     }
-                    if (!resProd.data || !resProd.data.data || !resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) {
-                        throw new Error("Tidak ada data dari API Offers.");
+                    if (!resProd.data.data) {
+                        throw new Error(`Objek Data Hilang: ${JSON.stringify(resProd.data).substring(0, 60)}`);
+                    }
+                    if (!resProd.data.data[serviceId]) {
+                        let keys = Object.keys(resProd.data.data).join(",");
+                        throw new Error(`Layanan '${serviceId}' tidak ditemukan di: [${keys}]`);
+                    }
+                    if (!resProd.data.data[serviceId]["6"]) {
+                        throw new Error(`Negara '6' tidak ditemukan di response API.`);
+                    }
+                    if (!resProd.data.data[serviceId]["6"].map) {
+                        throw new Error(`Objek Map Harga tidak ditemukan.`);
                     }
 
                     const priceMap = resProd.data.data[serviceId]["6"].map;
@@ -252,22 +271,10 @@
                     bower_lastServiceId = serviceId;
 
                 } catch (e) {
-                    // FALLBACK DARURAT: Jika API Harga Baru tetap gagal, panel menggunakan harga dasar (getPrices) agar Anda tetap BISA ORDER!
-                    try {
-                        const fallback = await apiVakSms('getPrices', { service: serviceId, country: 6 });
-                        if (fallback.isJson && fallback.data["6"] && fallback.data["6"][serviceId]) {
-                            let cost = fallback.data["6"][serviceId].cost;
-                            let count = fallback.data["6"][serviceId].count;
-                            bower_cachedOffers = [{ priceStr: cost.toString(), price: parseFloat(cost), stock: count }];
-                            bower_lastServiceId = serviceId;
-                            console.log("Fallback Aktif: Menggunakan harga dasar.");
-                        } else {
-                            throw new Error("Layanan benar-benar kosong.");
-                        }
-                    } catch(err2) {
-                        document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:12px;">Gagal memuat harga.</span>`;
-                        return;
-                    }
+                    // MENCETAK ERROR MERAH DAN TIDAK MELAKUKAN FALLBACK
+                    document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block;">🚨 ERROR OFFERS: ${e.message}</span>`;
+                    document.getElementById("bower_btnPesanAksi").disabled = true;
+                    return;
                 }
             }
 
