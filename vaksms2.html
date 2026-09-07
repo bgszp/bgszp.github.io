@@ -130,6 +130,7 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
+            └> Perbaikan Parsing JSON Endpoint /offers.<br>
             └> Kode Operator & API Harga Map Sinkron.<br>
             └> Fitur Auto-Cancel & Ban Otomatis Aktif.<br>
             └> Harga Sinkron dengan Live Kurs USD-IDR.
@@ -183,7 +184,6 @@
             let endpointPath = "";
             let queryString = `?api_key=${token.trim()}`;
             
-            // Routing request khusus ke endpoint Offers atau API Standar
             if (action === "offers") { endpointPath = "/activations/offers"; } 
             else { queryString += `&action=${action}`; }
 
@@ -231,21 +231,20 @@
         window.bower_muatProdukLayanan = async function() {
             try {
                 let serviceId = document.getElementById("bower_dropdownLayanan").value;
-                let opId = document.getElementById("vak_dropdownOperator").value;
                 let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
                 let prefixLayanan = elemNamaSrv.split(' ')[0]; 
                 let opName = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
 
                 document.getElementById("bower_labelServerTerpilih").innerHTML = `Mencari data harga...`;
                 
-                // Menarik API Offers (Map Harga)
                 const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
                 
-                if (!resProd.isJson || !resProd.data || !resProd.data[serviceId] || !resProd.data[serviceId]["6"]) {
+                // PERBAIKAN: Struktur respons dari /offers dibungkus objek "data"
+                if (!resProd.isJson || !resProd.data || !resProd.data.data || !resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) {
                     throw new Error("Stok harga tidak ditemukan.");
                 }
 
-                const priceMap = resProd.data[serviceId]["6"].map;
+                const priceMap = resProd.data.data[serviceId]["6"].map;
                 bower_daftarServerTersedia = [];
                 
                 for (const [priceStr, count] of Object.entries(priceMap)) {
@@ -259,14 +258,12 @@
 
                 if (bower_daftarServerTersedia.length === 0) throw new Error("Stok habis.");
 
-                // Urutkan dari harga termurah
                 bower_daftarServerTersedia.sort((a, b) => a.price - b.price);
-                
                 bower_renderDropdownOptions();
-                bower_pilihServerDropdown(0); // Pilih yang termurah otomatis
+                bower_pilihServerDropdown(0);
                  
             } catch (e) {
-                document.getElementById("bower_labelServerTerpilih").innerText = e.message || "Layanan Kosong";
+                document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:12px;">${e.message || "Layanan Kosong"}</span>`;
                 document.getElementById("bower_btnPesanAksi").disabled = true;
                 document.getElementById("bower_containerListDropdown").innerHTML = "";
             }
@@ -309,7 +306,6 @@
             const teksAsli = btn.innerHTML;
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             
-            // Auto-cancel: Batalkan order lama di Server (status 8)
             bower_daftarOrderan.forEach(item => {
                 if (item.status === "pending") {
                     item.status = "cancelled";
@@ -384,7 +380,6 @@
             } catch(e) { document.getElementById("bower_txtSaldoLive").innerText = "Error"; }
         }
 
-        // Batal Biasa (Status 8 sesuai dokumentasi)
         window.bower_eksekusiBatalkanServer = async function(index) {
             const item = bower_daftarOrderan[index];
             try { 
@@ -394,13 +389,12 @@
             } catch (e) {}
         }
         
-        // Blokir/Ban: Tetap memakai Status 8 (Cancel) ke server + Blocklist Lokal agar bersih dari web
         window.bower_blokirManual = async function(index) {
             const item = bower_daftarOrderan[index];
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
-                await apiVakSms('setStatus', { id: item.order_id, status: 8 });
+                await apiVakSms('cancelActivation', { id: item.order_id });
                 item.status = "cancelled"; 
                 bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Nomor di-BAN!"); 
             } catch (e) { alert("Gagal memblokir: " + e.message); }
