@@ -78,13 +78,13 @@
                     <option value="tg">Telegram (Indonesia)</option>
                 </select>
                 
-                <!-- Lapis 2: Operator -->
+                <!-- Lapis 2: Operator (Disesuaikan dengan Kode Vak-SMS) -->
                 <select id="vak_dropdownOperator" class="unified-select-op" onchange="bower_muatProdukLayanan()" style="color: #ffb86c;">
                     <option value="any" selected>⚡ Semua Operator (Acak)</option>
                     <option value="telkomsel">Telkomsel</option>
                     <option value="indosat">Indosat</option>
-                    <option value="xl">XL / Axis</option>
-                    <option value="tri">Three (Tri)</option>
+                    <option value="xlAxiata">XL / Axis</option>
+                    <option value="three">Three (Tri)</option>
                     <option value="smartfren">Smartfren</option>
                 </select>
                 
@@ -126,10 +126,11 @@
                 </div>
             </div>
         </div>
-        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
+        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 120px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Diinisialisasi.<br>
-            └> Perbaikan Sinkronisasi Tombol Batal/Blokir.<br>
-            └> Filter Batas Harga Stok Premium Aktif.
+            └> Kode Operator Vak-SMS (three, xlAxiata) Aktif.<br>
+            └> Fitur Blokir/Ban (Status 9) Sinkron Server.<br>
+            └> Fitur Auto-Cancel Order Menumpuk Aktif.
         </div>
     </div>
     
@@ -239,11 +240,10 @@
 
                 if (stock === 0) throw new Error("Stok habis.");
 
-                // Membangun daftar rentang batas harga (Max Price) yang dikirim ke API
                 bower_daftarServerTersedia = [
                     { id: 'tier1', opName: opName, price: basePrice, maxPrice: basePrice, label: 'Harga Dasar (Termurah)' },
-                    { id: 'tier2', opName: opName, price: basePrice * 1.5, maxPrice: basePrice * 2, label: 'Batas Maksimal' },
-                    { id: 'tier3', opName: opName, price: basePrice * 3, maxPrice: basePrice * 4, label: 'Batas Maksimal' }
+                    { id: 'tier2', opName: opName, price: basePrice * 1.5, maxPrice: basePrice * 2, label: 'Batas Maksimal (Sedang)' },
+                    { id: 'tier3', opName: opName, price: basePrice * 3, maxPrice: basePrice * 4, label: 'Batas Maksimal (Tinggi)' }
                 ];
                 
                 bower_renderDropdownOptions();
@@ -303,6 +303,17 @@
             const teksAsli = btn.innerHTML;
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             
+            // --- PEMBARUAN: Auto-cancel pesanan lama yang masih pending ---
+            bower_daftarOrderan.forEach(item => {
+                if (item.status === "pending") {
+                    item.status = "cancelled";
+                    apiVakSms(`setStatus`, { id: item.order_id, status: 8 }).catch(e=>{});
+                }
+            });
+            bower_renderUILayout();
+            bower_simpanDaftarOrderanKeLokal();
+            // --------------------------------------------------------------
+            
             try {
                 let serviceId = document.getElementById("bower_dropdownLayanan").value;
                 let opId = document.getElementById("vak_dropdownOperator").value;
@@ -337,7 +348,6 @@
 
                             if (ageHours < 24) {
                                 btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
-                                // Batal pesanan otomatis ke server karena bekas
                                 await apiVakSms(`setStatus`, { id: actId, status: 8 }).catch(e=>{});
                                 await new Promise(r => setTimeout(r, 1500)); 
                                 continue; 
@@ -399,7 +409,6 @@
             } catch(e) { document.getElementById("bower_txtSaldoLive").innerText = "Error"; }
         }
 
-        // --- PEMBARUAN: Batal & Blokir menggunakan Status 8 (Cancel) ke Peladen ---
         window.bower_eksekusiBatalkanServer = async function(index) {
             const item = bower_daftarOrderan[index];
             try { 
@@ -409,22 +418,22 @@
             } catch (e) {}
         }
         
+        // --- PEMBARUAN: Fungsi Ban (Status 9) Sinkron ke Web Vak-SMS ---
         window.bower_blokirManual = async function(index) {
             const item = bower_daftarOrderan[index];
-            if (!confirm(`Batalkan & Blokir nomor ${item.phone} selama 24 jam agar tidak muncul lagi?`)) return;
+            if (!confirm(`Batalkan & BAN nomor ${item.phone} di server Vak-SMS agar tidak muncul lagi?`)) return;
             
             try {
-                // 1. Simpan di Firebase agar tidak muncul lagi di panel
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
                 
-                // 2. Kirim status=8 (Cancel) ke Vak-SMS agar pesanan benar-benar dibatalkan dan hilang dari web mereka
-                await apiVakSms(`setStatus`, { id: item.order_id, status: 8 });
+                // Status 9: Ban di Vak-SMS
+                await apiVakSms(`setStatus`, { id: item.order_id, status: 9 });
                 
                 item.status = "cancelled"; 
                 bower_renderUILayout(); 
                 bower_simpanDaftarOrderanKeLokal(); 
                 window.bower_ambilSaldoLive(); 
-                bower_showToast("Nomor Diblokir!"); 
+                bower_showToast("Nomor di-BAN!"); 
             } catch (e) {
                 alert("Gagal membatalkan/memblokir: " + e.message);
             }
