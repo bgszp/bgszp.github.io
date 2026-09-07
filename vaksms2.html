@@ -124,12 +124,6 @@
                 </div>
             </div>
         </div>
-        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
-            └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Tembus Blokir Header Aplikasi (Pure URL).<br>
-            └> Mengirim 4 Tipe Otorisasi Serentak.<br>
-            └> Menunggu Balasan Filter Harga...
-        </div>
     </div>
     
     <div class="toast" id="bower_toastNotif">Berhasil! ✨</div>
@@ -187,9 +181,8 @@
 
             for (const [key, value] of Object.entries(params)) { queryString += `&${key}=${value}`; }
             
-            // Wajib untuk Anti Cache Cloudflare
+            // Bypass Cache
             queryString += `&_t=${Date.now()}`;
-            
             const targetUrl = `${VAK_WORKER_URL}${endpointPath}${queryString}`;
             
             try {
@@ -239,19 +232,15 @@
                 try {
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
                     
-                    // MENANGKAP ERROR DIAGNOSTIK DARI WORKER JIKA DITOLAK
                     if (resProd.data && resProd.data.is_debug_error) {
-                        let errMsg = `🚨 [${resProd.data.vak_status}] ${resProd.data.vak_response}`;
-                        throw new Error(errMsg);
+                        throw new Error(`Fallback Triggered: Server masih memblokir.`);
                     }
-                    
-                    if (!resProd.isJson) { throw new Error("API merespons teks mentah."); }
-                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error("Token Ditolak."); }
-                    if (!resProd.data || !resProd.data.data) {
-                        if (resProd.data["6"] && resProd.data["6"][serviceId]) { throw new Error("Rute Salah, kembali ke getPrices."); }
-                        throw new Error("Format JSON Tidak Dikenali.");
+                    if (resProd.data && resProd.data.title === "Unauthenticated") {
+                        throw new Error(`Fallback Triggered: Server masih memblokir.`);
                     }
-                    if (!resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) { throw new Error("Tidak ada stok."); }
+                    if (!resProd.data || !resProd.data.data || !resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) {
+                        throw new Error("Tidak ada data dari API Offers.");
+                    }
 
                     const priceMap = resProd.data.data[serviceId]["6"].map;
                     bower_cachedOffers = [];
@@ -263,8 +252,22 @@
                     bower_lastServiceId = serviceId;
 
                 } catch (e) {
-                    document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block;">${e.message}</span>`;
-                    return;
+                    // FALLBACK DARURAT: Jika API Harga Baru tetap gagal, panel menggunakan harga dasar (getPrices) agar Anda tetap BISA ORDER!
+                    try {
+                        const fallback = await apiVakSms('getPrices', { service: serviceId, country: 6 });
+                        if (fallback.isJson && fallback.data["6"] && fallback.data["6"][serviceId]) {
+                            let cost = fallback.data["6"][serviceId].cost;
+                            let count = fallback.data["6"][serviceId].count;
+                            bower_cachedOffers = [{ priceStr: cost.toString(), price: parseFloat(cost), stock: count }];
+                            bower_lastServiceId = serviceId;
+                            console.log("Fallback Aktif: Menggunakan harga dasar.");
+                        } else {
+                            throw new Error("Layanan benar-benar kosong.");
+                        }
+                    } catch(err2) {
+                        document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:12px;">Gagal memuat harga.</span>`;
+                        return;
+                    }
                 }
             }
 
@@ -376,7 +379,7 @@
                         order_id: finalOrder.activationId, phone: finalOrder.phoneNumber, layanan: bower_namaProdukTerpilih, harga: finalOrder.activationCost, waktu_dibuat: Date.now(), status: "pending", otp: "", is_recycled: isRecycled 
                     });
                     bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive();
-                } else { alert("Sistem membatalkan orderan berulang kali karena selalu dapat nomor bekas."); }
+                } else { alert("Sistem membatalkan orderan berulang karena nomor bekas."); }
             } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
         }
 
