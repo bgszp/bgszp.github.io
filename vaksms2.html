@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Blokir Firebase (Lokal) Aktif (Mencegah nomor bekas).<br>
-            └> Direct API Cepat & Ringan.
+            └> Direct API V2 Aktif (/api/setStatus/).<br>
+            └> Fitur BAN & END Bekerja Penuh!
         </div>
     </div>
     
@@ -192,7 +192,6 @@
             try {
                 const res = await fetch(targetUrl);
                 const dataText = await res.text();
-                
                 try { 
                     let parsedData = JSON.parse(dataText);
                     return { isJson: true, data: parsedData, raw: dataText }; 
@@ -202,6 +201,14 @@
             } catch (e) { 
                 throw new Error("Ditolak Peramban (CORS)."); 
             }
+        }
+
+        // --- SISTEM API BARU KHUSUS BAN (bad) & SELESAI (end) ---
+        window.vak_apiSetStatusV2 = async function(actId, isBan) {
+            const key = localStorage.getItem("otp_key_vaksms") || "";
+            const statusStr = isBan ? 'bad' : 'end'; 
+            const targetUrl = `https://vak-sms.com/api/setStatus/?apiKey=${key.trim()}&status=${statusStr}&idNum=${actId}&nocache=${Date.now()}`;
+            try { await fetch(targetUrl); } catch (e) { console.log(e); }
         }
 
         document.addEventListener("DOMContentLoaded", async function() {
@@ -360,7 +367,8 @@
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
                             
-                            await apiVakSms('cancelActivation', { id: actId }).catch(e=>{});
+                            // Eksekusi API V2 Khusus BAN Otomatis
+                            await window.vak_apiSetStatusV2(actId, true);
                             
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
@@ -408,17 +416,17 @@
             } catch (e) {}
         }
         
-        // Fungsi Blokir Manual Standar (Aman untuk API)
+        // --- BLOKIR MANUAL DENGAN API V2 ---
         window.vak_blokirManual = async function(index) {
             const item = vak_daftarOrderan[index];
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
                 
-                await apiVakSms('cancelActivation', { id: item.order_id });
+                await window.vak_apiSetStatusV2(item.order_id, true);
                 
                 item.status = "cancelled"; 
-                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Nomor di-BAN Lokal!"); 
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Nomor di-BAN!"); 
             } catch (e) { alert("Gagal memblokir: " + e.message); }
         }
 
@@ -426,9 +434,15 @@
             const item = vak_daftarOrderan[index];
             try { await apiVakSms('setStatus', { id: item.order_id, status: 3 }); vak_showToast("Resend Diminta!"); } catch (e) {}
         }
+        
+        // --- SELESAI MANUAL DENGAN API V2 ---
         window.vak_eksekusiSelesai = async function(index) {
             const item = vak_daftarOrderan[index];
-            try { await apiVakSms(`setStatus`, { id: item.order_id, status: 6 }); item.status = "completed"; vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Selesai!"); } catch(err) {}
+            try { 
+                await window.vak_apiSetStatusV2(item.order_id, false); 
+                item.status = "completed"; 
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Selesai!"); 
+            } catch(err) {}
         }
 
         window.vak_mesinCekSmsTerpusat = async function() {
