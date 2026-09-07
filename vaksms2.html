@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Bypass Auth Canggih CF Worker Aktif.<br>
-            └> Penyamaran Peramban (User-Agent) Aktif.
+            └> Mode Direct API (Client-Side) Aktif.<br>
+            └> Worker dipangkas menjadi Webhook murni.
         </div>
     </div>
     
@@ -174,27 +174,32 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
+        // --- SISTEM BARU: PEMANGGILAN API LANGSUNG KE VAK-SMS (DIRECT FETCH) ---
         async function apiVakSms(action, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
             
-            let endpointPath = "";
-            let queryString = `?api_key=${token.trim()}`;
-            
-            if (action === "offers") { endpointPath = "/activations/offers"; } 
-            else { queryString += `&action=${action}`; }
+            let targetUrl = '';
+            let fetchOptions = { method: 'GET' };
 
-            for (const [key, value] of Object.entries(params)) { queryString += `&${key}=${value}`; }
-            queryString += `&_t=${Date.now()}`;
-            
-            const targetUrl = `${VAK_WORKER_URL}${endpointPath}${queryString}`;
+            if (action === "offers") {
+                // Sesuai Aturan Vak-SMS: Panggil API Harga Langsung tanpa URL Parameter api_key, tapi pakai Header
+                targetUrl = `https://vak-sms.com/stubs/handler_api.php/activations/offers?services=${params.services}&countries=6`;
+                fetchOptions.headers = { 'Authorization': token.trim(), 'Accept': 'application/json' };
+            } else {
+                // Panggilan Standar (Beli, Cek Saldo) tetap menggunakan URL api_key
+                targetUrl = `https://vak-sms.com/stubs/handler_api.php?api_key=${token.trim()}&action=${action}`;
+                for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
+            }
             
             try {
-                const res = await fetch(targetUrl);
+                const res = await fetch(targetUrl, fetchOptions);
                 const dataText = await res.text();
                 try { return { isJson: true, data: JSON.parse(dataText), raw: dataText }; } 
                 catch(e) { return { isJson: false, raw: dataText }; }
-            } catch (e) { throw new Error("Gagal terhubung ke Proxy Webhook."); }
+            } catch (e) { 
+                throw new Error("Direct Fetch Diblokir Jaringan/CORS Browser. Hubungi Admin."); 
+            }
         }
 
         document.addEventListener("DOMContentLoaded", async function() {
@@ -236,16 +241,10 @@
                 try {
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
                     
-                    // --- MENCETAK ERROR DETAIL (JIKA VAK-SMS MENOLAK) ---
-                    if (resProd.data && resProd.data.is_debug_error) {
-                        let err = new Error(`[Status ${resProd.data.vak_status}] ${resProd.data.vak_response}`);
-                        err.debug_info = resProd.data.debug_info;
-                        throw err;
-                    }
                     if (!resProd.isJson) { throw new Error(`Bukan JSON: ${resProd.raw.substring(0,60)}`); }
-                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error(`Token Ditolak!`); }
+                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error(`Token API Ditolak Server.`); }
                     if (!resProd.data.data) { throw new Error(`Data Hilang: ${JSON.stringify(resProd.data).substring(0, 60)}`); }
-                    if (!resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) { throw new Error(`Tidak ada stok untuk layanan ini.`); }
+                    if (!resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) { throw new Error(`Tidak ada stok layanan.`); }
 
                     const priceMap = resProd.data.data[serviceId]["6"].map;
                     bower_cachedOffers = [];
@@ -257,11 +256,7 @@
                     bower_lastServiceId = serviceId;
 
                 } catch (e) {
-                    let debugHtml = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block;">🚨 ERROR OFFERS: ${e.message}</span>`;
-                    if (e.debug_info) {
-                        debugHtml += `<span style="color:#ffb86c; font-size:9px; display:block; margin-top:4px;">🔑 Key: ${e.debug_info.key_sent} <br>🌐 URL: ${e.debug_info.url}</span>`;
-                    }
-                    document.getElementById("bower_labelServerTerpilih").innerHTML = debugHtml;
+                    document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block;">🚨 DIRECT API ERROR: ${e.message}</span>`;
                     document.getElementById("bower_btnPesanAksi").disabled = true;
                     return;
                 }
@@ -437,6 +432,7 @@
                 if (!izinkanCek) continue;
                 
                 try {
+                    // Pengecekan OTP SANGAT PENTING: Harus menggunakan Worker!
                     const resKV = await fetch(`${VAK_WORKER_URL}/get-sms?id=${i.order_id}`);
                     const jsonKV = await resKV.json();
                     
