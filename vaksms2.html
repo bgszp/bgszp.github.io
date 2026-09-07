@@ -9,7 +9,6 @@
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
         * { box-sizing: border-box; transition: all 0.2s ease; }
         body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        /* Container disesuaikan agar ukurannya identik dan responsif di tengah layar */
         .container { width: 100%; max-width: 480px; margin: 0 auto 10px auto; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
         
         .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
@@ -30,18 +29,20 @@
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         
         .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
-        .unified-order-box { display: flex; flex-direction: column; background: #0b0c16; border: 1px solid #4a3c8c; border-radius: 10px; overflow: hidden; }
-        .unified-select-op { border: none; background: #121324; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 12px 14px; outline: none; cursor: pointer; width: 100%; border-bottom: 1px solid #222448; }
-        .dropdown-selected-bar { background: #121324; border: none; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
         
-        .dropdown-list-options { display: none; background: #121324; border-top: 1px solid #222448; max-height: 200px; overflow-y: auto; }
+        /* Modifikasi UI agar persis seperti SMSBower */
+        .unified-order-box { display: flex; flex-direction: column; gap: 8px; }
+        .unified-select-op { border: 1px solid #2c2e5c; background: #0b0c16; border-radius: 10px; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 12px 14px; outline: none; cursor: pointer; width: 100%; }
+        .dropdown-selected-bar { background: #0b0c16; border: 1px solid #2c2e5c; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
+        
+        .dropdown-list-options { display: none; background: #121324; border: 1px solid #2c2e5c; border-radius: 10px; margin-top: 4px; max-height: 200px; overflow-y: auto; }
         .dropdown-list-options.active { display: block; }
         .dropdown-item-row { padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1b35; cursor: pointer; font-size: 13px; }
         .dropdown-item-row.selected { background: #25204d; border-left: 3px solid var(--accent-purple); }
         
         .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; }
-        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; display: block; }
+        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 8px; font-weight: 600; display: block; }
     </style>
 </head>
 <body>
@@ -91,7 +92,7 @@
                 
                 <div class="dropdown-selected-bar" onclick="vak_toggleDropdownList()">
                     <span id="vak_labelServerTerpilih" style="color: #fff;">Mencari harga...</span>
-                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Opsi Harga</span>
+                    <span style="font-size: 11px; color: var(--accent-cyan); font-weight: bold;">▼ Ubah Tier</span>
                 </div>
                 <div id="vak_containerListDropdown" class="dropdown-list-options"></div>
             </div>
@@ -127,8 +128,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Mode Direct API (Client-Side) Aktif.<br>
-            └> Variabel Independen & Sinkronisasi DB Aktif.
+            └> UI Disinkronkan dengan SMSBower.<br>
+            └> Direct API Client-Side Aktif.
         </div>
     </div>
     
@@ -138,7 +139,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
         import { getDatabase, ref, get, set, child } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
-        // Konfigurasi Firebase Anda tetap utuh untuk riwayat blokir bersama
         const firebaseConfig = {
             apiKey: "AIzaSyBuNaE700uoAXECmd7hG73wiJK6cY1ttcE",
             authDomain: "panel-smsbower.firebaseapp.com",
@@ -176,7 +176,6 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
-        // --- DIRECT API (CLIENT-SIDE) ---
         async function apiVakSms(action, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
@@ -314,7 +313,7 @@
             
             document.getElementById("vak_labelServerTerpilih").innerHTML = `
                 <span style="color:var(--accent-cyan); font-weight:bold; font-size:14px; margin-right:8px;">${vak_formatRupiah(srv.price * KURS_USD_IDR)}</span>
-                <span style="font-size:11px; color:#8b8da9;">(${srv.stock} tersedia)</span>
+                <span style="font-size:11px; color:#8b8da9;">(${srv.stock} stok)</span>
             `;
             document.getElementById("vak_containerListDropdown").classList.remove("active");
             document.getElementById("vak_btnPesanAksi").disabled = false; 
