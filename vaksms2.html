@@ -78,7 +78,7 @@
                     <option value="tg">Telegram (Indonesia)</option>
                 </select>
                 
-                <!-- Lapis 2: Operator (Disesuaikan dengan Kode Vak-SMS) -->
+                <!-- Lapis 2: Operator -->
                 <select id="vak_dropdownOperator" class="unified-select-op" onchange="bower_muatProdukLayanan()" style="color: #ffb86c;">
                     <option value="any" selected>⚡ Semua Operator (Acak)</option>
                     <option value="telkomsel">Telkomsel</option>
@@ -88,7 +88,7 @@
                     <option value="smartfren">Smartfren</option>
                 </select>
                 
-                <!-- Lapis 3: Batas Harga (Tampilan Bersih) -->
+                <!-- Lapis 3: Batas Harga -->
                 <div class="dropdown-selected-bar" onclick="bower_toggleDropdownList()">
                     <span id="bower_labelServerTerpilih" style="color: #fff;">Mencari harga...</span>
                     <span style="font-size: 10px; color: var(--accent-cyan);">▼ Opsi Harga</span>
@@ -128,8 +128,7 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 120px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Diinisialisasi.<br>
-            └> Kode Operator Vak-SMS (three, xlAxiata) Aktif.<br>
-            └> Fitur Blokir/Ban (Status 9) Sinkron Server.<br>
+            └> API Cancel & Blokir (action=cancelActivation) Sinkron.<br>
             └> Fitur Auto-Cancel Order Menumpuk Aktif.
         </div>
     </div>
@@ -153,13 +152,13 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        const KURS_USD_IDR = 17630; 
+        const KURS_USD_IDR = 15500; 
 
         let bower_daftarOrderan = []; 
         let bower_daftarServerTersedia = [];
         let bower_produkTerpilihId = null; 
         let bower_namaProdukTerpilih = ""; 
-        let bower_hargaProdukTerpilih = 0; // Max Price Request
+        let bower_hargaProdukTerpilih = 0; 
         let bower_siklusCek = 0;
 
         const VAK_WORKER_URL = "https://vaksms-webhook.tiktiksatu001.workers.dev"; 
@@ -226,7 +225,6 @@
 
                 document.getElementById("bower_labelServerTerpilih").innerHTML = `Mencari harga...`;
                 
-                // Ambil Harga Dasar (Paling Murah) dari API
                 const resProd = await apiVakSms('getPrices', { service: serviceId, country: 6 });
                 
                 let stock = 0; let basePrice = 0;
@@ -303,16 +301,15 @@
             const teksAsli = btn.innerHTML;
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             
-            // --- PEMBARUAN: Auto-cancel pesanan lama yang masih pending ---
+            // Auto-cancel pesanan lama yang masih pending untuk Vak-SMS
             bower_daftarOrderan.forEach(item => {
                 if (item.status === "pending") {
                     item.status = "cancelled";
-                    apiVakSms(`setStatus`, { id: item.order_id, status: 8 }).catch(e=>{});
+                    apiVakSms('cancelActivation', { id: item.order_id }).catch(e=>{});
                 }
             });
             bower_renderUILayout();
             bower_simpanDaftarOrderanKeLokal();
-            // --------------------------------------------------------------
             
             try {
                 let serviceId = document.getElementById("bower_dropdownLayanan").value;
@@ -348,7 +345,7 @@
 
                             if (ageHours < 24) {
                                 btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
-                                await apiVakSms(`setStatus`, { id: actId, status: 8 }).catch(e=>{});
+                                await apiVakSms('cancelActivation', { id: actId }).catch(e=>{});
                                 await new Promise(r => setTimeout(r, 1500)); 
                                 continue; 
                             } else {
@@ -412,22 +409,21 @@
         window.bower_eksekusiBatalkanServer = async function(index) {
             const item = bower_daftarOrderan[index];
             try { 
-                await apiVakSms(`setStatus`, { id: item.order_id, status: 8 }); 
+                await apiVakSms('cancelActivation', { id: item.order_id }); 
                 item.status = "cancelled"; 
                 bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Dibatalkan!"); 
             } catch (e) {}
         }
         
-        // --- PEMBARUAN: Fungsi Ban (Status 9) Sinkron ke Web Vak-SMS ---
+        // Memastikan request cancelActivation dikirim
         window.bower_blokirManual = async function(index) {
             const item = bower_daftarOrderan[index];
-            if (!confirm(`Batalkan & BAN nomor ${item.phone} di server Vak-SMS agar tidak muncul lagi?`)) return;
+            if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
             
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
                 
-                // Status 9: Ban di Vak-SMS
-                await apiVakSms(`setStatus`, { id: item.order_id, status: 9 });
+                await apiVakSms('cancelActivation', { id: item.order_id });
                 
                 item.status = "cancelled"; 
                 bower_renderUILayout(); 
@@ -483,7 +479,7 @@
 
             bower_daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiVakSms(`setStatus`, { id: item.order_id, status: 8 }).catch(e=>{}); }
+                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiVakSms('cancelActivation', { id: item.order_id }).catch(e=>{}); }
                 if (item.status === "cancelled") return; 
 
                 let d = new Date(item.waktu_dibuat);
