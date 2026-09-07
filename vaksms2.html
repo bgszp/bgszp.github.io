@@ -124,12 +124,6 @@
                 </div>
             </div>
         </div>
-        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
-            └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Diagnostics Log Mode Aktif.<br>
-            └> Fitur Auto-Cancel & Ban Sinkron.<br>
-            └> Menunggu Output Error API...
-        </div>
     </div>
     
     <div class="toast" id="bower_toastNotif">Berhasil! ✨</div>
@@ -186,11 +180,13 @@
             else { queryString += `&action=${action}`; }
 
             for (const [key, value] of Object.entries(params)) { queryString += `&${key}=${value}`; }
-            
             const targetUrl = `${VAK_WORKER_URL}${endpointPath}${queryString}`;
             
+            // INJEKSI HEADER LANGSUNG DARI BROWSER
+            const reqHeaders = { 'Authorization': token.trim() };
+            
             try {
-                const res = await fetch(targetUrl);
+                const res = await fetch(targetUrl, { headers: reqHeaders });
                 const dataText = await res.text();
                 try { return { isJson: true, data: JSON.parse(dataText) }; } 
                 catch(e) { return { isJson: false, raw: dataText }; }
@@ -236,22 +232,13 @@
                 try {
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
                     
-                    // --- SISTEM DIAGNOSTIK ERROR ---
-                    if (!resProd.isJson) {
-                        throw new Error("API merespons teks mentah: " + resProd.raw.substring(0, 50));
-                    }
-                    if (resProd.data && resProd.data.title === "Unauthenticated") {
-                         throw new Error("Token Ditolak: Authorization Header tidak terkirim via Worker.");
-                    }
+                    if (!resProd.isJson) { throw new Error("API merespons teks mentah: " + resProd.raw.substring(0, 50)); }
+                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error("Token Ditolak: Pastikan Worker mengizinkan Header."); }
                     if (!resProd.data || !resProd.data.data) {
-                        if (resProd.data["6"] && resProd.data["6"][serviceId]) {
-                            throw new Error("Rute Worker Salah (Tembus ke getPrices). Harap klik Deploy ulang Worker.");
-                        }
-                        throw new Error("Format JSON Tidak Dikenali: " + JSON.stringify(resProd.data).substring(0, 50));
+                        if (resProd.data["6"] && resProd.data["6"][serviceId]) { throw new Error("Rute Salah. Silakan Deploy Worker Baru."); }
+                        throw new Error("Format Tidak Dikenali: " + JSON.stringify(resProd.data).substring(0, 50));
                     }
-                    if (!resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) {
-                        throw new Error("Tidak ada stok untuk layanan ini.");
-                    }
+                    if (!resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) { throw new Error("Tidak ada stok."); }
 
                     const priceMap = resProd.data.data[serviceId]["6"].map;
                     bower_cachedOffers = [];
@@ -263,7 +250,6 @@
                     bower_lastServiceId = serviceId;
 
                 } catch (e) {
-                    // MENCETAK ALASAN ERROR SECARA EKSPLISIT KE PANEL
                     document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:11px; line-height:1.2; display:block;">🚨 ${e.message}</span>`;
                     return;
                 }
@@ -540,4 +526,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
