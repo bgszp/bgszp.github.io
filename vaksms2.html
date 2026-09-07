@@ -126,9 +126,9 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Bypass Cache Cloudflare Aktif.<br>
-            └> Pelacak Respons Error Vak-SMS Aktif.<br>
-            └> Siap Mencari Harga...
+            └> Tembus Blokir Header Aplikasi (Pure URL).<br>
+            └> Mengirim 4 Tipe Otorisasi Serentak.<br>
+            └> Menunggu Balasan Filter Harga...
         </div>
     </div>
     
@@ -187,7 +187,7 @@
 
             for (const [key, value] of Object.entries(params)) { queryString += `&${key}=${value}`; }
             
-            // ANTI-CACHE: Cegah Cloudflare memberi data lama yang error
+            // Wajib untuk Anti Cache Cloudflare
             queryString += `&_t=${Date.now()}`;
             
             const targetUrl = `${VAK_WORKER_URL}${endpointPath}${queryString}`;
@@ -239,15 +239,16 @@
                 try {
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
                     
-                    // TANGKAP ERROR ASLI DARI VAK-SMS (Jika Worker mengirimkan error balasan)
+                    // MENANGKAP ERROR DIAGNOSTIK DARI WORKER JIKA DITOLAK
                     if (resProd.data && resProd.data.is_debug_error) {
-                        throw new Error(`[Status ${resProd.data.vak_status}] ${resProd.data.vak_response}`);
+                        let errMsg = `🚨 [${resProd.data.vak_status}] ${resProd.data.vak_response}`;
+                        throw new Error(errMsg);
                     }
                     
                     if (!resProd.isJson) { throw new Error("API merespons teks mentah."); }
-                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error("Token Masih Ditolak Vak-SMS."); }
+                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error("Token Ditolak."); }
                     if (!resProd.data || !resProd.data.data) {
-                        if (resProd.data["6"] && resProd.data["6"][serviceId]) { throw new Error("Rute Worker Masih Salah."); }
+                        if (resProd.data["6"] && resProd.data["6"][serviceId]) { throw new Error("Rute Salah, kembali ke getPrices."); }
                         throw new Error("Format JSON Tidak Dikenali.");
                     }
                     if (!resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) { throw new Error("Tidak ada stok."); }
@@ -262,7 +263,7 @@
                     bower_lastServiceId = serviceId;
 
                 } catch (e) {
-                    document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block;">🚨 ${e.message}</span>`;
+                    document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block;">${e.message}</span>`;
                     return;
                 }
             }
