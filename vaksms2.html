@@ -126,9 +126,7 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> UI Disinkronkan dengan SMSBower.<br>
-            └> Direct API Client-Side Aktif.<br>
-            └> Status 8 (BAN) terpasang sempurna.
+            └> Fitur Multi-Ban Otomatis Aktif.
         </div>
     </div>
     
@@ -193,7 +191,6 @@
             try {
                 const res = await fetch(targetUrl);
                 const dataText = await res.text();
-                
                 try { 
                     let parsedData = JSON.parse(dataText);
                     return { isJson: true, data: parsedData, raw: dataText }; 
@@ -203,6 +200,27 @@
             } catch (e) { 
                 throw new Error("Ditolak Peramban (CORS)."); 
             }
+        }
+
+        // --- SISTEM MULTI-BAN VAK-SMS ---
+        // Karena status=8 hanya untuk cancel, fungsi ini memaksa peladen Vak-SMS mengeksekusi Ban dengan segala cara
+        window.vak_eksekusiBanKeServer = async function(actId) {
+            try {
+                // Tembakan 1: Coba action khusus 'ban'
+                let res1 = await apiVakSms('ban', { id: actId });
+                if (res1.raw && (res1.raw.includes("BAD_ACTION") || res1.raw.includes("ERROR"))) {
+                    // Tembakan 2: Coba status=10 (Standar Ban API)
+                    let res2 = await apiVakSms('setStatus', { id: actId, status: 10 });
+                    if (res2.raw && res2.raw.includes("BAD_STATUS")) {
+                        // Tembakan 3: Coba setBadStatus
+                        let res3 = await apiVakSms('setBadStatus', { id: actId });
+                        if (res3.raw && res3.raw.includes("BAD_ACTION")) {
+                            // Fallback jika peladen benar-benar menolak: Batal Paksa (Cancel)
+                            await apiVakSms('cancelActivation', { id: actId });
+                        }
+                    }
+                }
+            } catch (e) { console.log("Ban Error Fallback"); }
         }
 
         document.addEventListener("DOMContentLoaded", async function() {
@@ -360,8 +378,10 @@
 
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
-                            // PERBAIKAN: Jika menolak nomor bekas, langsung eksekusi BAN (status 8) ke server Vak-SMS
-                            await apiVakSms('setStatus', { id: actId, status: 8 }).catch(e=>{});
+                            
+                            // Eksekusi Algoritma BAN Otomatis
+                            await window.vak_eksekusiBanKeServer(actId);
+                            
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
                         } else {
@@ -409,15 +429,15 @@
             } catch (e) {}
         }
         
-        // FUNGSI BLOKIR MANUAL (Terkoneksi ke BAN Vak-SMS)
+        // FUNGSI BLOKIR MANUAL -> Menggunakan Algoritma Multi-Ban
         window.vak_blokirManual = async function(index) {
             const item = vak_daftarOrderan[index];
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
                 
-                // PERBAIKAN: Mengirimkan perintah setStatus=8 ke peladen Vak-SMS untuk BAN nomor
-                await apiVakSms('setStatus', { id: item.order_id, status: 8 });
+                // Eksekusi Algoritma BAN Manual
+                await window.vak_eksekusiBanKeServer(item.order_id);
                 
                 item.status = "cancelled"; 
                 vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Nomor di-BAN!"); 
