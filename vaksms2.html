@@ -29,8 +29,6 @@
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         
         .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
-        
-        /* Modifikasi UI agar persis seperti SMSBower */
         .unified-order-box { display: flex; flex-direction: column; gap: 8px; }
         .unified-select-op { border: 1px solid #2c2e5c; background: #0b0c16; border-radius: 10px; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 12px 14px; outline: none; cursor: pointer; width: 100%; }
         .dropdown-selected-bar { background: #0b0c16; border: 1px solid #2c2e5c; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
@@ -128,7 +126,7 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> UI Disinkronkan dengan SMSBower.<br>
+            └> Tombol Blokir / Ban tersinkronisasi server (Status: 8).<br>
             └> Direct API Client-Side Aktif.
         </div>
     </div>
@@ -361,7 +359,8 @@
 
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
-                            await apiVakSms('cancelActivation', { id: actId }).catch(e=>{});
+                            // Otomatis BAN (status=8) nomor yang masuk daftar hitam agar tidak dikirim ulang oleh Vak-SMS
+                            await apiVakSms('setStatus', { id: actId, status: 8 }).catch(e=>{});
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
                         } else {
@@ -399,6 +398,7 @@
             } catch(e) { document.getElementById("vak_txtSaldoLive").innerText = "Error"; }
         }
 
+        // Fungsi Batal Pesanan Biasa -> Tetap pakai cancelActivation
         window.vak_eksekusiBatalkanServer = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
@@ -408,12 +408,16 @@
             } catch (e) {}
         }
         
+        // Fungsi BLOKIR -> Terkoneksi menjadi BAN di server Vak-SMS (menggunakan setStatus: 8)
         window.vak_blokirManual = async function(index) {
             const item = vak_daftarOrderan[index];
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
-                await apiVakSms('cancelActivation', { id: item.order_id });
+                
+                // EKSEKUSI BAN NOMOR KE SERVER VAK-SMS (Status 8)
+                await apiVakSms('setStatus', { id: item.order_id, status: 8 });
+                
                 item.status = "cancelled"; 
                 vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Nomor di-BAN!"); 
             } catch (e) { alert("Gagal memblokir: " + e.message); }
