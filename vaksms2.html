@@ -126,10 +126,11 @@
                 </div>
             </div>
         </div>
-        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 120px; overflow-y: auto;">
+        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Diinisialisasi.<br>
-            └> API Cancel & Blokir (action=cancelActivation) Sinkron.<br>
-            └> Fitur Auto-Cancel Order Menumpuk Aktif.
+            └> API Cancel & Blokir Sinkron.<br>
+            └> Fitur Auto-Cancel Order Menumpuk Aktif.<br>
+            └> Harga Sinkron dengan Live Kurs USD-IDR.
         </div>
     </div>
     
@@ -152,7 +153,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        const KURS_USD_IDR = 15500; 
+        // Nilai fallback jika API Kurs sedang bermasalah
+        let KURS_USD_IDR = 15500; 
 
         let bower_daftarOrderan = []; 
         let bower_daftarServerTersedia = [];
@@ -165,6 +167,20 @@
 
         function bower_formatRupiah(angka) {
             return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
+        }
+
+        // Fungsi baru untuk menarik data kurs Live
+        window.bower_updateKursLive = async function() {
+            try {
+                const res = await fetch("https://open.er-api.com/v6/latest/USD");
+                const data = await res.json();
+                if (data && data.rates && data.rates.IDR) {
+                    KURS_USD_IDR = data.rates.IDR;
+                    console.log("Live Kurs Terupdate: Rp", KURS_USD_IDR);
+                }
+            } catch (e) {
+                console.log("Gagal menarik live kurs, menggunakan nilai default.");
+            }
         }
 
         async function apiVakSms(action, params = {}) {
@@ -189,7 +205,10 @@
             } catch (e) { throw new Error("Gagal terhubung ke Proxy Webhook."); }
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", async function() {
+            // Tarik live kurs terlebih dahulu sebelum memproses yang lain
+            await window.bower_updateKursLive();
+
             const savedKey = localStorage.getItem("otp_key_vaksms");
             if(savedKey) {
                 document.getElementById("bower_otpKey").value = savedKey;
@@ -202,6 +221,8 @@
 
             setInterval(window.bower_mesinWaktuTerpusat, 1000);
             setInterval(window.bower_mesinCekSmsTerpusat, 2000); 
+            // Update kurs secara berkala setiap 1 jam (3600000ms)
+            setInterval(window.bower_updateKursLive, 3600000); 
         });
 
         window.bower_toggleRiwayatDropdown = function() { const w = document.getElementById("bower_wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
@@ -301,7 +322,6 @@
             const teksAsli = btn.innerHTML;
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             
-            // Auto-cancel pesanan lama yang masih pending untuk Vak-SMS
             bower_daftarOrderan.forEach(item => {
                 if (item.status === "pending") {
                     item.status = "cancelled";
@@ -415,7 +435,6 @@
             } catch (e) {}
         }
         
-        // Memastikan request cancelActivation dikirim
         window.bower_blokirManual = async function(index) {
             const item = bower_daftarOrderan[index];
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
