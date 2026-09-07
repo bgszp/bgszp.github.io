@@ -71,14 +71,12 @@
         <div class="dropdown-box-wrapper">
             <label class="form-label">🛒 Setup Layanan Utama</label>
             <div class="unified-order-box">
-                <!-- Lapis 1: Layanan -->
                 <select id="bower_dropdownLayanan" class="unified-select-op" onchange="bower_muatProdukLayanan()">
                     <option value="ka" selected>Shopee (Indonesia)</option>
                     <option value="wa">WhatsApp (Indonesia)</option>
                     <option value="tg">Telegram (Indonesia)</option>
                 </select>
                 
-                <!-- Lapis 2: Operator -->
                 <select id="vak_dropdownOperator" class="unified-select-op" onchange="bower_terapkanFilterOperator()" style="color: #ffb86c;">
                     <option value="any" selected>⚡ Semua Operator (Acak)</option>
                     <option value="telkomsel">Telkomsel</option>
@@ -90,7 +88,6 @@
                     <option value="smartfren">Smartfren</option>
                 </select>
                 
-                <!-- Lapis 3: Batas Harga -->
                 <div class="dropdown-selected-bar" onclick="bower_toggleDropdownList()">
                     <span id="bower_labelServerTerpilih" style="color: #fff;">Mencari harga...</span>
                     <span style="font-size: 10px; color: var(--accent-cyan);">▼ Opsi Harga</span>
@@ -129,9 +126,9 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Fallback Harga Aktif (Anti-Error URL).<br>
-            └> Caching Operator Instan Tanpa Delay.<br>
-            └> Fitur Auto-Cancel & Ban Sinkron.
+            └> Diagnostics Log Mode Aktif.<br>
+            └> Fitur Auto-Cancel & Ban Sinkron.<br>
+            └> Menunggu Output Error API...
         </div>
     </div>
     
@@ -229,47 +226,47 @@
             window.bower_refreshSemuaDataLive(); bower_showToast("Dibersihkan!");
         }
 
-        // FUNGSI BARU: Menarik Data dari API Hanya jika Layanan Berubah
         window.bower_muatProdukLayanan = async function() {
             let serviceId = document.getElementById("bower_dropdownLayanan").value;
             
-            // Caching: Hanya memanggil API jika ganti Shopee -> WA, dll.
             if (serviceId !== bower_lastServiceId || !bower_cachedOffers || bower_cachedOffers.length === 0) {
                 document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data harga...</span>`;
                 document.getElementById("bower_btnPesanAksi").disabled = true;
                 
-                let priceMap = null;
-
                 try {
-                    // Coba endpoint Offers baru
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
-                    if (resProd.isJson && resProd.data && resProd.data.data && resProd.data.data[serviceId] && resProd.data.data[serviceId]["6"]) {
-                        priceMap = resProd.data.data[serviceId]["6"].map;
-                    } else { throw new Error("Fallback required"); }
-                } catch (e) {
-                    // FALLBACK CERDAS: Beralih ke endpoint getPrices lawas jika Worker bermasalah
-                    try {
-                        const resFallback = await apiVakSms('getPrices', { service: serviceId, country: 6 });
-                        if (resFallback.isJson && resFallback.data["6"] && resFallback.data["6"][serviceId]) {
-                            let cost = resFallback.data["6"][serviceId].cost;
-                            let count = resFallback.data["6"][serviceId].count;
-                            priceMap = {};
-                            priceMap[cost] = count;
-                        } else { throw new Error("Stok benar-benar kosong"); }
-                    } catch (fallbackError) {
-                        document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:12px;">Stok harga tidak ditemukan.</span>`;
-                        return;
+                    
+                    // --- SISTEM DIAGNOSTIK ERROR ---
+                    if (!resProd.isJson) {
+                        throw new Error("API merespons teks mentah: " + resProd.raw.substring(0, 50));
                     }
-                }
+                    if (resProd.data && resProd.data.title === "Unauthenticated") {
+                         throw new Error("Token Ditolak: Authorization Header tidak terkirim via Worker.");
+                    }
+                    if (!resProd.data || !resProd.data.data) {
+                        if (resProd.data["6"] && resProd.data["6"][serviceId]) {
+                            throw new Error("Rute Worker Salah (Tembus ke getPrices). Harap klik Deploy ulang Worker.");
+                        }
+                        throw new Error("Format JSON Tidak Dikenali: " + JSON.stringify(resProd.data).substring(0, 50));
+                    }
+                    if (!resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) {
+                        throw new Error("Tidak ada stok untuk layanan ini.");
+                    }
 
-                // Simpan ke Cache
-                bower_cachedOffers = [];
-                for (const [priceStr, count] of Object.entries(priceMap)) {
-                    let priceVal = parseFloat(priceStr);
-                    if(count > 0) bower_cachedOffers.push({ priceStr: priceStr, price: priceVal, stock: count });
+                    const priceMap = resProd.data.data[serviceId]["6"].map;
+                    bower_cachedOffers = [];
+                    for (const [priceStr, count] of Object.entries(priceMap)) {
+                        let priceVal = parseFloat(priceStr);
+                        if(count > 0) bower_cachedOffers.push({ priceStr: priceStr, price: priceVal, stock: count });
+                    }
+                    bower_cachedOffers.sort((a, b) => a.price - b.price);
+                    bower_lastServiceId = serviceId;
+
+                } catch (e) {
+                    // MENCETAK ALASAN ERROR SECARA EKSPLISIT KE PANEL
+                    document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:11px; line-height:1.2; display:block;">🚨 ${e.message}</span>`;
+                    return;
                 }
-                bower_cachedOffers.sort((a, b) => a.price - b.price);
-                bower_lastServiceId = serviceId;
             }
 
             if (bower_cachedOffers.length === 0) {
@@ -278,11 +275,9 @@
                 return;
             }
 
-            // Terapkan ke Tampilan (Operator Filter)
             window.bower_terapkanFilterOperator();
         }
 
-        // FUNGSI BARU: Menerapkan Filter Operator Instan (Tanpa Delay Loading)
         window.bower_terapkanFilterOperator = function() {
             if (!bower_cachedOffers || bower_cachedOffers.length === 0) return;
 
@@ -295,7 +290,7 @@
             });
 
             bower_renderDropdownOptions();
-            bower_pilihServerDropdown(0); // Pilih otomatis opsi termurah
+            bower_pilihServerDropdown(0); 
         }
 
         function bower_renderDropdownOptions() {
@@ -332,7 +327,6 @@
             const teksAsli = btn.innerHTML;
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             
-            // Auto Cancel Nomor Menggantung
             bower_daftarOrderan.forEach(item => {
                 if (item.status === "pending") {
                     item.status = "cancelled";
