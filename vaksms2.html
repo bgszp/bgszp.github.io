@@ -126,8 +126,9 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Tembus Blokir Header Aplikasi (Pure URL).<br>
-            └> Filter Harga Vak-SMS Terhubung!
+            └> Bypass Cache Cloudflare Aktif.<br>
+            └> Pelacak Respons Error Vak-SMS Aktif.<br>
+            └> Siap Mencari Harga...
         </div>
     </div>
     
@@ -174,7 +175,6 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
-        // FUNGSI KOMUNIKASI API YANG SUDAH DIBERSIHKAN DARI HEADER INJEKSI
         async function apiVakSms(action, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
@@ -187,10 +187,12 @@
 
             for (const [key, value] of Object.entries(params)) { queryString += `&${key}=${value}`; }
             
+            // ANTI-CACHE: Cegah Cloudflare memberi data lama yang error
+            queryString += `&_t=${Date.now()}`;
+            
             const targetUrl = `${VAK_WORKER_URL}${endpointPath}${queryString}`;
             
             try {
-                // Murni GET Request tanpa opsi header sama sekali
                 const res = await fetch(targetUrl);
                 const dataText = await res.text();
                 try { return { isJson: true, data: JSON.parse(dataText) }; } 
@@ -237,13 +239,18 @@
                 try {
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
                     
-                    if (!resProd.isJson) { throw new Error("API merespons teks mentah: " + resProd.raw.substring(0, 50)); }
-                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error("Token Ditolak: Key Invalid."); }
+                    // TANGKAP ERROR ASLI DARI VAK-SMS (Jika Worker mengirimkan error balasan)
+                    if (resProd.data && resProd.data.is_debug_error) {
+                        throw new Error(`[Status ${resProd.data.vak_status}] ${resProd.data.vak_response}`);
+                    }
+                    
+                    if (!resProd.isJson) { throw new Error("API merespons teks mentah."); }
+                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error("Token Masih Ditolak Vak-SMS."); }
                     if (!resProd.data || !resProd.data.data) {
-                        if (resProd.data["6"] && resProd.data["6"][serviceId]) { throw new Error("Worker Tidak Singkron."); }
+                        if (resProd.data["6"] && resProd.data["6"][serviceId]) { throw new Error("Rute Worker Masih Salah."); }
                         throw new Error("Format JSON Tidak Dikenali.");
                     }
-                    if (!resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) { throw new Error("Tidak ada stok harga."); }
+                    if (!resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) { throw new Error("Tidak ada stok."); }
 
                     const priceMap = resProd.data.data[serviceId]["6"].map;
                     bower_cachedOffers = [];
@@ -255,7 +262,7 @@
                     bower_lastServiceId = serviceId;
 
                 } catch (e) {
-                    document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:11px; line-height:1.2; display:block;">🚨 ${e.message}</span>`;
+                    document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block;">🚨 ${e.message}</span>`;
                     return;
                 }
             }
