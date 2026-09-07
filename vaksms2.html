@@ -124,6 +124,11 @@
                 </div>
             </div>
         </div>
+        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
+            └> Sistem Panel Vak-SMS Beroperasi.<br>
+            └> Bypass CORS Authorization Aktif via Worker.<br>
+            └> Fitur Daftar Opsi Harga Premium Aktif.
+        </div>
     </div>
     
     <div class="toast" id="bower_toastNotif">Berhasil! ✨</div>
@@ -180,13 +185,13 @@
             else { queryString += `&action=${action}`; }
 
             for (const [key, value] of Object.entries(params)) { queryString += `&${key}=${value}`; }
+            
             const targetUrl = `${VAK_WORKER_URL}${endpointPath}${queryString}`;
             
-            // INJEKSI HEADER LANGSUNG DARI BROWSER
-            const reqHeaders = { 'Authorization': token.trim() };
-            
             try {
-                const res = await fetch(targetUrl, { headers: reqHeaders });
+                // FETCH BIASA TANPA CUSTOM HEADER (Agar tidak kena blokir peramban Median)
+                // Header Authorization sudah ditangani oleh Cloudflare Worker
+                const res = await fetch(targetUrl);
                 const dataText = await res.text();
                 try { return { isJson: true, data: JSON.parse(dataText) }; } 
                 catch(e) { return { isJson: false, raw: dataText }; }
@@ -233,7 +238,7 @@
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
                     
                     if (!resProd.isJson) { throw new Error("API merespons teks mentah: " + resProd.raw.substring(0, 50)); }
-                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error("Token Ditolak: Pastikan Worker mengizinkan Header."); }
+                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error("Worker gagal menyuntikkan Token."); }
                     if (!resProd.data || !resProd.data.data) {
                         if (resProd.data["6"] && resProd.data["6"][serviceId]) { throw new Error("Rute Salah. Silakan Deploy Worker Baru."); }
                         throw new Error("Format Tidak Dikenali: " + JSON.stringify(resProd.data).substring(0, 50));
@@ -526,4 +531,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
