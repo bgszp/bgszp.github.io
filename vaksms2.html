@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vak-SMS Multi Panel</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 10px; }
+        
+        .badge-rank { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; color: #fff; margin-right: 6px; display: inline-block; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
+        .badge-gold { background: linear-gradient(135deg, #d4af37, #aa7c11); border: 1px solid #e8c557; }
+        .badge-silver { background: linear-gradient(135deg, #b5b5b5, #757575); border: 1px solid #d4d4d4; }
+        .badge-bronze { background: linear-gradient(135deg, #cd7f32, #8d5524); border: 1px solid #e09b59; }
+
+        .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
+        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
+        .search-input:focus { border-color: var(--accent-cyan); }
+        .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
+        .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
+        .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
+        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
+        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
+        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-resend { background: #4a3c8c; color: #fff; }
+        .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
+        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
+        .unified-order-box { display: flex; flex-direction: column; gap: 6px; background: #0b0c16; border: 1px solid #4a3c8c; border-radius: 10px; padding: 8px; }
+        .unified-select-op { border: none; background: #121324; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 10px; border-radius: 6px; outline: none; cursor: pointer; width: 100%; }
+        .dropdown-selected-bar { background: #121324; border: none; border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
+        .dropdown-list-options { display: none; margin-top: 8px; background: #121324; border: 1px solid #3d3463; border-radius: 10px; max-height: 250px; overflow-y: auto; }
+        .dropdown-list-options.active { display: block; }
+        .dropdown-item-row { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1b35; cursor: pointer; font-size: 13px; }
+        .dropdown-item-row.selected { background: #25204d; border-left: 3px solid var(--accent-purple); }
+        .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (Shopee & WA)</h3>
+            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
+                👛 <span id="bower_txtSaldoLive">Rp 0</span>
+                <span onclick="bower_refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+            <div class="pemicu-dropdown" onclick="bower_toggleApiKeyDropdown()">
+                <span>🔑 Konfigurasi API Key (Vak-SMS)</span>
+                <span id="bower_panahApiKey" style="font-size: 10px;">▼</span>
+            </div>
+            <div id="bower_wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Vak-SMS API Key:</label>
+                <div style="display: flex; gap: 6px;">
+                    <input type="password" id="bower_otpKey" placeholder="API Key Vak-SMS" class="search-input" style="margin-bottom:0;">
+                    <button onclick="bower_simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
+                </div>
+                <small id="bower_statusKey" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
+            </div>
+        </div>
+
+        <div class="dropdown-box-wrapper">
+            <label class="form-label">🛒 Setup Layanan Utama</label>
+            <div class="unified-order-box">
+                <select id="bower_dropdownLayanan" class="unified-select-op" onchange="bower_muatProdukLayanan(true)">
+                    <option value="ka" selected>Shopee (Indonesia)</option>
+                    <option value="wa">WhatsApp (Indonesia)</option>
+                </select>
+                
+                <div class="dropdown-selected-bar" onclick="bower_toggleDropdownList()">
+                    <span id="bower_labelServerTerpilih" style="color: #fff;">Pilih Provider / Tier...</span>
+                    <span style="font-size: 10px; color: var(--accent-cyan);">▼ Ubah Tier</span>
+                </div>
+            </div>
+            <div id="bower_containerListDropdown" class="dropdown-list-options"></div>
+            <button class="btn-pesan-sekarang" id="bower_btnPesanAksi" onclick="bower_eksekusiBeliTerpilih()" disabled>
+                <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
+            </button>
+        </div>
+
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📱 Nomor & OTP Aktif:</span>
+                <button onclick="bower_bersihkanAktif()" style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer;">🧹 Bersihkan</button>
+            </div>
+            <div id="bower_containerListOrder">
+                <div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div class="pemicu-dropdown" onclick="bower_toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
+                <span>📜 Riwayat Sukses (<span id="bower_countRiwayatBadge">0</span>)</span>
+                <span id="bower_panahRiwayat" style="font-size: 10px;">▼</span>
+            </div>
+            <div id="bower_wadahRiwayatDropdown" style="display: none; background: #0b0c16; padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <div style="text-align: right; margin-bottom: 10px;">
+                    <span onclick="bower_hapusSemuaRiwayatBawah()" style="cursor: pointer; font-size: 10px; color: var(--accent-red); font-weight: bold;">🗑️ Hapus Riwayat</span>
+                </div>
+                <div id="bower_containerRiwayat">
+                    <div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
+            └> Sistem Panel Vak-SMS Diinisialisasi.<br>
+            └> Webhook KV & Auto-Blokir 24 Jam Aktif.
+        </div>
+    </div>
+    
+    <div class="toast" id="bower_toastNotif">Berhasil! ✨</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+        import { getDatabase, ref, get, set, child } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuNaE700uoAXECmd7hG73wiJK6cY1ttcE",
+            authDomain: "panel-smsbower.firebaseapp.com",
+            databaseURL: "https://panel-smsbower-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "panel-smsbower",
+            storageBucket: "panel-smsbower.firebasestorage.app",
+            messagingSenderId: "147643043216",
+            appId: "1:147643043216:web:09035ac3f71cb353efb715"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // KURS USD ke IDR (Vak-SMS menggunakan USD/Rubel, kita asumsikan USD di harga Rp15.500)
+        const KURS_USD_IDR = 15500; 
+
+        let bower_daftarOrderan = []; 
+        let bower_daftarServerTersedia = []; 
+        let bower_produkTerpilihId = null; 
+        let bower_namaProdukTerpilih = ""; 
+        let bower_hargaProdukTerpilih = 0; 
+        let bower_siklusCek = 0;
+
+        // URL WORKER BARU (Proxy API dan Webhook KV)
+        const VAK_WORKER_URL = "https://vaksms-webhook.tiktiksatu001.workers.dev"; 
+
+        function bower_formatRupiah(angka) {
+            return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
+        }
+
+        // Fungsi Core untuk Komunikasi API
+        async function apiVakSms(action, params = {}) {
+            const token = localStorage.getItem("otp_key_smsbower");
+            if (!token) throw new Error("API Key belum disetting.");
+            
+            let queryString = `?action=${action}&api_key=${token.trim()}`;
+            for (const [key, value] of Object.entries(params)) {
+                queryString += `&${key}=${value}`;
+            }
+            
+            const targetUrl = `${VAK_WORKER_URL}${queryString}`;
+            
+            try {
+                const res = await fetch(targetUrl);
+                const dataText = await res.text();
+                try {
+                    return { isJson: true, data: JSON.parse(dataText) };
+                } catch(e) {
+                    return { isJson: false, raw: dataText };
+                }
+            } catch (e) { throw new Error("Gagal terhubung ke Proxy Webhook."); }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const savedKey = localStorage.getItem("otp_key_smsbower");
+            if(savedKey) {
+                document.getElementById("bower_otpKey").value = savedKey;
+                document.getElementById("bower_statusKey").innerText = "✅ Token Aktif."; document.getElementById("bower_statusKey").style.color = "#50fa7b";
+                window.bower_refreshSemuaDataLive();
+            } else window.bower_toggleApiKeyDropdown();
+
+            const orderanLokal = localStorage.getItem("daftar_orderan_smsbower");
+            if (orderanLokal) { bower_daftarOrderan = JSON.parse(orderanLokal); bower_renderUILayout(); }
+
+            setInterval(window.bower_mesinWaktuTerpusat, 1000);
+            setInterval(window.bower_mesinCekSmsTerpusat, 2000); 
+        });
+
+        window.bower_toggleRiwayatDropdown = function() { const w = document.getElementById("bower_wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
+        window.bower_toggleApiKeyDropdown = function() { const w = document.getElementById("bower_wadahApiKeyDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
+        window.bower_toggleDropdownList = function() { document.getElementById("bower_containerListDropdown").classList.toggle("active"); }
+
+        window.bower_bersihkanAktif = function() {
+            let pindah = false;
+            bower_daftarOrderan.forEach(item => { if (item.status === "received") { item.status = "history_received"; pindah = true; } });
+            if (pindah) { bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); }
+            window.bower_refreshSemuaDataLive(); bower_showToast("Dibersihkan!");
+        }
+
+        window.bower_muatProdukLayanan = async function(autoOpen = false) {
+            try {
+                let serviceId = document.getElementById("bower_dropdownLayanan").value;
+                let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
+                let prefixLayanan = elemNamaSrv.split(' ')[0]; 
+
+                if(autoOpen) document.getElementById("bower_labelServerTerpilih").innerHTML = `Mencari harga...`;
+                
+                // Ambil Harga dari Vak-SMS (ID Negara 6 = Indonesia)
+                const resProd = await apiVakSms('getPrices', { service: serviceId, country: 6 });
+                
+                let stock = 0;
+                let price = 0;
+                
+                if (resProd.isJson && resProd.data["6"] && resProd.data["6"][serviceId]) {
+                    stock = parseInt(resProd.data["6"][serviceId].count) || 0;
+                    price = parseFloat(resProd.data["6"][serviceId].cost) || 0;
+                } else {
+                    throw new Error("Stok kosong.");
+                }
+
+                if (stock === 0) throw new Error("Stok habis.");
+
+                bower_daftarServerTersedia = [{ id: 'any', stock: stock, price: price, rank: 'Gold' }];
+                bower_renderDropdownOptions();
+                
+                const srv = bower_daftarServerTersedia[0]; 
+                bower_produkTerpilihId = srv.id;
+                bower_namaProdukTerpilih = `${prefixLayanan} (Vak-SMS)`;
+                bower_hargaProdukTerpilih = srv.price; 
+                
+                document.getElementById("bower_labelServerTerpilih").innerHTML = `<span class="badge-rank badge-gold">${srv.rank}</span> ${bower_formatRupiah(srv.price * KURS_USD_IDR)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+                document.getElementById("bower_btnPesanAksi").disabled = false;
+                if(autoOpen) document.getElementById("bower_containerListDropdown").classList.add("active");
+                 
+            } catch (e) {
+                document.getElementById("bower_labelServerTerpilih").innerText = e.message || "Stok Kosong";
+                document.getElementById("bower_btnPesanAksi").disabled = true; document.getElementById("bower_containerListDropdown").innerHTML = "";
+            }
+        }
+
+        function bower_renderDropdownOptions() {
+            const container = document.getElementById("bower_containerListDropdown");
+            if(bower_daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center;">Kosong</div>`; return; }
+            let html = "";
+            bower_daftarServerTersedia.forEach((srv, index) => {
+                let sel = (bower_produkTerpilihId === srv.id) ? "selected" : "";
+                html += `<div class="dropdown-item-row ${sel}" onclick="bower_pilihServerDropdown(${index})">
+                            <span><span class="badge-rank badge-gold">${srv.rank}</span> Semua Operator <span style="font-size:10px; color:#aaa;">(${srv.stock} pcs)</span></span>
+                            <span style="color:var(--accent-cyan); font-weight:bold;">${bower_formatRupiah(srv.price * KURS_USD_IDR)}</span>
+                        </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.bower_pilihServerDropdown = function(index) {
+            let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
+            let prefixLayanan = elemNamaSrv.split(' ')[0]; 
+            const srv = bower_daftarServerTersedia[index];
+            bower_produkTerpilihId = srv.id; 
+            bower_namaProdukTerpilih = `${prefixLayanan} (Vak-SMS)`;
+            bower_hargaProdukTerpilih = srv.price; 
+            
+            document.getElementById("bower_labelServerTerpilih").innerHTML = `<span class="badge-rank badge-gold">${srv.rank}</span> ${bower_formatRupiah(srv.price * KURS_USD_IDR)} <span style="font-size:11px;">(${srv.stock} stok)</span>`;
+            document.getElementById("bower_containerListDropdown").classList.remove("active");
+            document.getElementById("bower_btnPesanAksi").disabled = false; bower_renderDropdownOptions();
+        }
+
+        window.bower_eksekusiBeliTerpilih = async function() {
+            const btn = document.getElementById("bower_btnPesanAksi"); 
+            const teksAsli = btn.innerHTML;
+            btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
+            
+            try {
+                let serviceId = document.getElementById("bower_dropdownLayanan").value;
+                
+                let maxRetries = 3; 
+                let attempt = 0;
+                let finalOrder = null;
+                let isRecycled = false;
+
+                while (attempt < maxRetries) {
+                    attempt++;
+                    if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
+                    
+                    const responseData = await apiVakSms('getNumberV2', { service: serviceId, country: 6, operator: 'any' });
+                    
+                    if (responseData.isJson && responseData.data.phoneNumber) {
+                        let phone = responseData.data.phoneNumber.toString();
+                        let actId = responseData.data.activationId.toString();
+                        
+                        const dbRef = ref(db);
+                        const snapshot = await get(child(dbRef, `blocklist/${phone}`));
+
+                        if (snapshot.exists()) {
+                            let data = snapshot.val();
+                            let ageHours = (Date.now() - data.timestamp) / (1000 * 60 * 60);
+
+                            if (ageHours < 24) {
+                                btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
+                                await apiVakSms(`setStatus`, { id: actId, status: 8 }).catch(e=>{});
+                                await new Promise(r => setTimeout(r, 1500)); 
+                                continue; 
+                            } else {
+                                finalOrder = responseData.data;
+                                isRecycled = true;
+                                break;
+                            }
+                        } else {
+                            finalOrder = responseData.data;
+                            break;
+                        }
+                    } else {
+                        throw new Error(responseData.raw || "Gagal mendapatkan nomor dari API");
+                    }
+                }
+
+                if (finalOrder) {
+                    bower_daftarOrderan.unshift({ 
+                        order_id: finalOrder.activationId, 
+                        phone: finalOrder.phoneNumber, 
+                        layanan: bower_namaProdukTerpilih, 
+                        harga: finalOrder.activationCost, 
+                        waktu_dibuat: Date.now(), 
+                        status: "pending", 
+                        otp: "",
+                        is_recycled: isRecycled 
+                    });
+                    bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive();
+                } else {
+                    alert("Sistem membatalkan orderan berulang kali karena selalu dapat nomor bekas dari Firebase. Silakan coba lagi nanti.");
+                }
+
+            } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
+        }
+
+        window.bower_simpanKonfigurasi = function() {
+            const key = document.getElementById("bower_otpKey").value.trim();
+            if(!key) return alert("Masukkan Token!");
+            localStorage.setItem("otp_key_smsbower", key);
+            document.getElementById("bower_statusKey").innerText = "✅ Token Disimpan!";
+            window.bower_refreshSemuaDataLive(); window.bower_toggleApiKeyDropdown();
+        }
+
+        window.bower_refreshSemuaDataLive = function() { window.bower_ambilSaldoLive(); window.bower_muatProdukLayanan(false); }
+        
+        window.bower_ambilSaldoLive = async function() {
+            try {
+                const res = await apiVakSms('getBalance'); 
+                let saldoApi = 0;
+                
+                if (!res.isJson && res.raw.includes("ACCESS_BALANCE")) {
+                    saldoApi = parseFloat(res.raw.split(":")[1]);
+                } else if (res.isJson && res.data.balance) {
+                    saldoApi = parseFloat(res.data.balance);
+                }
+                
+                document.getElementById("bower_txtSaldoLive").innerText = bower_formatRupiah(saldoApi * KURS_USD_IDR);
+            } catch(e) { document.getElementById("bower_txtSaldoLive").innerText = "Error"; }
+        }
+
+        window.bower_eksekusiBatalkanServer = async function(index) {
+            const item = bower_daftarOrderan[index];
+            try { await apiVakSms(`setStatus`, { id: item.order_id, status: 8 }); item.status = "cancelled"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Dibatalkan!"); } catch (e) {}
+        }
+        
+        window.bower_blokirManual = async function(index) {
+            const item = bower_daftarOrderan[index];
+            if (!confirm(`Blokir nomor ${item.phone} agar tidak muncul lagi selama 24 jam? Pesanan akan dibatalkan otomatis.`)) return;
+            
+            try {
+                set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
+                await apiVakSms(`setStatus`, { id: item.order_id, status: 8 });
+                item.status = "cancelled"; 
+                bower_renderUILayout(); 
+                bower_simpanDaftarOrderanKeLokal(); 
+                window.bower_ambilSaldoLive(); 
+                bower_showToast("Nomor Diblokir!"); 
+            } catch (e) {
+                alert("Gagal memblokir: " + e.message);
+            }
+        }
+
+        window.bower_eksekusiResend = async function(index) {
+            const item = bower_daftarOrderan[index];
+            try { await apiVakSms('setStatus', { id: item.order_id, status: 3 }); bower_showToast("Resend Diminta!"); } catch (e) {}
+        }
+        window.bower_eksekusiSelesai = async function(index) {
+            const item = bower_daftarOrderan[index];
+            try { await apiVakSms(`setStatus`, { id: item.order_id, status: 6 }); item.status = "completed"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Selesai!"); } catch(err) {}
+        }
+
+        window.bower_mesinCekSmsTerpusat = async function() {
+            bower_siklusCek++; let sudahCekTerbaru = false;
+            for (let index = 0; index < bower_daftarOrderan.length; index++) {
+                let i = bower_daftarOrderan[index];
+                if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
+                let izinkanCek = (i.status === "pending" && !sudahCekTerbaru) ? (sudahCekTerbaru = true) : (bower_siklusCek % 10 === 0);
+                if (!izinkanCek) continue;
+                
+                try {
+                    // Cek via Webhook KV
+                    const resKV = await fetch(`${VAK_WORKER_URL}/get-sms?id=${i.order_id}`);
+                    const jsonKV = await resKV.json();
+                    
+                    if (jsonKV.status === "OK" && jsonKV.otp) {
+                        if (i.status === "pending" || i.otp !== jsonKV.otp) {
+                            i.status = "received"; i.otp = jsonKV.otp; 
+                            set(ref(db, 'blocklist/' + i.phone), { timestamp: Date.now() }).catch(err => console.log(err));
+                            bower_putarSuaraNotifKeras(); bower_munculkanPopupNative(i.phone, i.otp, i.layanan); bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal();
+                        }
+                    } else if (bower_siklusCek % 15 === 0) {
+                        // Backup check ke API utama jika status tercancel dari sisi provider
+                        const resMain = await apiVakSms('getStatus', { id: i.order_id });
+                        if (!resMain.isJson && resMain.raw === "STATUS_CANCEL") {
+                            i.status = "cancelled"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); 
+                        }
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function bower_renderUILayout() {
+            const containerAktif = document.getElementById("bower_containerListOrder");
+            const containerRiwayat = document.getElementById("bower_containerRiwayat");
+            let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
+
+            bower_daftarOrderan.forEach((item, index) => {
+                let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
+                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiVakSms(`setStatus`, { id: item.order_id, status: 8 }).catch(e=>{}); }
+                if (item.status === "cancelled") return; 
+
+                let d = new Date(item.waktu_dibuat);
+                let timeStr = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + " " + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
+                let labelWarning = item.is_recycled ? `<span style="color:#ff5555; font-size:9px; border:1px solid #ff5555; padding:2px 4px; border-radius:4px; margin-left:4px;">⚠️ Pernah Dipakai</span>` : "";
+
+                if (item.status === "completed" || item.status === "history_received") {
+                    let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="bower_eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="bower_eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
+                    let teksHargaHistory = item.harga ? bower_formatRupiah(item.harga * KURS_USD_IDR) : '-';
+                    htmlRiwayat += `
+                    <div class="history-card">
+                        <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;"><span>${item.layanan} ${labelWarning} • ${teksHargaHistory}</span><span>⏱️ ${timeStr}</span></div>
+                        <div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:14px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>
+                        <div class="box-copy-statik otp-masuk" style="margin-top:6px;"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP:</div><div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button></div>
+                        ${btnKirimUlang}
+                    </div>`; countRiwayat++; return;
+                }
+
+                countAktif++; 
+                let sisa = Math.max(0, 300 - sec); 
+                let cool = Math.max(0, 120 - sec); 
+                let sisaMax = Math.max(0, 1500 - sec); 
+                
+                if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) { cool = 0; }
+
+                let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
+                let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`; let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
+                
+                let btnBlokirManual = item.status === "pending" ? `<button onclick="bower_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir 24 Jam"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
+                
+                let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal Vak-SMS"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
+
+                if (item.status === "received") { 
+                    textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
+                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
+                    btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="bower_eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button><button onclick="bower_eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button></div>`;
+                } else if (item.status === "pending") {
+                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="bower_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
+                }
+                
+                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span style="display:flex; align-items:center;">${item.layanan} ${labelWarning} ${btnBlokirManual} ${badgeMaxTime}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
+            });
+
+            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
+            containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
+            document.getElementById("bower_countRiwayatBadge").innerText = countRiwayat;
+        }
+
+        function bower_simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_smsbower", JSON.stringify(bower_daftarOrderan)); }
+        window.bower_hapusSemuaRiwayatBawah = function() { bower_daftarOrderan = bower_daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); }
+        window.bower_mesinWaktuTerpusat = function() { if (bower_daftarOrderan.some(i => i.status === "pending" || i.status === "received")) bower_renderUILayout(); }
+        
+        window.bower_showToast = function(m) { const t = document.getElementById('bower_toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
+        window.bower_salinTeksToast = function(txt) { navigator.clipboard.writeText(txt); bower_showToast("Disalin!"); }
+
+        window.bower_putarSuaraNotifKeras = function() {
+            try { 
+                const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return;
+                const audioCtx = new AudioContext(); let time = audioCtx.currentTime; 
+                const sequence = [523.25, 659.25, 783.99, 1046.50]; 
+                sequence.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                    osc.type = idx % 2 === 0 ? "sine" : "sawtooth"; let startTime = time + (idx * 0.09);
+                    osc.frequency.setValueAtTime(freq, startTime); gain.gain.setValueAtTime(0.4, startTime); gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+                    if (audioCtx.createStereoPanner) { const pan = audioCtx.createStereoPanner(); pan.pan.value = idx < 2 ? -0.5 : 0.5; osc.connect(gain).connect(pan).connect(audioCtx.destination); } else { osc.connect(gain).connect(audioCtx.destination); }
+                    osc.start(startTime); osc.stop(startTime + 0.4);
+                });
+            } catch (e) { console.log(e); }
+        }
+
+        window.bower_munculkanPopupNative = function(nomor, otp, layanan) {
+            if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
+            } 
+        }
+    </script>
+</body>
+</html>
