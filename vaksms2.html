@@ -139,7 +139,7 @@
         const db = getDatabase(app);
 
         // KURS USD ke IDR (Vak-SMS menggunakan USD/Rubel, kita asumsikan USD di harga Rp15.500)
-        const KURS_USD_IDR = 15500; 
+        const KURS_USD_IDR = 17630; 
 
         let bower_daftarOrderan = []; 
         let bower_daftarServerTersedia = []; 
@@ -157,7 +157,7 @@
 
         // Fungsi Core untuk Komunikasi API
         async function apiVakSms(action, params = {}) {
-            const token = localStorage.getItem("otp_key_smsbower");
+            const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
             
             let queryString = `?action=${action}&api_key=${token.trim()}`;
@@ -179,14 +179,14 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            const savedKey = localStorage.getItem("otp_key_smsbower");
+            const savedKey = localStorage.getItem("otp_key_vaksms");
             if(savedKey) {
                 document.getElementById("bower_otpKey").value = savedKey;
                 document.getElementById("bower_statusKey").innerText = "✅ Token Aktif."; document.getElementById("bower_statusKey").style.color = "#50fa7b";
                 window.bower_refreshSemuaDataLive();
             } else window.bower_toggleApiKeyDropdown();
 
-            const orderanLokal = localStorage.getItem("daftar_orderan_smsbower");
+            const orderanLokal = localStorage.getItem("daftar_orderan_vaksms");
             if (orderanLokal) { bower_daftarOrderan = JSON.parse(orderanLokal); bower_renderUILayout(); }
 
             setInterval(window.bower_mesinWaktuTerpusat, 1000);
