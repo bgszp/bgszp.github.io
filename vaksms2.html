@@ -78,8 +78,8 @@
                     <option value="tg">Telegram (Indonesia)</option>
                 </select>
                 
-                <!-- Lapis 2: Operator Sesuai Dokumentasi -->
-                <select id="vak_dropdownOperator" class="unified-select-op" onchange="bower_muatProdukLayanan()" style="color: #ffb86c;">
+                <!-- Lapis 2: Operator -->
+                <select id="vak_dropdownOperator" class="unified-select-op" onchange="bower_terapkanFilterOperator()" style="color: #ffb86c;">
                     <option value="any" selected>⚡ Semua Operator (Acak)</option>
                     <option value="telkomsel">Telkomsel</option>
                     <option value="indosat">Indosat</option>
@@ -95,7 +95,6 @@
                     <span id="bower_labelServerTerpilih" style="color: #fff;">Mencari harga...</span>
                     <span style="font-size: 10px; color: var(--accent-cyan);">▼ Opsi Harga</span>
                 </div>
-                <!-- Dropdown List Harga (Terisi Otomatis) -->
                 <div id="bower_containerListDropdown" class="dropdown-list-options"></div>
             </div>
             
@@ -130,10 +129,9 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Perbaikan Parsing JSON Endpoint /offers.<br>
-            └> Kode Operator & API Harga Map Sinkron.<br>
-            └> Fitur Auto-Cancel & Ban Otomatis Aktif.<br>
-            └> Harga Sinkron dengan Live Kurs USD-IDR.
+            └> Fallback Harga Aktif (Anti-Error URL).<br>
+            └> Caching Operator Instan Tanpa Delay.<br>
+            └> Fitur Auto-Cancel & Ban Sinkron.
         </div>
     </div>
     
@@ -160,6 +158,9 @@
 
         let bower_daftarOrderan = []; 
         let bower_daftarServerTersedia = [];
+        let bower_cachedOffers = []; 
+        let bower_lastServiceId = null; 
+        
         let bower_produkTerpilihId = null; 
         let bower_namaProdukTerpilih = ""; 
         let bower_hargaProdukTerpilih = 0; 
@@ -228,45 +229,73 @@
             window.bower_refreshSemuaDataLive(); bower_showToast("Dibersihkan!");
         }
 
+        // FUNGSI BARU: Menarik Data dari API Hanya jika Layanan Berubah
         window.bower_muatProdukLayanan = async function() {
-            try {
-                let serviceId = document.getElementById("bower_dropdownLayanan").value;
-                let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
-                let prefixLayanan = elemNamaSrv.split(' ')[0]; 
-                let opName = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
+            let serviceId = document.getElementById("bower_dropdownLayanan").value;
+            
+            // Caching: Hanya memanggil API jika ganti Shopee -> WA, dll.
+            if (serviceId !== bower_lastServiceId || !bower_cachedOffers || bower_cachedOffers.length === 0) {
+                document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data harga...</span>`;
+                document.getElementById("bower_btnPesanAksi").disabled = true;
+                
+                let priceMap = null;
 
-                document.getElementById("bower_labelServerTerpilih").innerHTML = `Mencari data harga...`;
-                
-                const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
-                
-                // PERBAIKAN: Struktur respons dari /offers dibungkus objek "data"
-                if (!resProd.isJson || !resProd.data || !resProd.data.data || !resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) {
-                    throw new Error("Stok harga tidak ditemukan.");
-                }
-
-                const priceMap = resProd.data.data[serviceId]["6"].map;
-                bower_daftarServerTersedia = [];
-                
-                for (const [priceStr, count] of Object.entries(priceMap)) {
-                    let priceVal = parseFloat(priceStr);
-                    if(count > 0) {
-                        bower_daftarServerTersedia.push({
-                            id: priceStr, opName: opName, price: priceVal, stock: count
-                        });
+                try {
+                    // Coba endpoint Offers baru
+                    const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
+                    if (resProd.isJson && resProd.data && resProd.data.data && resProd.data.data[serviceId] && resProd.data.data[serviceId]["6"]) {
+                        priceMap = resProd.data.data[serviceId]["6"].map;
+                    } else { throw new Error("Fallback required"); }
+                } catch (e) {
+                    // FALLBACK CERDAS: Beralih ke endpoint getPrices lawas jika Worker bermasalah
+                    try {
+                        const resFallback = await apiVakSms('getPrices', { service: serviceId, country: 6 });
+                        if (resFallback.isJson && resFallback.data["6"] && resFallback.data["6"][serviceId]) {
+                            let cost = resFallback.data["6"][serviceId].cost;
+                            let count = resFallback.data["6"][serviceId].count;
+                            priceMap = {};
+                            priceMap[cost] = count;
+                        } else { throw new Error("Stok benar-benar kosong"); }
+                    } catch (fallbackError) {
+                        document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:12px;">Stok harga tidak ditemukan.</span>`;
+                        return;
                     }
                 }
 
-                if (bower_daftarServerTersedia.length === 0) throw new Error("Stok habis.");
-
-                bower_daftarServerTersedia.sort((a, b) => a.price - b.price);
-                bower_renderDropdownOptions();
-                bower_pilihServerDropdown(0);
-                 
-            } catch (e) {
-                document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:12px;">${e.message || "Layanan Kosong"}</span>`;
-                document.getElementById("bower_btnPesanAksi").disabled = true;
-                document.getElementById("bower_containerListDropdown").innerHTML = "";
+                // Simpan ke Cache
+                bower_cachedOffers = [];
+                for (const [priceStr, count] of Object.entries(priceMap)) {
+                    let priceVal = parseFloat(priceStr);
+                    if(count > 0) bower_cachedOffers.push({ priceStr: priceStr, price: priceVal, stock: count });
+                }
+                bower_cachedOffers.sort((a, b) => a.price - b.price);
+                bower_lastServiceId = serviceId;
             }
+
+            if (bower_cachedOffers.length === 0) {
+                document.getElementById("bower_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:12px;">Stok habis.</span>`;
+                document.getElementById("bower_btnPesanAksi").disabled = true;
+                return;
+            }
+
+            // Terapkan ke Tampilan (Operator Filter)
+            window.bower_terapkanFilterOperator();
+        }
+
+        // FUNGSI BARU: Menerapkan Filter Operator Instan (Tanpa Delay Loading)
+        window.bower_terapkanFilterOperator = function() {
+            if (!bower_cachedOffers || bower_cachedOffers.length === 0) return;
+
+            let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
+            let prefixLayanan = elemNamaSrv.split(' ')[0]; 
+            let opName = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
+
+            bower_daftarServerTersedia = bower_cachedOffers.map(offer => {
+                return { id: offer.priceStr, opName: opName, price: offer.price, stock: offer.stock, prefix: prefixLayanan };
+            });
+
+            bower_renderDropdownOptions();
+            bower_pilihServerDropdown(0); // Pilih otomatis opsi termurah
         }
 
         function bower_renderDropdownOptions() {
@@ -284,12 +313,9 @@
         }
 
         window.bower_pilihServerDropdown = function(index) {
-            let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
-            let prefixLayanan = elemNamaSrv.split(' ')[0]; 
             const srv = bower_daftarServerTersedia[index];
-            
             bower_produkTerpilihId = srv.id; 
-            bower_namaProdukTerpilih = `${prefixLayanan} (${srv.opName})`;
+            bower_namaProdukTerpilih = `${srv.prefix} (${srv.opName})`;
             bower_hargaProdukTerpilih = srv.price; 
             
             document.getElementById("bower_labelServerTerpilih").innerHTML = `
@@ -306,10 +332,11 @@
             const teksAsli = btn.innerHTML;
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             
+            // Auto Cancel Nomor Menggantung
             bower_daftarOrderan.forEach(item => {
                 if (item.status === "pending") {
                     item.status = "cancelled";
-                    apiVakSms('setStatus', { id: item.order_id, status: 8 }).catch(e=>{});
+                    apiVakSms('cancelActivation', { id: item.order_id }).catch(e=>{});
                 }
             });
             bower_renderUILayout();
@@ -342,7 +369,7 @@
 
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
-                            await apiVakSms('setStatus', { id: actId, status: 8 }).catch(e=>{});
+                            await apiVakSms('cancelActivation', { id: actId }).catch(e=>{});
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
                         } else {
@@ -383,7 +410,7 @@
         window.bower_eksekusiBatalkanServer = async function(index) {
             const item = bower_daftarOrderan[index];
             try { 
-                await apiVakSms('setStatus', { id: item.order_id, status: 8 }); 
+                await apiVakSms('cancelActivation', { id: item.order_id }); 
                 item.status = "cancelled"; 
                 bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Dibatalkan!"); 
             } catch (e) {}
@@ -444,7 +471,7 @@
 
             bower_daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiVakSms('setStatus', { id: item.order_id, status: 8 }).catch(e=>{}); }
+                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiVakSms('cancelActivation', { id: item.order_id }).catch(e=>{}); }
                 if (item.status === "cancelled") return; 
 
                 let d = new Date(item.waktu_dibuat);
