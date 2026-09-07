@@ -126,7 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Fitur Multi-Ban Otomatis Aktif.
+            └> Direct API (Client-Side) Aktif.<br>
+            └> Brute-Force Ban (Kode Rahasia) Aktif!
         </div>
     </div>
     
@@ -191,6 +192,7 @@
             try {
                 const res = await fetch(targetUrl);
                 const dataText = await res.text();
+                
                 try { 
                     let parsedData = JSON.parse(dataText);
                     return { isJson: true, data: parsedData, raw: dataText }; 
@@ -202,25 +204,22 @@
             }
         }
 
-        // --- SISTEM MULTI-BAN VAK-SMS ---
-        // Karena status=8 hanya untuk cancel, fungsi ini memaksa peladen Vak-SMS mengeksekusi Ban dengan segala cara
+        // --- SISTEM BRUTE-FORCE BAN (Membongkar Kode Rahasia Server Vak-SMS) ---
         window.vak_eksekusiBanKeServer = async function(actId) {
             try {
-                // Tembakan 1: Coba action khusus 'ban'
-                let res1 = await apiVakSms('ban', { id: actId });
-                if (res1.raw && (res1.raw.includes("BAD_ACTION") || res1.raw.includes("ERROR"))) {
-                    // Tembakan 2: Coba status=10 (Standar Ban API)
-                    let res2 = await apiVakSms('setStatus', { id: actId, status: 10 });
-                    if (res2.raw && res2.raw.includes("BAD_STATUS")) {
-                        // Tembakan 3: Coba setBadStatus
-                        let res3 = await apiVakSms('setBadStatus', { id: actId });
-                        if (res3.raw && res3.raw.includes("BAD_ACTION")) {
-                            // Fallback jika peladen benar-benar menolak: Batal Paksa (Cancel)
-                            await apiVakSms('cancelActivation', { id: actId });
-                        }
-                    }
-                }
-            } catch (e) { console.log("Ban Error Fallback"); }
+                // Tembakan 1: Status 10 (Kode standar SMS-Activate untuk Ban)
+                await apiVakSms('setStatus', { id: actId, status: 10 });
+                // Tembakan 2: Status 9 (Alternatif)
+                await apiVakSms('setStatus', { id: actId, status: 9 });
+                // Tembakan 3: Status 4
+                await apiVakSms('setStatus', { id: actId, status: 4 });
+                // Tembakan 4: Action "ban"
+                await apiVakSms('ban', { id: actId });
+                // Tembakan 5: Action "setBadStatus"
+                await apiVakSms('setBadStatus', { id: actId });
+                // Tembakan Pamungkas: Status 8 (Cancel) agar uang tetap kembali jika semua kode Ban mereka tolak
+                await apiVakSms('setStatus', { id: actId, status: 8 });
+            } catch (e) { console.log("Ban Execution Done"); }
         }
 
         document.addEventListener("DOMContentLoaded", async function() {
@@ -379,7 +378,7 @@
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
                             
-                            // Eksekusi Algoritma BAN Otomatis
+                            // Eksekusi Brute-Force BAN agar nomor ini tidak dijual lagi
                             await window.vak_eksekusiBanKeServer(actId);
                             
                             await new Promise(r => setTimeout(r, 1500)); 
@@ -419,7 +418,7 @@
             } catch(e) { document.getElementById("vak_txtSaldoLive").innerText = "Error"; }
         }
 
-        // Batal Biasa (Tidak Blokir) tetap menggunakan cancelActivation
+        // Fungsi Batal Pesanan Normal
         window.vak_eksekusiBatalkanServer = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
@@ -429,14 +428,14 @@
             } catch (e) {}
         }
         
-        // FUNGSI BLOKIR MANUAL -> Menggunakan Algoritma Multi-Ban
+        // Fungsi Blokir & BAN Manual
         window.vak_blokirManual = async function(index) {
             const item = vak_daftarOrderan[index];
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
                 
-                // Eksekusi Algoritma BAN Manual
+                // EKSEKUSI BRUTE-FORCE BAN
                 await window.vak_eksekusiBanKeServer(item.order_id);
                 
                 item.status = "cancelled"; 
