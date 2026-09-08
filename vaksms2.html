@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Cek OTP Real-Time API (Super Cepat).<br>
-            └> Selesai & Ban disesuaikan Dokumen Resmi!
+            └> Cek OTP Real-Time API.<br>
+            └> API action=finishActivation Terpasang!
         </div>
     </div>
     
@@ -202,7 +202,6 @@
             }
         }
 
-        // Endpoint V2 ini murni khusus untuk blokir (bad)
         window.vak_apiSetStatusV2 = async function(actId, isBan) {
             const key = localStorage.getItem("otp_key_vaksms") || "";
             const statusStr = isBan ? 'bad' : 'end'; 
@@ -366,7 +365,7 @@
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
                             
-                            await window.vak_apiSetStatusV2(actId, true); 
+                            await window.vak_apiSetStatusV2(actId, true); // BAN Otomatis
                             
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
@@ -436,12 +435,13 @@
             try { await apiVakSms('setStatus', { id: item.order_id, status: 3 }); vak_showToast("Resend Diminta!"); } catch (e) {}
         }
         
-        // --- PERBAIKAN SELESAI ---
-        // Tombol Selesai dikembalikan ke API Standar status=6 sesuai dokumen Vak-SMS
+        // --- PERBAIKAN: Tombol Selesai Menggunakan Endpoint Spesifik Vak-SMS ---
         window.vak_eksekusiSelesai = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
-                await apiVakSms('setStatus', { id: item.order_id, status: 6 }); 
+                // Menggunakan endpoint action=finishActivation yang ada di dokumentasi khusus Vak-SMS
+                await apiVakSms('finishActivation', { id: item.order_id }); 
+                
                 item.status = "completed"; 
                 vak_renderUILayout(); 
                 vak_simpanDaftarOrderanKeLokal(); 
