@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Arsitektur Hybrid Mass-Scale Aktif.<br>
-            └> Worker difungsikan eksklusif sebagai Webhook.
+            └> Direct Cek OTP Real-Time API (No Webhook) Aktif!<br>
+            └> OTP dijamin masuk seketika (Delay 0-2 Detik).
         </div>
     </div>
     
@@ -161,8 +161,6 @@
         let vak_namaProdukTerpilih = ""; 
         let vak_hargaProdukTerpilih = 0; 
         let vak_siklusCek = 0;
-
-        const VAK_WORKER_URL = "https://vaksms-webhook.tiktiksatu001.workers.dev"; 
 
         function vak_formatRupiah(angka) { return "Rp " + Math.ceil(angka).toLocaleString("id-ID"); }
 
@@ -224,6 +222,7 @@
             const orderanLokal = localStorage.getItem("daftar_orderan_vaksms");
             if (orderanLokal) { vak_daftarOrderan = JSON.parse(orderanLokal); vak_renderUILayout(); }
 
+            // MENJALANKAN SIKLUS SETIAP 2 DETIK
             setInterval(window.vak_mesinWaktuTerpusat, 1000);
             setInterval(window.vak_mesinCekSmsTerpusat, 2000); 
             setInterval(window.vak_updateKursLive, 3600000); 
@@ -446,32 +445,40 @@
             } catch(err) {}
         }
 
-        // --- SISTEM CEK OTP VIA WEBHOOK (Aman dari Rate Limit & Ban Massal) ---
+        // --- SISTEM CEK OTP DIRECT API (REAL-TIME SANGAT CEPAT) ---
+        // Mencabut sistem Webhook Cloudflare, kini panel menembak langsung ke Vak-SMS
         window.vak_mesinCekSmsTerpusat = async function() {
-            vak_siklusCek++; let sudahCekTerbaru = false;
+            vak_siklusCek++; 
+            let sudahCekSatuOrderan = false; // Batasi 1 koneksi per 2 detik agar tidak spam
             
             for (let index = 0; index < vak_daftarOrderan.length; index++) {
                 let i = vak_daftarOrderan[index];
-                if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
-                let izinkanCek = (i.status === "pending" && !sudahCekTerbaru) ? (sudahCekTerbaru = true) : (vak_siklusCek % 5 === 0); // Dipercepat menjadi 5 detik karena Webhook kuat menampung
-                if (!izinkanCek) continue;
+                if (i.status !== "pending") continue; 
+                
+                if (sudahCekSatuOrderan) continue;
+                sudahCekSatuOrderan = true;
                 
                 try {
-                    // Cek OTP ke Cloudflare Worker (Webhook)
-                    const resKV = await fetch(`${VAK_WORKER_URL}/get-sms?id=${i.order_id}`);
-                    const jsonKV = await resKV.json();
+                    // DIRECT PING: Mengambil OTP langsung dari web Vak-SMS tanpa delay 30 detik KV Cloudflare
+                    const resMain = await apiVakSms('getStatus', { id: i.order_id });
                     
-                    if (jsonKV.status === "OK" && jsonKV.otp) {
-                        if (i.status === "pending" || i.otp !== jsonKV.otp) {
-                            i.status = "received"; i.otp = jsonKV.otp; 
+                    if (!resMain.isJson) {
+                        if (resMain.raw.includes("STATUS_OK:")) {
+                            let otpCode = resMain.raw.split(":")[1];
+                            i.status = "received"; 
+                            i.otp = otpCode; 
+                            
                             set(ref(db, 'blocklist/' + i.phone), { timestamp: Date.now() }).catch(err => console.log(err));
-                            vak_putarSuaraNotifKeras(); vak_munculkanPopupNative(i.phone, i.otp, i.layanan); vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal();
-                        }
-                    } else if (vak_siklusCek % 15 === 0) {
-                        // Cek status pembatalan otomatis dari server Vak-SMS setiap 30 detik
-                        const resMain = await apiVakSms('getStatus', { id: i.order_id });
-                        if (!resMain.isJson && (resMain.raw === "STATUS_CANCEL" || resMain.raw === "STATUS_CANCEL_BAN")) {
-                            i.status = "cancelled"; vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); 
+                            vak_putarSuaraNotifKeras(); 
+                            vak_munculkanPopupNative(i.phone, i.otp, i.layanan); 
+                            vak_renderUILayout(); 
+                            vak_simpanDaftarOrderanKeLokal();
+                            window.vak_ambilSaldoLive(); 
+                        } else if (resMain.raw === "STATUS_CANCEL" || resMain.raw === "STATUS_CANCEL_BAN") {
+                            i.status = "cancelled"; 
+                            vak_renderUILayout(); 
+                            vak_simpanDaftarOrderanKeLokal(); 
+                            window.vak_ambilSaldoLive(); 
                         }
                     }
                 } catch (e) {}
