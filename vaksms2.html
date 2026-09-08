@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Cek OTP Real-Time API.<br>
-            └> API action=finishActivation Terpasang!
+            └> Blokir (BAN) API V2 aktif memblokir permanen.<br>
+            └> Selesai bersifat "Penutupan Lokal" (Standar Vak-SMS).
         </div>
     </div>
     
@@ -202,6 +202,7 @@
             }
         }
 
+        // Endpoint V2 ini murni khusus untuk BAN (bad)
         window.vak_apiSetStatusV2 = async function(actId, isBan) {
             const key = localStorage.getItem("otp_key_vaksms") || "";
             const statusStr = isBan ? 'bad' : 'end'; 
@@ -435,18 +436,17 @@
             try { await apiVakSms('setStatus', { id: item.order_id, status: 3 }); vak_showToast("Resend Diminta!"); } catch (e) {}
         }
         
-        // --- PERBAIKAN: Tombol Selesai Menggunakan Endpoint Spesifik Vak-SMS ---
+        // --- SELESAI MENGGUNAKAN PROTOKOL STANDAR (status=6) ---
+        // Penutupan ini bersifat LOKAL di panel Anda, di web Vak-SMS akan menunggu 20 menit berlalu.
         window.vak_eksekusiSelesai = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
-                // Menggunakan endpoint action=finishActivation yang ada di dokumentasi khusus Vak-SMS
-                await apiVakSms('finishActivation', { id: item.order_id }); 
-                
+                await apiVakSms('setStatus', { id: item.order_id, status: 6 }).catch(e=>{}); 
                 item.status = "completed"; 
                 vak_renderUILayout(); 
                 vak_simpanDaftarOrderanKeLokal(); 
                 window.vak_ambilSaldoLive(); 
-                vak_showToast("Selesai!"); 
+                vak_showToast("Selesai (Ditutup Lokal)!"); 
             } catch(err) { console.log(err); }
         }
 
