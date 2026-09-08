@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Direct Cek OTP Real-Time API (No Webhook) Aktif!<br>
-            └> OTP dijamin masuk seketika (Delay 0-2 Detik).
+            └> Timer dimaksimalkan ke 20 Menit (1200 detik).<br>
+            └> Tombol Selesai dikalibrasi ke Status 6 API.
         </div>
     </div>
     
@@ -204,6 +204,7 @@
 
         window.vak_apiSetStatusV2 = async function(actId, isBan) {
             const key = localStorage.getItem("otp_key_vaksms") || "";
+            // Fungsi V2 ini kini dikhususkan murni HANYA UNTUK BAN
             const statusStr = isBan ? 'bad' : 'end'; 
             const targetUrl = `https://vak-sms.com/api/setStatus/?apiKey=${key.trim()}&status=${statusStr}&idNum=${actId}&nocache=${Date.now()}`;
             try { await fetch(targetUrl); } catch (e) { console.log(e); }
@@ -222,7 +223,6 @@
             const orderanLokal = localStorage.getItem("daftar_orderan_vaksms");
             if (orderanLokal) { vak_daftarOrderan = JSON.parse(orderanLokal); vak_renderUILayout(); }
 
-            // MENJALANKAN SIKLUS SETIAP 2 DETIK
             setInterval(window.vak_mesinWaktuTerpusat, 1000);
             setInterval(window.vak_mesinCekSmsTerpusat, 2000); 
             setInterval(window.vak_updateKursLive, 3600000); 
@@ -436,20 +436,23 @@
             try { await apiVakSms('setStatus', { id: item.order_id, status: 3 }); vak_showToast("Resend Diminta!"); } catch (e) {}
         }
         
+        // --- PERBAIKAN: Tombol Selesai Menggunakan Status=6 Sesuai Dokumen Resmi ---
         window.vak_eksekusiSelesai = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
-                await window.vak_apiSetStatusV2(item.order_id, false); 
+                // Mengirimkan status=6 untuk menutup dan menghapus pesanan dari antrean Active Numbers di server
+                await apiVakSms('setStatus', { id: item.order_id, status: 6 }); 
                 item.status = "completed"; 
-                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Selesai!"); 
+                vak_renderUILayout(); 
+                vak_simpanDaftarOrderanKeLokal(); 
+                window.vak_ambilSaldoLive(); 
+                vak_showToast("Selesai!"); 
             } catch(err) {}
         }
 
-        // --- SISTEM CEK OTP DIRECT API (REAL-TIME SANGAT CEPAT) ---
-        // Mencabut sistem Webhook Cloudflare, kini panel menembak langsung ke Vak-SMS
         window.vak_mesinCekSmsTerpusat = async function() {
             vak_siklusCek++; 
-            let sudahCekSatuOrderan = false; // Batasi 1 koneksi per 2 detik agar tidak spam
+            let sudahCekSatuOrderan = false; 
             
             for (let index = 0; index < vak_daftarOrderan.length; index++) {
                 let i = vak_daftarOrderan[index];
@@ -459,7 +462,6 @@
                 sudahCekSatuOrderan = true;
                 
                 try {
-                    // DIRECT PING: Mengambil OTP langsung dari web Vak-SMS tanpa delay 30 detik KV Cloudflare
                     const resMain = await apiVakSms('getStatus', { id: i.order_id });
                     
                     if (!resMain.isJson) {
@@ -513,7 +515,8 @@
                 }
 
                 countAktif++; 
-                let sisa = Math.max(0, 300 - sec); let cool = Math.max(0, 120 - sec); let sisaMax = Math.max(0, 1500 - sec); 
+                // --- PERBAIKAN: Waktu maksimal diset ke 1200 detik (20 Menit) ---
+                let sisa = Math.max(0, 300 - sec); let cool = Math.max(0, 120 - sec); let sisaMax = Math.max(0, 1200 - sec); 
                 if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) { cool = 0; }
 
                 let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
