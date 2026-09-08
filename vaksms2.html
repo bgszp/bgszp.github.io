@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Direct API V2 Aktif (/api/setStatus/).<br>
-            └> Fitur BAN & END Bekerja Penuh!
+            └> Jeda Smart-Refresh Saldo (3 Detik) Aktif.<br>
+            └> Direct Cek OTP Real-Time API (No Webhook) Aktif!
         </div>
     </div>
     
@@ -162,8 +162,6 @@
         let vak_hargaProdukTerpilih = 0; 
         let vak_siklusCek = 0;
 
-        const VAK_WORKER_URL = "https://vaksms-webhook.tiktiksatu001.workers.dev"; 
-
         function vak_formatRupiah(angka) { return "Rp " + Math.ceil(angka).toLocaleString("id-ID"); }
 
         window.vak_updateKursLive = async function() {
@@ -192,6 +190,7 @@
             try {
                 const res = await fetch(targetUrl);
                 const dataText = await res.text();
+                
                 try { 
                     let parsedData = JSON.parse(dataText);
                     return { isJson: true, data: parsedData, raw: dataText }; 
@@ -203,7 +202,6 @@
             }
         }
 
-        // --- SISTEM API BARU KHUSUS BAN (bad) & SELESAI (end) ---
         window.vak_apiSetStatusV2 = async function(actId, isBan) {
             const key = localStorage.getItem("otp_key_vaksms") || "";
             const statusStr = isBan ? 'bad' : 'end'; 
@@ -367,8 +365,7 @@
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
                             
-                            // Eksekusi API V2 Khusus BAN Otomatis
-                            await window.vak_apiSetStatusV2(actId, true);
+                            await window.vak_apiSetStatusV2(actId, true); // BAN Otomatis
                             
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
@@ -382,7 +379,10 @@
                     vak_daftarOrderan.unshift({ 
                         order_id: finalOrder.activationId, phone: finalOrder.phoneNumber, layanan: vak_namaProdukTerpilih, harga: finalOrder.activationCost, waktu_dibuat: Date.now(), status: "pending", otp: "", is_recycled: isRecycled 
                     });
-                    vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive();
+                    vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); 
+                    
+                    // JEDA 3 DETIK SEBELUM REFRESH SALDO SETELAH BELI
+                    setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
                 } else { alert("Sistem membatalkan orderan berulang karena nomor bekas."); }
             } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
         }
@@ -412,11 +412,13 @@
             try { 
                 await apiVakSms('cancelActivation', { id: item.order_id }); 
                 item.status = "cancelled"; 
-                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Dibatalkan!"); 
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Dibatalkan!"); 
+                
+                // JEDA 3 DETIK SEBELUM REFRESH SALDO (MENUNGGU SERVER REFUND)
+                setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
             } catch (e) {}
         }
         
-        // --- BLOKIR MANUAL DENGAN API V2 ---
         window.vak_blokirManual = async function(index) {
             const item = vak_daftarOrderan[index];
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
@@ -426,7 +428,10 @@
                 await window.vak_apiSetStatusV2(item.order_id, true);
                 
                 item.status = "cancelled"; 
-                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Nomor di-BAN!"); 
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Nomor di-BAN!"); 
+                
+                // JEDA 3 DETIK SEBELUM REFRESH SALDO (MENUNGGU SERVER REFUND)
+                setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
             } catch (e) { alert("Gagal memblokir: " + e.message); }
         }
 
@@ -435,7 +440,6 @@
             try { await apiVakSms('setStatus', { id: item.order_id, status: 3 }); vak_showToast("Resend Diminta!"); } catch (e) {}
         }
         
-        // --- SELESAI MANUAL DENGAN API V2 ---
         window.vak_eksekusiSelesai = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
@@ -445,28 +449,36 @@
             } catch(err) {}
         }
 
+        // --- SISTEM CEK OTP DIRECT API (REAL-TIME TANPA WORKER) ---
         window.vak_mesinCekSmsTerpusat = async function() {
-            vak_siklusCek++; let sudahCekTerbaru = false;
+            vak_siklusCek++; 
+            // Mengecek setiap 4 detik untuk mencegah rate limit server Vak-SMS
+            if (vak_siklusCek % 2 !== 0) return; 
+
             for (let index = 0; index < vak_daftarOrderan.length; index++) {
                 let i = vak_daftarOrderan[index];
-                if (i.status !== "pending" && i.status !== "received" && i.status !== "history_received") continue; 
-                let izinkanCek = (i.status === "pending" && !sudahCekTerbaru) ? (sudahCekTerbaru = true) : (vak_siklusCek % 10 === 0);
-                if (!izinkanCek) continue;
+                if (i.status !== "pending") continue; 
                 
                 try {
-                    const resKV = await fetch(`${VAK_WORKER_URL}/get-sms?id=${i.order_id}`);
-                    const jsonKV = await resKV.json();
+                    // MENGAMBIL OTP LANGSUNG KE VAK-SMS (Bypass Worker)
+                    const resMain = await apiVakSms('getStatus', { id: i.order_id });
                     
-                    if (jsonKV.status === "OK" && jsonKV.otp) {
-                        if (i.status === "pending" || i.otp !== jsonKV.otp) {
-                            i.status = "received"; i.otp = jsonKV.otp; 
+                    if (!resMain.isJson) {
+                        if (resMain.raw.includes("STATUS_OK:")) {
+                            let otpCode = resMain.raw.split(":")[1];
+                            i.status = "received"; 
+                            i.otp = otpCode; 
+                            
                             set(ref(db, 'blocklist/' + i.phone), { timestamp: Date.now() }).catch(err => console.log(err));
-                            vak_putarSuaraNotifKeras(); vak_munculkanPopupNative(i.phone, i.otp, i.layanan); vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal();
-                        }
-                    } else if (vak_siklusCek % 15 === 0) {
-                        const resMain = await apiVakSms('getStatus', { id: i.order_id });
-                        if (!resMain.isJson && (resMain.raw === "STATUS_CANCEL" || resMain.raw === "STATUS_CANCEL_BAN")) {
-                            i.status = "cancelled"; vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); 
+                            vak_putarSuaraNotifKeras(); 
+                            vak_munculkanPopupNative(i.phone, i.otp, i.layanan); 
+                            vak_renderUILayout(); 
+                            vak_simpanDaftarOrderanKeLokal();
+                        } else if (resMain.raw === "STATUS_CANCEL" || resMain.raw === "STATUS_CANCEL_BAN") {
+                            i.status = "cancelled"; 
+                            vak_renderUILayout(); 
+                            vak_simpanDaftarOrderanKeLokal(); 
+                            window.vak_ambilSaldoLive(); 
                         }
                     }
                 } catch (e) {}
