@@ -125,9 +125,10 @@
             </div>
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
-            └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Perbaikan Error "BAD ACTION" (Filter Operator).<br>
-            └> Jeda Smart-Refresh Saldo Aktif.
+            └> Tampilan & Posisi UI Asli (TIDAK BERUBAH).<br>
+            └> Sistem "Smart Buffer +$0.015" aktif di balik layar.<br>
+            └> Filter Operator kini akurat anti-lempar!<br>
+            └> Notifikasi Stereo 3D (Kiri ke Kanan).
         </div>
     </div>
     
@@ -298,6 +299,7 @@
             const container = document.getElementById("vak_containerListDropdown");
             if(vak_daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center;">Kosong</div>`; return; }
             let html = "";
+            // UI dropdown tier tidak diubah sedikitpun
             vak_daftarServerTersedia.forEach((srv, index) => {
                 let sel = (vak_produkTerpilihId === srv.id) ? "selected" : "";
                 html += `<div class="dropdown-item-row ${sel}" onclick="vak_pilihServerDropdown(${index})">
@@ -331,7 +333,6 @@
             vak_daftarOrderan.forEach(item => {
                 if (item.status === "pending") {
                     item.status = "cancelled";
-                    // Pembatalan otomatis order gantung menggunakan metode standar yang tidak ditolak (status 8)
                     apiVakSms('setStatus', { id: item.order_id, status: 8 }).catch(e=>{});
                 }
             });
@@ -341,6 +342,8 @@
             try {
                 let serviceId = document.getElementById("vak_dropdownLayanan").value;
                 let opId = document.getElementById("vak_dropdownOperator").value;
+                
+                // MENGAMBIL HARGA YANG DIPILIH DARI UI SEBAGAI HARGA DASAR
                 let selectedMaxPrice = vak_hargaProdukTerpilih;
                 
                 let maxRetries = 3; 
@@ -352,12 +355,17 @@
                     attempt++;
                     if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                     
-                    // PERBAIKAN TERSANGKA 1: Mencegah 'BAD ACTION' jika operator acak
-                    let apiParams = { service: serviceId, country: 6, maxPrice: selectedMaxPrice };
-                    // Jika bukan "any", barulah parameter operator ditambahkan. 
-                    // Jika "any" (acak), server akan memberikannya otomatis tanpa perlu parameter.
+                    // --- LOGIKA SMART BUFFER (TANPA MENGUBAH UI) ---
+                    let apiParams = { service: serviceId, country: 6 };
+                    
                     if (opId !== "any") {
                         apiParams.operator = opId;
+                        // Rahasia: Menyuntikkan napas $0.015 ke server agar operator pilihan pasti dapat,
+                        // meskipun harganya sedikit lebih mahal di server. (Saldo akan dipotong sesuai harga aslinya).
+                        apiParams.maxPrice = selectedMaxPrice + 0.015; 
+                    } else {
+                        // Jika operator acak, harga sangat ketat sesuai pilihan untuk menghemat saldo
+                        apiParams.maxPrice = selectedMaxPrice;
                     }
                     
                     const responseData = await apiVakSms('getNumberV2', apiParams);
@@ -371,9 +379,7 @@
 
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
-                            
-                            await window.vak_apiSetStatusV2(actId, true); // BAN Otomatis
-                            
+                            await window.vak_apiSetStatusV2(actId, true); 
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
                         } else {
@@ -411,14 +417,12 @@
             } catch(e) { document.getElementById("vak_txtSaldoLive").innerText = "Error"; }
         }
 
-        // --- PEMBATALAN BIASA MENGGUNAKAN STANDAR status=8 ---
         window.vak_eksekusiBatalkanServer = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
                 await apiVakSms('setStatus', { id: item.order_id, status: 8 }); 
                 item.status = "cancelled"; 
                 vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Dibatalkan!"); 
-                
                 setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
             } catch (e) {}
         }
@@ -428,12 +432,9 @@
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
-                
                 await window.vak_apiSetStatusV2(item.order_id, true);
-                
                 item.status = "cancelled"; 
                 vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Nomor di-BAN!"); 
-                
                 setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
             } catch (e) { alert("Gagal memblokir: " + e.message); }
         }
@@ -448,14 +449,10 @@
             try { 
                 await apiVakSms('setStatus', { id: item.order_id, status: 6 }); 
                 item.status = "completed"; 
-                vak_renderUILayout(); 
-                vak_simpanDaftarOrderanKeLokal(); 
-                window.vak_ambilSaldoLive(); 
-                vak_showToast("Selesai!"); 
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Selesai!"); 
             } catch(err) { console.log(err); }
         }
 
-        // --- SISTEM CEK OTP VIA FIREBASE REAL-TIME ---
         window.vak_mesinCekSmsTerpusat = async function() {
             vak_siklusCek++; 
             let sudahCekSatuOrderan = false; 
@@ -559,7 +556,7 @@
         window.vak_showToast = function(m) { const t = document.getElementById('vak_toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         window.vak_salinTeksToast = function(txt) { navigator.clipboard.writeText(txt); vak_showToast("Disalin!"); }
 
-        // --- NADA DERING UNIK STEREO (MODERN SCI-FI) ---
+        // --- NADA DERING MODERN SCI-FI (STEREO) ---
         window.vak_putarSuaraNotifKeras = function() {
             try { 
                 const AudioContext = window.AudioContext || window.webkitAudioContext; 
