@@ -125,9 +125,9 @@
             </div>
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
-            └> Tampilan & Posisi UI Asli (TIDAK BERUBAH).<br>
-            └> Sistem "Smart Buffer +$0.015" aktif di balik layar.<br>
-            └> Filter Operator kini akurat anti-lempar!<br>
+            └> Tampilan & Posisi UI Asli.<br>
+            └> Sistem "Smart Buffer +$0.015" aktif.<br>
+            └> Badge Harga Asli Ditambahkan di Status Cek OTP.<br>
             └> Notifikasi Stereo 3D (Kiri ke Kanan).
         </div>
     </div>
@@ -299,7 +299,6 @@
             const container = document.getElementById("vak_containerListDropdown");
             if(vak_daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center;">Kosong</div>`; return; }
             let html = "";
-            // UI dropdown tier tidak diubah sedikitpun
             vak_daftarServerTersedia.forEach((srv, index) => {
                 let sel = (vak_produkTerpilihId === srv.id) ? "selected" : "";
                 html += `<div class="dropdown-item-row ${sel}" onclick="vak_pilihServerDropdown(${index})">
@@ -343,7 +342,6 @@
                 let serviceId = document.getElementById("vak_dropdownLayanan").value;
                 let opId = document.getElementById("vak_dropdownOperator").value;
                 
-                // MENGAMBIL HARGA YANG DIPILIH DARI UI SEBAGAI HARGA DASAR
                 let selectedMaxPrice = vak_hargaProdukTerpilih;
                 
                 let maxRetries = 3; 
@@ -355,16 +353,12 @@
                     attempt++;
                     if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                     
-                    // --- LOGIKA SMART BUFFER (TANPA MENGUBAH UI) ---
                     let apiParams = { service: serviceId, country: 6 };
                     
                     if (opId !== "any") {
                         apiParams.operator = opId;
-                        // Rahasia: Menyuntikkan napas $0.015 ke server agar operator pilihan pasti dapat,
-                        // meskipun harganya sedikit lebih mahal di server. (Saldo akan dipotong sesuai harga aslinya).
                         apiParams.maxPrice = selectedMaxPrice + 0.015; 
                     } else {
-                        // Jika operator acak, harga sangat ketat sesuai pilihan untuk menghemat saldo
                         apiParams.maxPrice = selectedMaxPrice;
                     }
                     
@@ -533,6 +527,10 @@
                 let btnBlokirManual = item.status === "pending" ? `<button onclick="vak_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir & Batal"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
                 let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal Vak-SMS"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
 
+                // --- MODIFIKASI LENCANA (BADGE) HARGA AKTUAL ---
+                let teksHargaAsli = item.harga ? vak_formatRupiah(item.harga * KURS_USD_IDR) : '-';
+                let badgeHargaAsli = `<div style="font-size:10px; font-weight:bold; color:var(--accent-cyan); background:#1d203f; padding:3px 7px; border-radius:5px; border:1px solid #3d3f7a;" title="Harga Asli">💰 ${teksHargaAsli}</div>`;
+
                 if (item.status === "received") { 
                     textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
                     kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="vak_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
@@ -541,7 +539,8 @@
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="vak_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
-                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span style="display:flex; align-items:center;">${item.layanan} ${labelWarning} ${btnBlokirManual} ${badgeMaxTime}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="vak_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>${btnAksi}</div>`;
+                // Menempatkan lencana harga sejajar dengan teks status menggunakan display: flex
+                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span style="display:flex; align-items:center;">${item.layanan} ${labelWarning} ${btnBlokirManual} ${badgeMaxTime}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="vak_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;"><div style="font-size:11px; font-weight:600; color:${colStat};">${textStat}</div>${badgeHargaAsli}</div>${btnAksi}</div>`;
             });
 
             containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
@@ -556,7 +555,6 @@
         window.vak_showToast = function(m) { const t = document.getElementById('vak_toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         window.vak_salinTeksToast = function(txt) { navigator.clipboard.writeText(txt); vak_showToast("Disalin!"); }
 
-        // --- NADA DERING MODERN SCI-FI (STEREO) ---
         window.vak_putarSuaraNotifKeras = function() {
             try { 
                 const AudioContext = window.AudioContext || window.webkitAudioContext; 
@@ -564,29 +562,26 @@
                 const ctx = new AudioContext(); 
                 const now = ctx.currentTime; 
 
-                // Nada 1: Kiri Murni (Ting)
                 const osc1 = ctx.createOscillator(); const gain1 = ctx.createGain();
-                osc1.type = 'sine'; osc1.frequency.setValueAtTime(987.77, now); // Nada B5
+                osc1.type = 'sine'; osc1.frequency.setValueAtTime(987.77, now); 
                 gain1.gain.setValueAtTime(0, now); gain1.gain.linearRampToValueAtTime(0.5, now + 0.02); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
                 if (ctx.createStereoPanner) { const pan1 = ctx.createStereoPanner(); pan1.pan.value = -1; osc1.connect(gain1).connect(pan1).connect(ctx.destination); } else osc1.connect(gain1).connect(ctx.destination);
                 osc1.start(now); osc1.stop(now + 0.2);
 
-                // Nada 2: Kanan Murni (Ting Lebih Tinggi)
                 const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain();
-                osc2.type = 'sine'; osc2.frequency.setValueAtTime(1318.51, now + 0.1); // Nada E6
+                osc2.type = 'sine'; osc2.frequency.setValueAtTime(1318.51, now + 0.1); 
                 gain2.gain.setValueAtTime(0, now + 0.1); gain2.gain.linearRampToValueAtTime(0.5, now + 0.12); gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
                 if (ctx.createStereoPanner) { const pan2 = ctx.createStereoPanner(); pan2.pan.value = 1; osc2.connect(gain2).connect(pan2).connect(ctx.destination); } else osc2.connect(gain2).connect(ctx.destination);
                 osc2.start(now + 0.1); osc2.stop(now + 0.3);
 
-                // Nada 3: Meluncur dari Kiri ke Kanan (Dering Dinamis)
                 const osc3 = ctx.createOscillator(); const gain3 = ctx.createGain();
-                osc3.type = 'triangle'; osc3.frequency.setValueAtTime(1567.98, now + 0.2); // Nada G6
-                osc3.frequency.exponentialRampToValueAtTime(880.00, now + 0.6); // Efek suara menurun (Slide)
+                osc3.type = 'triangle'; osc3.frequency.setValueAtTime(1567.98, now + 0.2); 
+                osc3.frequency.exponentialRampToValueAtTime(880.00, now + 0.6); 
                 gain3.gain.setValueAtTime(0, now + 0.2); gain3.gain.linearRampToValueAtTime(0.4, now + 0.25); gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
                 if (ctx.createStereoPanner) { 
                     const pan3 = ctx.createStereoPanner(); 
-                    pan3.pan.setValueAtTime(-0.8, now + 0.2); // Mulai dari Kiri
-                    pan3.pan.linearRampToValueAtTime(0.8, now + 0.6); // Berjalan menyeberang ke Kanan
+                    pan3.pan.setValueAtTime(-0.8, now + 0.2); 
+                    pan3.pan.linearRampToValueAtTime(0.8, now + 0.6); 
                     osc3.connect(gain3).connect(pan3).connect(ctx.destination); 
                 } else {
                     osc3.connect(gain3).connect(ctx.destination);
