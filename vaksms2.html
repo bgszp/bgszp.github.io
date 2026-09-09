@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Blokir (BAN) API V2 aktif memblokir permanen.<br>
-            └> Selesai bersifat "Penutupan Lokal" (Standar Vak-SMS).
+            └> Skala Massal (Hybrid Mode) Aktif.<br>
+            └> Webhook OTP via Firebase (Real-Time 0 Delay!).
         </div>
     </div>
     
@@ -135,7 +135,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
-        import { getDatabase, ref, get, set, child } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+        import { getDatabase, ref, get, set, child, remove } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBuNaE700uoAXECmd7hG73wiJK6cY1ttcE",
@@ -177,32 +177,22 @@
             if (!token) throw new Error("API Key belum disetting.");
             
             let targetUrl = '';
-            
             if (action === "offers") {
                 targetUrl = `https://vak-sms.com/stubs/handler_api.php/activations/offers?api_key=${token.trim()}&services=${params.services}&countries=${params.countries}`;
             } else {
                 targetUrl = `https://vak-sms.com/stubs/handler_api.php?api_key=${token.trim()}&action=${action}`;
                 for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
             }
-            
             targetUrl += `&_t=${Date.now()}`;
             
             try {
                 const res = await fetch(targetUrl);
                 const dataText = await res.text();
-                
-                try { 
-                    let parsedData = JSON.parse(dataText);
-                    return { isJson: true, data: parsedData, raw: dataText }; 
-                } catch(e) { 
-                    return { isJson: false, raw: dataText }; 
-                }
-            } catch (e) { 
-                throw new Error("Ditolak Peramban (CORS)."); 
-            }
+                try { return { isJson: true, data: JSON.parse(dataText), raw: dataText }; } 
+                catch(e) { return { isJson: false, raw: dataText }; }
+            } catch (e) { throw new Error("Ditolak Peramban (CORS)."); }
         }
 
-        // Endpoint V2 ini murni khusus untuk BAN (bad)
         window.vak_apiSetStatusV2 = async function(actId, isBan) {
             const key = localStorage.getItem("otp_key_vaksms") || "";
             const statusStr = isBan ? 'bad' : 'end'; 
@@ -241,19 +231,15 @@
 
         window.vak_muatProdukLayanan = async function() {
             let serviceId = document.getElementById("vak_dropdownLayanan").value;
-            
             if (serviceId !== vak_lastServiceId || !vak_cachedOffers || vak_cachedOffers.length === 0) {
                 document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data harga...</span>`;
                 document.getElementById("vak_btnPesanAksi").disabled = true;
                 
                 try {
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
-                    
-                    if (!resProd.isJson) { throw new Error(`Bukan JSON: ${resProd.raw.substring(0,60)}`); }
-                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error(`Token Ditolak Server.`); }
-                    if (!resProd.data || !resProd.data.data || !resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) { 
-                        throw new Error(`Data Kosong / Tidak ada stok.`); 
-                    }
+                    if (!resProd.isJson) throw new Error(`Bukan JSON`);
+                    if (resProd.data && resProd.data.title === "Unauthenticated") throw new Error(`Token Ditolak Server.`);
+                    if (!resProd.data || !resProd.data.data || !resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) throw new Error(`Data Kosong / Tidak ada stok.`); 
 
                     const priceMap = resProd.data.data[serviceId]["6"].map;
                     vak_cachedOffers = [];
@@ -263,7 +249,6 @@
                     }
                     vak_cachedOffers.sort((a, b) => a.price - b.price);
                     vak_lastServiceId = serviceId;
-
                 } catch (e) {
                     document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block;">🚨 ERROR: ${e.message}</span>`;
                     document.getElementById("vak_btnPesanAksi").disabled = true;
@@ -282,7 +267,6 @@
 
         window.vak_terapkanFilterOperator = function() {
             if (!vak_cachedOffers || vak_cachedOffers.length === 0) return;
-
             let elemNamaSrv = document.getElementById("vak_dropdownLayanan").options[document.getElementById("vak_dropdownLayanan").selectedIndex].text;
             let prefixLayanan = elemNamaSrv.split(' ')[0]; 
             let opName = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
@@ -365,9 +349,7 @@
 
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
-                            
-                            await window.vak_apiSetStatusV2(actId, true); // BAN Otomatis
-                            
+                            await window.vak_apiSetStatusV2(actId, true); 
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
                         } else {
@@ -411,7 +393,6 @@
                 await apiVakSms('cancelActivation', { id: item.order_id }); 
                 item.status = "cancelled"; 
                 vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Dibatalkan!"); 
-                
                 setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
             } catch (e) {}
         }
@@ -421,12 +402,9 @@
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
-                
                 await window.vak_apiSetStatusV2(item.order_id, true);
-                
                 item.status = "cancelled"; 
                 vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Nomor di-BAN!"); 
-                
                 setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
             } catch (e) { alert("Gagal memblokir: " + e.message); }
         }
@@ -436,20 +414,16 @@
             try { await apiVakSms('setStatus', { id: item.order_id, status: 3 }); vak_showToast("Resend Diminta!"); } catch (e) {}
         }
         
-        // --- SELESAI MENGGUNAKAN PROTOKOL STANDAR (status=6) ---
-        // Penutupan ini bersifat LOKAL di panel Anda, di web Vak-SMS akan menunggu 20 menit berlalu.
         window.vak_eksekusiSelesai = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
-                await apiVakSms('setStatus', { id: item.order_id, status: 6 }).catch(e=>{}); 
+                await apiVakSms('finishActivation', { id: item.order_id }); 
                 item.status = "completed"; 
-                vak_renderUILayout(); 
-                vak_simpanDaftarOrderanKeLokal(); 
-                window.vak_ambilSaldoLive(); 
-                vak_showToast("Selesai (Ditutup Lokal)!"); 
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Selesai!"); 
             } catch(err) { console.log(err); }
         }
 
+        // --- SISTEM CEK OTP VIA FIREBASE (REAL-TIME TANPA DELAY CLOUDFLARE) ---
         window.vak_mesinCekSmsTerpusat = async function() {
             vak_siklusCek++; 
             let sudahCekSatuOrderan = false; 
@@ -462,13 +436,15 @@
                 sudahCekSatuOrderan = true;
                 
                 try {
-                    const resMain = await apiVakSms('getStatus', { id: i.order_id });
+                    // Cek OTP langsung ke Firebase Database milik Anda sendiri yang disuntik oleh Cloudflare Worker
+                    const dbRef = ref(db);
+                    const snapshot = await get(child(dbRef, `vaksms_otp/${i.order_id}`));
                     
-                    if (!resMain.isJson) {
-                        if (resMain.raw.includes("STATUS_OK:")) {
-                            let otpCode = resMain.raw.split(":")[1];
+                    if (snapshot.exists()) {
+                        const fbData = snapshot.val();
+                        if (fbData && fbData.otp) {
                             i.status = "received"; 
-                            i.otp = otpCode; 
+                            i.otp = fbData.otp; 
                             
                             set(ref(db, 'blocklist/' + i.phone), { timestamp: Date.now() }).catch(err => console.log(err));
                             vak_putarSuaraNotifKeras(); 
@@ -476,7 +452,14 @@
                             vak_renderUILayout(); 
                             vak_simpanDaftarOrderanKeLokal();
                             window.vak_ambilSaldoLive(); 
-                        } else if (resMain.raw === "STATUS_CANCEL" || resMain.raw === "STATUS_CANCEL_BAN") {
+                            
+                            // Hapus OTP dari Firebase agar tidak menumpuk
+                            remove(child(dbRef, `vaksms_otp/${i.order_id}`));
+                        }
+                    } else if (vak_siklusCek % 15 === 0) {
+                        // Sesekali cek langsung ke Vak-SMS hanya untuk mengetahui jika nomor dibatalkan (bukan untuk cek OTP)
+                        const resMain = await apiVakSms('getStatus', { id: i.order_id });
+                        if (!resMain.isJson && (resMain.raw === "STATUS_CANCEL" || resMain.raw === "STATUS_CANCEL_BAN")) {
                             i.status = "cancelled"; 
                             vak_renderUILayout(); 
                             vak_simpanDaftarOrderanKeLokal(); 
