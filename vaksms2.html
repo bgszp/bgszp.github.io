@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Sistem Panel Vak-SMS Beroperasi.<br>
-            └> Skala Massal (Hybrid Mode) Aktif.<br>
-            └> Webhook OTP via Firebase (Real-Time 0 Delay!).
+            └> Perbaikan Error "BAD ACTION" (Filter Operator).<br>
+            └> Jeda Smart-Refresh Saldo Aktif.
         </div>
     </div>
     
@@ -177,20 +177,29 @@
             if (!token) throw new Error("API Key belum disetting.");
             
             let targetUrl = '';
+            
             if (action === "offers") {
                 targetUrl = `https://vak-sms.com/stubs/handler_api.php/activations/offers?api_key=${token.trim()}&services=${params.services}&countries=${params.countries}`;
             } else {
                 targetUrl = `https://vak-sms.com/stubs/handler_api.php?api_key=${token.trim()}&action=${action}`;
                 for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
             }
+            
             targetUrl += `&_t=${Date.now()}`;
             
             try {
                 const res = await fetch(targetUrl);
                 const dataText = await res.text();
-                try { return { isJson: true, data: JSON.parse(dataText), raw: dataText }; } 
-                catch(e) { return { isJson: false, raw: dataText }; }
-            } catch (e) { throw new Error("Ditolak Peramban (CORS)."); }
+                
+                try { 
+                    let parsedData = JSON.parse(dataText);
+                    return { isJson: true, data: parsedData, raw: dataText }; 
+                } catch(e) { 
+                    return { isJson: false, raw: dataText }; 
+                }
+            } catch (e) { 
+                throw new Error("Ditolak Peramban (CORS)."); 
+            }
         }
 
         window.vak_apiSetStatusV2 = async function(actId, isBan) {
@@ -231,15 +240,19 @@
 
         window.vak_muatProdukLayanan = async function() {
             let serviceId = document.getElementById("vak_dropdownLayanan").value;
+            
             if (serviceId !== vak_lastServiceId || !vak_cachedOffers || vak_cachedOffers.length === 0) {
                 document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data harga...</span>`;
                 document.getElementById("vak_btnPesanAksi").disabled = true;
                 
                 try {
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
-                    if (!resProd.isJson) throw new Error(`Bukan JSON`);
-                    if (resProd.data && resProd.data.title === "Unauthenticated") throw new Error(`Token Ditolak Server.`);
-                    if (!resProd.data || !resProd.data.data || !resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) throw new Error(`Data Kosong / Tidak ada stok.`); 
+                    
+                    if (!resProd.isJson) { throw new Error(`Bukan JSON`); }
+                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error(`Token Ditolak Server.`); }
+                    if (!resProd.data || !resProd.data.data || !resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) { 
+                        throw new Error(`Data Kosong / Tidak ada stok.`); 
+                    }
 
                     const priceMap = resProd.data.data[serviceId]["6"].map;
                     vak_cachedOffers = [];
@@ -249,6 +262,7 @@
                     }
                     vak_cachedOffers.sort((a, b) => a.price - b.price);
                     vak_lastServiceId = serviceId;
+
                 } catch (e) {
                     document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block;">🚨 ERROR: ${e.message}</span>`;
                     document.getElementById("vak_btnPesanAksi").disabled = true;
@@ -267,6 +281,7 @@
 
         window.vak_terapkanFilterOperator = function() {
             if (!vak_cachedOffers || vak_cachedOffers.length === 0) return;
+
             let elemNamaSrv = document.getElementById("vak_dropdownLayanan").options[document.getElementById("vak_dropdownLayanan").selectedIndex].text;
             let prefixLayanan = elemNamaSrv.split(' ')[0]; 
             let opName = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
@@ -316,7 +331,8 @@
             vak_daftarOrderan.forEach(item => {
                 if (item.status === "pending") {
                     item.status = "cancelled";
-                    apiVakSms('cancelActivation', { id: item.order_id }).catch(e=>{});
+                    // Pembatalan otomatis order gantung menggunakan metode standar yang tidak ditolak (status 8)
+                    apiVakSms('setStatus', { id: item.order_id, status: 8 }).catch(e=>{});
                 }
             });
             vak_renderUILayout();
@@ -336,9 +352,15 @@
                     attempt++;
                     if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                     
-                    const responseData = await apiVakSms('getNumberV2', { 
-                        service: serviceId, country: 6, operator: opId, maxPrice: selectedMaxPrice
-                    });
+                    // PERBAIKAN TERSANGKA 1: Mencegah 'BAD ACTION' jika operator acak
+                    let apiParams = { service: serviceId, country: 6, maxPrice: selectedMaxPrice };
+                    // Jika bukan "any", barulah parameter operator ditambahkan. 
+                    // Jika "any" (acak), server akan memberikannya otomatis tanpa perlu parameter.
+                    if (opId !== "any") {
+                        apiParams.operator = opId;
+                    }
+                    
+                    const responseData = await apiVakSms('getNumberV2', apiParams);
                     
                     if (responseData.isJson && responseData.data.phoneNumber) {
                         let phone = responseData.data.phoneNumber.toString();
@@ -349,7 +371,9 @@
 
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
-                            await window.vak_apiSetStatusV2(actId, true); 
+                            
+                            await window.vak_apiSetStatusV2(actId, true); // BAN Otomatis
+                            
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
                         } else {
@@ -363,7 +387,7 @@
                         order_id: finalOrder.activationId, phone: finalOrder.phoneNumber, layanan: vak_namaProdukTerpilih, harga: finalOrder.activationCost, waktu_dibuat: Date.now(), status: "pending", otp: "", is_recycled: isRecycled 
                     });
                     vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive();
-                } else { alert("Sistem membatalkan orderan berulang karena nomor bekas."); }
+                } else { alert("Sistem membatalkan orderan berulang karena mendeteksi nomor bekas."); }
             } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
         }
 
@@ -387,12 +411,14 @@
             } catch(e) { document.getElementById("vak_txtSaldoLive").innerText = "Error"; }
         }
 
+        // --- PEMBATALAN BIASA MENGGUNAKAN STANDAR status=8 ---
         window.vak_eksekusiBatalkanServer = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
-                await apiVakSms('cancelActivation', { id: item.order_id }); 
+                await apiVakSms('setStatus', { id: item.order_id, status: 8 }); 
                 item.status = "cancelled"; 
                 vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Dibatalkan!"); 
+                
                 setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
             } catch (e) {}
         }
@@ -402,9 +428,12 @@
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
             try {
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
+                
                 await window.vak_apiSetStatusV2(item.order_id, true);
+                
                 item.status = "cancelled"; 
                 vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Nomor di-BAN!"); 
+                
                 setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
             } catch (e) { alert("Gagal memblokir: " + e.message); }
         }
@@ -417,13 +446,16 @@
         window.vak_eksekusiSelesai = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
-                await apiVakSms('finishActivation', { id: item.order_id }); 
+                await apiVakSms('setStatus', { id: item.order_id, status: 6 }); 
                 item.status = "completed"; 
-                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(); vak_showToast("Selesai!"); 
+                vak_renderUILayout(); 
+                vak_simpanDaftarOrderanKeLokal(); 
+                window.vak_ambilSaldoLive(); 
+                vak_showToast("Selesai!"); 
             } catch(err) { console.log(err); }
         }
 
-        // --- SISTEM CEK OTP VIA FIREBASE (REAL-TIME TANPA DELAY CLOUDFLARE) ---
+        // --- SISTEM CEK OTP VIA FIREBASE REAL-TIME ---
         window.vak_mesinCekSmsTerpusat = async function() {
             vak_siklusCek++; 
             let sudahCekSatuOrderan = false; 
@@ -436,7 +468,6 @@
                 sudahCekSatuOrderan = true;
                 
                 try {
-                    // Cek OTP langsung ke Firebase Database milik Anda sendiri yang disuntik oleh Cloudflare Worker
                     const dbRef = ref(db);
                     const snapshot = await get(child(dbRef, `vaksms_otp/${i.order_id}`));
                     
@@ -453,11 +484,9 @@
                             vak_simpanDaftarOrderanKeLokal();
                             window.vak_ambilSaldoLive(); 
                             
-                            // Hapus OTP dari Firebase agar tidak menumpuk
                             remove(child(dbRef, `vaksms_otp/${i.order_id}`));
                         }
                     } else if (vak_siklusCek % 15 === 0) {
-                        // Sesekali cek langsung ke Vak-SMS hanya untuk mengetahui jika nomor dibatalkan (bukan untuk cek OTP)
                         const resMain = await apiVakSms('getStatus', { id: i.order_id });
                         if (!resMain.isJson && (resMain.raw === "STATUS_CANCEL" || resMain.raw === "STATUS_CANCEL_BAN")) {
                             i.status = "cancelled"; 
@@ -477,7 +506,7 @@
 
             vak_daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiVakSms('cancelActivation', { id: item.order_id }).catch(e=>{}); }
+                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiVakSms('setStatus', { id: item.order_id, status: 8 }).catch(e=>{}); }
                 if (item.status === "cancelled") return; 
 
                 let d = new Date(item.waktu_dibuat);
@@ -530,18 +559,43 @@
         window.vak_showToast = function(m) { const t = document.getElementById('vak_toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
         window.vak_salinTeksToast = function(txt) { navigator.clipboard.writeText(txt); vak_showToast("Disalin!"); }
 
+        // --- NADA DERING UNIK STEREO (MODERN SCI-FI) ---
         window.vak_putarSuaraNotifKeras = function() {
             try { 
-                const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return;
-                const audioCtx = new AudioContext(); let time = audioCtx.currentTime; 
-                const sequence = [523.25, 659.25, 783.99, 1046.50]; 
-                sequence.forEach((freq, idx) => {
-                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-                    osc.type = idx % 2 === 0 ? "sine" : "sawtooth"; let startTime = time + (idx * 0.09);
-                    osc.frequency.setValueAtTime(freq, startTime); gain.gain.setValueAtTime(0.4, startTime); gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
-                    if (audioCtx.createStereoPanner) { const pan = audioCtx.createStereoPanner(); pan.pan.value = idx < 2 ? -0.5 : 0.5; osc.connect(gain).connect(pan).connect(audioCtx.destination); } else { osc.connect(gain).connect(audioCtx.destination); }
-                    osc.start(startTime); osc.stop(startTime + 0.4);
-                });
+                const AudioContext = window.AudioContext || window.webkitAudioContext; 
+                if (!AudioContext) return;
+                const ctx = new AudioContext(); 
+                const now = ctx.currentTime; 
+
+                // Nada 1: Kiri Murni (Ting)
+                const osc1 = ctx.createOscillator(); const gain1 = ctx.createGain();
+                osc1.type = 'sine'; osc1.frequency.setValueAtTime(987.77, now); // Nada B5
+                gain1.gain.setValueAtTime(0, now); gain1.gain.linearRampToValueAtTime(0.5, now + 0.02); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                if (ctx.createStereoPanner) { const pan1 = ctx.createStereoPanner(); pan1.pan.value = -1; osc1.connect(gain1).connect(pan1).connect(ctx.destination); } else osc1.connect(gain1).connect(ctx.destination);
+                osc1.start(now); osc1.stop(now + 0.2);
+
+                // Nada 2: Kanan Murni (Ting Lebih Tinggi)
+                const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain();
+                osc2.type = 'sine'; osc2.frequency.setValueAtTime(1318.51, now + 0.1); // Nada E6
+                gain2.gain.setValueAtTime(0, now + 0.1); gain2.gain.linearRampToValueAtTime(0.5, now + 0.12); gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                if (ctx.createStereoPanner) { const pan2 = ctx.createStereoPanner(); pan2.pan.value = 1; osc2.connect(gain2).connect(pan2).connect(ctx.destination); } else osc2.connect(gain2).connect(ctx.destination);
+                osc2.start(now + 0.1); osc2.stop(now + 0.3);
+
+                // Nada 3: Meluncur dari Kiri ke Kanan (Dering Dinamis)
+                const osc3 = ctx.createOscillator(); const gain3 = ctx.createGain();
+                osc3.type = 'triangle'; osc3.frequency.setValueAtTime(1567.98, now + 0.2); // Nada G6
+                osc3.frequency.exponentialRampToValueAtTime(880.00, now + 0.6); // Efek suara menurun (Slide)
+                gain3.gain.setValueAtTime(0, now + 0.2); gain3.gain.linearRampToValueAtTime(0.4, now + 0.25); gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                if (ctx.createStereoPanner) { 
+                    const pan3 = ctx.createStereoPanner(); 
+                    pan3.pan.setValueAtTime(-0.8, now + 0.2); // Mulai dari Kiri
+                    pan3.pan.linearRampToValueAtTime(0.8, now + 0.6); // Berjalan menyeberang ke Kanan
+                    osc3.connect(gain3).connect(pan3).connect(ctx.destination); 
+                } else {
+                    osc3.connect(gain3).connect(ctx.destination);
+                }
+                osc3.start(now + 0.2); osc3.stop(now + 0.8);
+
             } catch (e) { console.log(e); }
         }
 
