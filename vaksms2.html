@@ -125,9 +125,9 @@
             </div>
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
-            └> Tampilan & Posisi UI Asli.<br>
-            └> Bug Harga Asli Terpecahkan (`price=true`).<br>
-            └> Suara Notifikasi Super Keras & Melengking.
+            └> Tombol Batal & Blokir Auto Refresh Saldo Aktif.<br>
+            └> API V2 Sinkron Total.<br>
+            └> Suara Notifikasi Super Keras.
         </div>
     </div>
     
@@ -252,7 +252,7 @@
                     for (const [priceStr, count] of Object.entries(priceMap)) {
                         let p = parseFloat(priceStr);
                         let c = parseInt(count);
-                        if (!isNaN(p) && c > 0) vak_cachedOffers.push({ priceStr: p.toString(), price: p, stock: c });
+                        if (!isNaN(p) && c > 0) vak_cachedOffers.push({ priceStr: priceStr, price: p, stock: c });
                     }
 
                     if (vak_cachedOffers.length === 0) {
@@ -324,7 +324,7 @@
             vak_daftarOrderan.forEach(item => {
                 if (item.status === "pending") {
                     item.status = "cancelled";
-                    apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'cancel' }).catch(e=>{});
+                    apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'bad' }).catch(e=>{});
                 }
             });
             vak_renderUILayout();
@@ -344,9 +344,7 @@
                     attempt++;
                     if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                     
-                    // PERUBAHAN FATAL: Menambahkan price: true agar server mengembalikan data harga asli potongan
                     let apiParams = { service: serviceId, country: 'id', price: true };
-                    
                     if (opId !== "any") {
                         apiParams.operator = opId;
                         apiParams.maxPrice = selectedMaxPrice + 0.015; 
@@ -370,6 +368,7 @@
                         if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                             btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
                             await apiVakSmsV2('setStatus', { idNum: actIdStr, status: 'bad' }); 
+                            window.vak_ambilSaldoLive(); // Auto refresh saldo saat banned otomatis
                             await new Promise(r => setTimeout(r, 1500)); 
                             continue; 
                         } else {
@@ -409,16 +408,23 @@
             } catch(e) { document.getElementById("vak_txtSaldoLive").innerText = "Error"; }
         }
 
+        // --- TOMBOL BATAL DENGAN AUTO REFRESH SALDO ---
         window.vak_eksekusiBatalkanServer = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
-                await apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'cancel' }); 
+                await apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'bad' }); 
                 item.status = "cancelled"; 
-                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Dibatalkan!"); 
-                setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
-            } catch (e) {}
+                vak_renderUILayout(); 
+                vak_simpanDaftarOrderanKeLokal(); 
+                vak_showToast("Dibatalkan & Saldo Kembali!"); 
+                // Auto refresh saldo instan tanpa jeda lama
+                window.vak_ambilSaldoLive();
+            } catch (e) { 
+                alert("Gagal membatalkan: " + e.message); 
+            }
         }
         
+        // --- TOMBOL BLOKIR DENGAN AUTO REFRESH SALDO ---
         window.vak_blokirManual = async function(index) {
             const item = vak_daftarOrderan[index];
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
@@ -426,8 +432,11 @@
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
                 await apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'bad' });
                 item.status = "cancelled"; 
-                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Nomor di-BAN!"); 
-                setTimeout(() => { window.vak_ambilSaldoLive(); }, 3000);
+                vak_renderUILayout(); 
+                vak_simpanDaftarOrderanKeLokal(); 
+                vak_showToast("Nomor di-BAN & Saldo Kembali!"); 
+                // Auto refresh saldo instan
+                window.vak_ambilSaldoLive();
             } catch (e) { alert("Gagal memblokir: " + e.message); }
         }
 
@@ -495,7 +504,11 @@
 
             vak_daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'cancel' }).catch(e=>{}); }
+                if (item.status === "pending" && sec >= 300) { 
+                    item.status = "cancelled"; 
+                    apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'bad' }).catch(e=>{});
+                    window.vak_ambilSaldoLive(); // Refresh saldo jika timeout otomatis
+                }
                 if (item.status === "cancelled") return; 
 
                 let d = new Date(item.waktu_dibuat);
