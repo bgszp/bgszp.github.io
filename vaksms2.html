@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi UI Asli.<br>
-            └> <span style="color:#00ffcc">MIGRASI TOTAL API TYPE 2 (V2) AKTIF.</span><br>
-            └> Sistem Cerdas Penarik Harga V2.<br>
+            └> MIGRASI API TYPE 2 (V2) SELESAI 100%.<br>
+            └> Pembaca Harga V2 'prices' Aktif.<br>
             └> Notifikasi Stereo "Spatial Crossing".
         </div>
     </div>
@@ -173,12 +173,10 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
-        // --- MESIN PENGGERAK UTAMA API TYPE 2 (V2) ---
         async function apiVakSmsV2(endpoint, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
             
-            // Menggunakan struktur URL resmi API V2
             let targetUrl = `https://vak-sms.com/api/${endpoint}/?apiKey=${token.trim()}`;
             for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
             targetUrl += `&nocache=${Date.now()}`;
@@ -189,11 +187,9 @@
                 
                 try { 
                     let parsedData = JSON.parse(dataText);
-                    // API V2 biasanya mengembalikan {"error": "..."} jika gagal
                     if (parsedData.error) throw new Error(parsedData.error);
                     return { isJson: true, data: parsedData, raw: dataText }; 
                 } catch(e) { 
-                    // Menangkap error jika bukan JSON (CORS/Cloudflare) atau error parsing
                     if (e.message.includes("Unexpected") || !e.message) {
                         return { isJson: false, raw: dataText }; 
                     }
@@ -233,7 +229,7 @@
             window.vak_refreshSemuaDataLive(); vak_showToast("Dibersihkan!");
         }
 
-        // --- SISTEM PEMBACA HARGA API V2 ---
+        // --- SISTEM PEMBACA HARGA API V2 (DIPERBAIKI BERDASARKAN SCREENSHOT) ---
         window.vak_muatProdukLayanan = async function() {
             let serviceId = document.getElementById("vak_dropdownLayanan").value;
             
@@ -242,37 +238,31 @@
                 document.getElementById("vak_btnPesanAksi").disabled = true;
                 
                 try {
-                    // Endpoint resmi getOfferNumberList V2
                     const resProd = await apiVakSmsV2('getOfferNumberList', { service: serviceId, country: 'id' });
                     
                     if (!resProd.isJson) throw new Error(`RAW TXT: ${resProd.raw.substring(0, 100)}`); 
 
-                    // Detektor Dinamis: Mengambil data JSON apa pun bentuknya
-                    let dataObj = resProd.data;
-                    if(dataObj.data) dataObj = dataObj.data; // Jika terbungkus di dalam 'data'
+                    // Di V2, server langsung mengembalikan {"ka": {"prices": {...}}, "wa": {...}}
+                    let rootData = resProd.data;
+                    if(rootData.data) rootData = rootData.data; // Jaga-jaga jika dibungkus 'data'
+
+                    // Cek apakah data layanan yang diminta ada di dalam objek JSON
+                    if (!rootData[serviceId] || !rootData[serviceId].prices) {
+                        throw new Error(`Stok Kosong / Tidak Tersedia.`);
+                    }
+
+                    // Mengekstrak khusus bagian 'prices' yang ada di gambar Anda
+                    const priceMap = rootData[serviceId].prices;
                     
                     vak_cachedOffers = [];
-                    
-                    // Jika bentuknya Array: [{"price": 0.01, "count": 100}]
-                    if (Array.isArray(dataObj)) {
-                        dataObj.forEach(item => {
-                            let p = parseFloat(item.price || item.cost);
-                            let c = parseInt(item.count || item.quantity || item.qty);
-                            if (!isNaN(p) && c > 0) vak_cachedOffers.push({ priceStr: p.toString(), price: p, stock: c });
-                        });
-                    } 
-                    // Jika bentuknya Object: {"0.01": 100} atau {"0.01": {"count": 100}}
-                    else if (typeof dataObj === 'object') {
-                        for (const [key, val] of Object.entries(dataObj)) {
-                            let p = parseFloat(key);
-                            let c = parseInt(val.count !== undefined ? val.count : val);
-                            if (!isNaN(p) && c > 0) vak_cachedOffers.push({ priceStr: p.toString(), price: p, stock: c });
-                        }
+                    for (const [priceStr, count] of Object.entries(priceMap)) {
+                        let p = parseFloat(priceStr);
+                        let c = parseInt(count);
+                        if (!isNaN(p) && c > 0) vak_cachedOffers.push({ priceStr: p.toString(), price: p, stock: c });
                     }
 
                     if (vak_cachedOffers.length === 0) {
-                        let debugText = JSON.stringify(resProd.data).substring(0, 150);
-                        throw new Error(`Struktur V2 Kosong/Beda: ${debugText}`);
+                        throw new Error(`Stok habis.`);
                     }
 
                     vak_cachedOffers.sort((a, b) => a.price - b.price);
@@ -332,7 +322,6 @@
             vak_renderDropdownOptions();
         }
 
-        // --- SISTEM PEMBELIAN API V2 ---
         window.vak_eksekusiBeliTerpilih = async function() {
             const btn = document.getElementById("vak_btnPesanAksi"); 
             const teksAsli = btn.innerHTML;
@@ -371,7 +360,6 @@
                     
                     const responseData = await apiVakSmsV2('getNumber', apiParams);
                     
-                    // Fleksibilitas penangkapan data V2 (phoneNumber/phone, idNum/activationId, price/cost)
                     let pPhone = responseData.data.phoneNumber || responseData.data.phone;
                     let pId = responseData.data.idNum || responseData.data.activationId || responseData.data.id;
                     let pCost = responseData.data.price || responseData.data.cost || responseData.data.activationCost || selectedMaxPrice;
@@ -414,7 +402,6 @@
 
         window.vak_refreshSemuaDataLive = function() { window.vak_ambilSaldoLive(); window.vak_muatProdukLayanan(); }
         
-        // --- CEK SALDO V2 ---
         window.vak_ambilSaldoLive = async function() {
             try {
                 const res = await apiVakSmsV2('getBalance'); 
@@ -426,7 +413,6 @@
             } catch(e) { document.getElementById("vak_txtSaldoLive").innerText = "Error"; }
         }
 
-        // --- AKSI TOMBOL V2 (setStatus) ---
         window.vak_eksekusiBatalkanServer = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
@@ -463,7 +449,6 @@
             } catch(err) { console.log(err); }
         }
 
-        // --- PENGECEKAN OTP TERPUSAT ---
         window.vak_mesinCekSmsTerpusat = async function() {
             vak_siklusCek++; 
             let sudahCekSatuOrderan = false; 
@@ -495,7 +480,6 @@
                             remove(child(dbRef, `vaksms_otp/${i.order_id}`));
                         }
                     } else if (vak_siklusCek % 15 === 0) {
-                        // Memeriksa ke server V2 jika pesanan terbatalkan dari pusat
                         const resMain = await apiVakSmsV2('getSmsCode', { idNum: i.order_id });
                         if (resMain.isJson && (resMain.data.status === "cancel" || resMain.data.status === "bad")) {
                             i.status = "cancelled"; 
