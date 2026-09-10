@@ -540,7 +540,7 @@
                     // Membentuk lengkungan suara (Fading out natural)
                     gain.gain.setValueAtTime(0, mulai);
                     gain.gain.linearRampToValueAtTime(volMaks, mulai + 0.02);
-                    gain.gain.exponentialRampToValueAtTime(0.001, mulai + durasi);
+                    gain.gain.exponentialRampToValueAtTime(0.002, mulai + durasi);
 
                     // Efek Stereo Bergerak
                     if (ctx.createStereoPanner) {
