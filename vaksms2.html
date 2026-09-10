@@ -126,9 +126,7 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi UI Asli.<br>
-            └> Sistem "Smart Buffer +$0.015" aktif.<br>
-            └> Badge Harga Asli Ditambahkan di Status Cek OTP.<br>
-            └> Notifikasi Stereo 3D (Kiri ke Kanan).
+            └> Mode Debug Respons Server Aktif.
         </div>
     </div>
     
@@ -239,6 +237,7 @@
             window.vak_refreshSemuaDataLive(); vak_showToast("Dibersihkan!");
         }
 
+        // --- SOLUSI 2: DEBUGGER TEKS ERROR ---
         window.vak_muatProdukLayanan = async function() {
             let serviceId = document.getElementById("vak_dropdownLayanan").value;
             
@@ -249,10 +248,16 @@
                 try {
                     const resProd = await apiVakSms('offers', { services: serviceId, countries: 6 });
                     
-                    if (!resProd.isJson) { throw new Error(`Bukan JSON`); }
-                    if (resProd.data && resProd.data.title === "Unauthenticated") { throw new Error(`Token Ditolak Server.`); }
+                    if (!resProd.isJson) { 
+                        throw new Error(`RAW TXT: ${resProd.raw.substring(0, 150)}`); 
+                    }
+                    if (resProd.data && resProd.data.title === "Unauthenticated") { 
+                        throw new Error(`Token Ditolak Server.`); 
+                    }
                     if (!resProd.data || !resProd.data.data || !resProd.data.data[serviceId] || !resProd.data.data[serviceId]["6"]) { 
-                        throw new Error(`Data Kosong / Tidak ada stok.`); 
+                        // Menampilkan output mentah dari server ke layar panel
+                        let debugText = JSON.stringify(resProd.data).substring(0, 150);
+                        throw new Error(`JSON ASLI: ${debugText}`); 
                     }
 
                     const priceMap = resProd.data.data[serviceId]["6"].map;
@@ -265,7 +270,7 @@
                     vak_lastServiceId = serviceId;
 
                 } catch (e) {
-                    document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block;">🚨 ERROR: ${e.message}</span>`;
+                    document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block; word-wrap:break-word;">🚨 ERROR: ${e.message}</span>`;
                     document.getElementById("vak_btnPesanAksi").disabled = true;
                     return;
                 }
@@ -527,7 +532,6 @@
                 let btnBlokirManual = item.status === "pending" ? `<button onclick="vak_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir & Batal"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
                 let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal Vak-SMS"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
 
-                // --- MODIFIKASI LENCANA (BADGE) HARGA AKTUAL ---
                 let teksHargaAsli = item.harga ? vak_formatRupiah(item.harga * KURS_USD_IDR) : '-';
                 let badgeHargaAsli = `<div style="font-size:10px; font-weight:bold; color:var(--accent-cyan); background:#1d203f; padding:3px 7px; border-radius:5px; border:1px solid #3d3f7a;" title="Harga Asli">💰 ${teksHargaAsli}</div>`;
 
@@ -539,7 +543,6 @@
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="vak_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
                 }
                 
-                // Menempatkan lencana harga sejajar dengan teks status menggunakan display: flex
                 htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span style="display:flex; align-items:center;">${item.layanan} ${labelWarning} ${btnBlokirManual} ${badgeMaxTime}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="vak_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;"><div style="font-size:11px; font-weight:600; color:${colStat};">${textStat}</div>${badgeHargaAsli}</div>${btnAksi}</div>`;
             });
 
@@ -562,19 +565,16 @@
                 const ctx = new AudioContext(); 
                 const now = ctx.currentTime; 
 
-                // Fungsi perakit nada 3D
                 function putarNada(freq, tipe, mulai, durasi, panAwal, panAkhir, volMaks) {
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
                     osc.type = tipe;
                     osc.frequency.setValueAtTime(freq, mulai);
 
-                    // Membentuk lengkungan suara (Fading out natural)
                     gain.gain.setValueAtTime(0, mulai);
                     gain.gain.linearRampToValueAtTime(volMaks, mulai + 0.02);
                     gain.gain.exponentialRampToValueAtTime(0.001, mulai + durasi);
 
-                    // Efek Stereo Bergerak
                     if (ctx.createStereoPanner) {
                         const panner = ctx.createStereoPanner();
                         panner.pan.setValueAtTime(panAwal, mulai);
@@ -590,19 +590,10 @@
                     osc.stop(mulai + durasi);
                 }
 
-                // 1. Ketukan Kiri Mentok (-1)
                 putarNada(1046.50, 'sine', now, 0.15, -1, -1, 0.6); 
-                
-                // 2. Ketukan Kanan Mentok (1)
                 putarNada(1318.51, 'sine', now + 0.1, 0.15, 1, 1, 0.6); 
-                
-                // 3. Ketukan Kiri Mentok (-1)
                 putarNada(1567.98, 'sine', now + 0.2, 0.15, -1, -1, 0.6); 
-                
-                // 4. EFEK PERSILANGAN 3D (Berputar melintasi kepala)
-                // Nada tinggi meluncur dari Kanan ke Kiri
                 putarNada(2093.00, 'triangle', now + 0.3, 0.7, 1, -1, 0.4); 
-                // Nada rendah meluncur bersamaan dari Kiri ke Kanan
                 putarNada(1046.50, 'sine', now + 0.3, 0.9, -1, 1, 0.5); 
 
             } catch (e) { console.log(e); }
