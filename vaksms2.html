@@ -561,15 +561,17 @@
                 const ctx = new AudioContext(); 
                 const now = ctx.currentTime; 
 
-                function putarNada(freq, tipe, mulai, durasi, panAwal, panAkhir, volMaks) {
+                // Mesin pemutar nada dengan Volume Maksimal (Overdrive)
+                function putarNadaKeras(freq, tipe, mulai, durasi, panAwal, panAkhir, volMaks) {
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
                     osc.type = tipe;
                     osc.frequency.setValueAtTime(freq, mulai);
 
+                    // Attack instan, volume mentok
                     gain.gain.setValueAtTime(0, mulai);
-                    gain.gain.linearRampToValueAtTime(volMaks, mulai + 0.02);
-                    gain.gain.exponentialRampToValueAtTime(0.003, mulai + durasi);
+                    gain.gain.linearRampToValueAtTime(volMaks, mulai + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.01, mulai + durasi);
 
                     if (ctx.createStereoPanner) {
                         const panner = ctx.createStereoPanner();
@@ -586,11 +588,14 @@
                     osc.stop(mulai + durasi);
                 }
 
-                putarNada(1046.50, 'sine', now, 0.15, -1, -1, 0.6); 
-                putarNada(1318.51, 'sine', now + 0.1, 0.15, 1, 1, 0.6); 
-                putarNada(1567.98, 'sine', now + 0.2, 0.15, -1, -1, 0.6); 
-                putarNada(2093.00, 'triangle', now + 0.3, 0.7, 1, -1, 0.4); 
-                putarNada(1046.50, 'sine', now + 0.3, 0.9, -1, 1, 0.5); 
+                // Menggunakan gelombang 'square' (Kotak) yang sangat keras dan melengking di speaker HP
+                putarNadaKeras(1046.50, 'square', now, 0.2, -1, -1, 1.2); 
+                putarNadaKeras(1318.51, 'square', now + 0.1, 0.2, 1, 1, 1.2); 
+                putarNadaKeras(1567.98, 'square', now + 0.2, 0.2, -1, -1, 1.2); 
+                
+                // Efek silang 3D menggunakan 'sawtooth' (Gergaji) agar suaranya tajam merobek udara
+                putarNadaKeras(2093.00, 'sawtooth', now + 0.3, 0.8, 1, -1, 0.8); 
+                putarNadaKeras(1046.50, 'square', now + 0.3, 1.0, -1, 1, 1.0); 
 
             } catch (e) { console.log(e); }
         }
