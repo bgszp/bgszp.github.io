@@ -125,10 +125,9 @@
             </div>
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
-            └> <span style="color:#00ffcc">SINKRONISASI API V2 DOKUMEN RESMI.</span><br>
-            └> Kode Layanan Shopee menjadi 'sh'.<br>
-            └> Parameter harga via 'priceMap'.<br>
-            └> Panggilan beli nomor via 'tel'.
+            └> Tampilan & Posisi UI Asli.<br>
+            └> Bug Harga Asli Terpecahkan (`price=true`).<br>
+            └> Suara Notifikasi Super Keras & Melengking.
         </div>
     </div>
     
@@ -237,14 +236,12 @@
                 document.getElementById("vak_btnPesanAksi").disabled = true;
                 
                 try {
-                    // PERUBAHAN: Sesuai dokumen, pengecekan harga menggunakan parameter "services" (jamak)
                     const resProd = await apiVakSmsV2('getOfferNumberList', { services: serviceId, country: 'id' });
                     
                     if (!resProd.isJson) throw new Error(`RAW TXT: ${resProd.raw.substring(0, 100)}`); 
 
                     let rootData = resProd.data;
                     
-                    // PERUBAHAN: Sesuai dokumen, membaca harga dari properti 'priceMap'
                     if (!rootData[serviceId] || !rootData[serviceId].priceMap) {
                         throw new Error(`Stok Kosong / Tidak Tersedia.`);
                     }
@@ -347,8 +344,9 @@
                     attempt++;
                     if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                     
-                    // PERUBAHAN: Sesuai dokumen, pembelian menggunakan parameter "service" (tunggal)
-                    let apiParams = { service: serviceId, country: 'id' };
+                    // PERUBAHAN FATAL: Menambahkan price: true agar server mengembalikan data harga asli potongan
+                    let apiParams = { service: serviceId, country: 'id', price: true };
+                    
                     if (opId !== "any") {
                         apiParams.operator = opId;
                         apiParams.maxPrice = selectedMaxPrice + 0.015; 
@@ -358,7 +356,6 @@
                     
                     const responseData = await apiVakSmsV2('getNumber', apiParams);
                     
-                    // PERUBAHAN: Sesuai dokumen V2, nomor HP dipanggil dari 'tel', bukan phoneNumber
                     let pPhone = responseData.data.tel; 
                     let pId = responseData.data.idNum;
                     let pCost = responseData.data.price || selectedMaxPrice;
@@ -561,14 +558,12 @@
                 const ctx = new AudioContext(); 
                 const now = ctx.currentTime; 
 
-                // Mesin pemutar nada dengan Volume Maksimal (Overdrive)
                 function putarNadaKeras(freq, tipe, mulai, durasi, panAwal, panAkhir, volMaks) {
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
                     osc.type = tipe;
                     osc.frequency.setValueAtTime(freq, mulai);
 
-                    // Attack instan, volume mentok
                     gain.gain.setValueAtTime(0, mulai);
                     gain.gain.linearRampToValueAtTime(volMaks, mulai + 0.01);
                     gain.gain.exponentialRampToValueAtTime(0.01, mulai + durasi);
@@ -588,12 +583,10 @@
                     osc.stop(mulai + durasi);
                 }
 
-                // Menggunakan gelombang 'square' (Kotak) yang sangat keras dan melengking di speaker HP
                 putarNadaKeras(1046.50, 'square', now, 0.2, -1, -1, 1.2); 
                 putarNadaKeras(1318.51, 'square', now + 0.1, 0.2, 1, 1, 1.2); 
                 putarNadaKeras(1567.98, 'square', now + 0.2, 0.2, -1, -1, 1.2); 
                 
-                // Efek silang 3D menggunakan 'sawtooth' (Gergaji) agar suaranya tajam merobek udara
                 putarNadaKeras(2093.00, 'sawtooth', now + 0.3, 0.8, 1, -1, 0.8); 
                 putarNadaKeras(1046.50, 'square', now + 0.3, 1.0, -1, 1, 1.0); 
 
