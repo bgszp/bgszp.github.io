@@ -525,18 +525,56 @@
 
         window.bower_putarSuaraNotifKeras = function() {
             try { 
-                const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return;
-                const audioCtx = new AudioContext(); let time = audioCtx.currentTime; 
-                const sequence = [523.25, 659.25, 783.99, 1046.50]; 
-                sequence.forEach((freq, idx) => {
-                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-                    osc.type = idx % 2 === 0 ? "sine" : "sawtooth"; let startTime = time + (idx * 0.09);
-                    osc.frequency.setValueAtTime(freq, startTime); gain.gain.setValueAtTime(0.4, startTime); gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
-                    if (audioCtx.createStereoPanner) { const pan = audioCtx.createStereoPanner(); pan.pan.value = idx < 2 ? -0.5 : 0.5; osc.connect(gain).connect(pan).connect(audioCtx.destination); } else { osc.connect(gain).connect(audioCtx.destination); }
-                    osc.start(startTime); osc.stop(startTime + 0.4);
-                });
+                const AudioContext = window.AudioContext || window.webkitAudioContext; 
+                if (!AudioContext) return;
+                const ctx = new AudioContext(); 
+                const now = ctx.currentTime; 
+
+                // Fungsi perakit nada 3D
+                function putarNada(freq, tipe, mulai, durasi, panAwal, panAkhir, volMaks) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = tipe;
+                    osc.frequency.setValueAtTime(freq, mulai);
+
+                    // Membentuk lengkungan suara (Fading out natural)
+                    gain.gain.setValueAtTime(0, mulai);
+                    gain.gain.linearRampToValueAtTime(volMaks, mulai + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, mulai + durasi);
+
+                    // Efek Stereo Bergerak
+                    if (ctx.createStereoPanner) {
+                        const panner = ctx.createStereoPanner();
+                        panner.pan.setValueAtTime(panAwal, mulai);
+                        if (panAwal !== panAkhir) {
+                            panner.pan.linearRampToValueAtTime(panAkhir, mulai + durasi);
+                        }
+                        osc.connect(gain).connect(panner).connect(ctx.destination);
+                    } else {
+                        osc.connect(gain).connect(ctx.destination);
+                    }
+
+                    osc.start(mulai);
+                    osc.stop(mulai + durasi);
+                }
+
+                // 1. Ketukan Kiri Mentok (-1)
+                putarNada(1046.50, 'sine', now, 0.15, -1, -1, 0.6); 
+                
+                // 2. Ketukan Kanan Mentok (1)
+                putarNada(1318.51, 'sine', now + 0.1, 0.15, 1, 1, 0.6); 
+                
+                // 3. Ketukan Kiri Mentok (-1)
+                putarNada(1567.98, 'sine', now + 0.2, 0.15, -1, -1, 0.6); 
+                
+                // 4. EFEK PERSILANGAN 3D (Berputar melintasi kepala)
+                // Nada tinggi meluncur dari Kanan ke Kiri
+                putarNada(2093.00, 'triangle', now + 0.3, 0.7, 1, -1, 0.4); 
+                // Nada rendah meluncur bersamaan dari Kiri ke Kanan
+                putarNada(1046.50, 'sine', now + 0.3, 0.9, -1, 1, 0.5); 
+
             } catch (e) { console.log(e); }
-        }
+            }
 
         window.bower_munculkanPopupNative = function(nomor, otp, layanan) {
             if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
