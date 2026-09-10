@@ -72,7 +72,7 @@
             <label class="form-label">🛒 Setup Layanan Utama</label>
             <div class="unified-order-box">
                 <select id="vak_dropdownLayanan" class="unified-select-op" onchange="vak_muatProdukLayanan()">
-                    <option value="ka" selected>Shopee (Indonesia)</option>
+                    <option value="sh" selected>Shopee (Indonesia)</option>
                     <option value="wa">WhatsApp (Indonesia)</option>
                     <option value="tg">Telegram (Indonesia)</option>
                 </select>
@@ -125,10 +125,10 @@
             </div>
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
-            └> Tampilan & Posisi UI Asli.<br>
-            └> MIGRASI API TYPE 2 (V2) SELESAI 100%.<br>
-            └> Pembaca Harga V2 'prices' Aktif.<br>
-            └> Notifikasi Stereo "Spatial Crossing".
+            └> <span style="color:#00ffcc">SINKRONISASI API V2 DOKUMEN RESMI.</span><br>
+            └> Kode Layanan Shopee menjadi 'sh'.<br>
+            └> Parameter harga via 'priceMap'.<br>
+            └> Panggilan beli nomor via 'tel'.
         </div>
     </div>
     
@@ -229,7 +229,6 @@
             window.vak_refreshSemuaDataLive(); vak_showToast("Dibersihkan!");
         }
 
-        // --- SISTEM PEMBACA HARGA API V2 (DIPERBAIKI BERDASARKAN SCREENSHOT) ---
         window.vak_muatProdukLayanan = async function() {
             let serviceId = document.getElementById("vak_dropdownLayanan").value;
             
@@ -238,21 +237,19 @@
                 document.getElementById("vak_btnPesanAksi").disabled = true;
                 
                 try {
-                    const resProd = await apiVakSmsV2('getOfferNumberList', { service: serviceId, country: 'id' });
+                    // PERUBAHAN: Sesuai dokumen, pengecekan harga menggunakan parameter "services" (jamak)
+                    const resProd = await apiVakSmsV2('getOfferNumberList', { services: serviceId, country: 'id' });
                     
                     if (!resProd.isJson) throw new Error(`RAW TXT: ${resProd.raw.substring(0, 100)}`); 
 
-                    // Di V2, server langsung mengembalikan {"ka": {"prices": {...}}, "wa": {...}}
                     let rootData = resProd.data;
-                    if(rootData.data) rootData = rootData.data; // Jaga-jaga jika dibungkus 'data'
-
-                    // Cek apakah data layanan yang diminta ada di dalam objek JSON
-                    if (!rootData[serviceId] || !rootData[serviceId].prices) {
+                    
+                    // PERUBAHAN: Sesuai dokumen, membaca harga dari properti 'priceMap'
+                    if (!rootData[serviceId] || !rootData[serviceId].priceMap) {
                         throw new Error(`Stok Kosong / Tidak Tersedia.`);
                     }
 
-                    // Mengekstrak khusus bagian 'prices' yang ada di gambar Anda
-                    const priceMap = rootData[serviceId].prices;
+                    const priceMap = rootData[serviceId].priceMap;
                     
                     vak_cachedOffers = [];
                     for (const [priceStr, count] of Object.entries(priceMap)) {
@@ -350,6 +347,7 @@
                     attempt++;
                     if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                     
+                    // PERUBAHAN: Sesuai dokumen, pembelian menggunakan parameter "service" (tunggal)
                     let apiParams = { service: serviceId, country: 'id' };
                     if (opId !== "any") {
                         apiParams.operator = opId;
@@ -360,9 +358,10 @@
                     
                     const responseData = await apiVakSmsV2('getNumber', apiParams);
                     
-                    let pPhone = responseData.data.phoneNumber || responseData.data.phone;
-                    let pId = responseData.data.idNum || responseData.data.activationId || responseData.data.id;
-                    let pCost = responseData.data.price || responseData.data.cost || responseData.data.activationCost || selectedMaxPrice;
+                    // PERUBAHAN: Sesuai dokumen V2, nomor HP dipanggil dari 'tel', bukan phoneNumber
+                    let pPhone = responseData.data.tel; 
+                    let pId = responseData.data.idNum;
+                    let pCost = responseData.data.price || selectedMaxPrice;
                     
                     if (responseData.isJson && pPhone && pId) {
                         let phoneStr = pPhone.toString();
@@ -570,7 +569,7 @@
 
                     gain.gain.setValueAtTime(0, mulai);
                     gain.gain.linearRampToValueAtTime(volMaks, mulai + 0.02);
-                    gain.gain.exponentialRampToValueAtTime(0.002, mulai + durasi);
+                    gain.gain.exponentialRampToValueAtTime(0.003, mulai + durasi);
 
                     if (ctx.createStereoPanner) {
                         const panner = ctx.createStereoPanner();
