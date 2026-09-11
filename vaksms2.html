@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Bug maxPrice Mode Sniper (Centang) Diperbaiki.<br>
-            └> Harga lencana akurat sesuai target tembakan.
+            └> Logic "Shotgun" Sniper Parameter Aktif.<br>
+            └> Bug Harga Lepas Kendali Terkunci 100%.
         </div>
     </div>
     
@@ -422,16 +422,20 @@
                             if (attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                         }
                         
-                        let apiParams = { service: serviceId, country: 'id', price: true };
+                        let apiParams = { service: serviceId, country: 'id' };
                         if (opId !== "any") {
                             apiParams.operator = opId;
                         }
 
-                        // PERBAIKAN LOGIKA HARGA SNIPER
+                        // --- PERBAIKAN FATAL LOGIKA HARGA SNIPER ---
                         if (vak_modeCentang) {
+                            // Mengirim parameter nominal ganda untuk mengakali server V2 Vak-SMS
+                            apiParams.price = currentPriceTarget; 
                             apiParams.maxPrice = currentPriceTarget; 
-                            apiParams.fixedPrice = true;
+                            apiParams.fixedPrice = 1; 
                         } else {
+                            // Mode auto-lowest seperti biasa
+                            apiParams.price = true; 
                             apiParams.maxPrice = (opId !== "any") ? (currentPriceTarget + 0.015) : currentPriceTarget;
                         }
                         
