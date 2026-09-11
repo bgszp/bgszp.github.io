@@ -81,7 +81,7 @@
                     <option value="any" selected>⚡ Semua Operator (Acak)</option>
                     <option value="telkomsel">Telkomsel</option>
                     <option value="indosat">Indosat</option>
-                    <option value="im3Ooredoo">IM3 Ooredoo</option>
+                    <option value="im3ooredoo">IM3 Ooredoo</option> <!-- Typo diperbaiki -->
                     <option value="xlAxiata">XL / Axis</option>
                     <option value="axis">Axis</option>
                     <option value="three">Three (Tri)</option>
@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Logic "Shotgun" Sniper Parameter Aktif.<br>
-            └> Bug Harga Lepas Kendali Terkunci 100%.
+            └> Bug Typo "im3ooredoo" Diperbaiki.<br>
+            └> Parameter Mode Sniper V2 Diperbarui Total.
         </div>
     </div>
     
@@ -422,19 +422,17 @@
                             if (attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                         }
                         
+                        // Perbaikan Parameter sesuai standar wajib V2
                         let apiParams = { service: serviceId, country: 'id' };
                         if (opId !== "any") {
                             apiParams.operator = opId;
                         }
 
-                        // --- PERBAIKAN FATAL LOGIKA HARGA SNIPER ---
                         if (vak_modeCentang) {
-                            // Mengirim parameter nominal ganda untuk mengakali server V2 Vak-SMS
-                            apiParams.price = currentPriceTarget; 
-                            apiParams.maxPrice = currentPriceTarget; 
-                            apiParams.fixedPrice = 1; 
+                            apiParams.price = true;             // Aktifkan struk harga 
+                            apiParams.maxPrice = currentPriceTarget; // Batas atas harga
+                            apiParams.fixedPrice = true;        // Kunci mati di harga maxPrice
                         } else {
-                            // Mode auto-lowest seperti biasa
                             apiParams.price = true; 
                             apiParams.maxPrice = (opId !== "any") ? (currentPriceTarget + 0.015) : currentPriceTarget;
                         }
