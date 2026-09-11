@@ -125,7 +125,8 @@
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
             └> Sistem Panel SMSBower Diinisialisasi.<br>
             └> Filter Prefix Operator Lokal Aktif.<br>
-            └> Auto-Blokir 3x24 Jam (Firebase Online) Aktif.
+            └> Auto-Blokir 3x24 Jam (Firebase) Aktif.<br>
+            └> Tracking OTP ke-X (Multi-Resend) Aktif.
         </div>
     </div>
     
@@ -152,15 +153,13 @@
         const BOWER_NILAI_KURS = 17815; 
         const BOWER_ALLOWED_PROVIDERS = [2295, 3160, 3309, 3340, 2738, 3435, 3029, 1329, 3406];
 
-        // === DATABASE AWALAN NOMOR (PREFIX) INDONESIA ===
         const PREFIX_OPERATOR = {
-            "telkomsel": ["811", "812", "813", "821", "822", "851", "852", "853", "823"],
+            "telkomsel": ["811", "812", "813", "821", "822", "851", "852", "853"],
             "indosat": ["814", "815", "816", "855", "856", "857", "858"],
-            "xl": ["817", "818", "819", "859", "877", "878", "831", "832", "833", "838"], // Termasuk Axis
+            "xl": ["817", "818", "819", "859", "877", "878", "831", "832", "833", "838"], 
             "three": ["895", "896", "897", "898", "899"],
             "smartfren": ["881", "882", "883", "884", "885", "886", "887", "888", "889"]
         };
-        // ================================================
 
         let bower_daftarOrderan = []; 
         let bower_daftarServerTersedia = []; 
@@ -207,7 +206,6 @@
             setInterval(window.bower_mesinCekSmsTerpusat, 2000); 
         });
 
-        // Daftarkan fungsi ke window agar bisa dipanggil dari HTML onclick
         window.bower_toggleRiwayatDropdown = function() { const w = document.getElementById("bower_wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
         window.bower_toggleApiKeyDropdown = function() { const w = document.getElementById("bower_wadahApiKeyDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
         window.bower_toggleDropdownList = function() { document.getElementById("bower_containerListDropdown").classList.toggle("active"); }
@@ -327,19 +325,16 @@
                     if (createdOrder) {
                         let phone = createdOrder.phone_number;
                         
-                        // 1. FILTER AWALAN NOMOR (PREFIX) SECARA LOKAL
                         if (opId !== "any") {
-                            // Ambil 3 digit setelah kode negara (misal dari 62812 jadi 812)
                             let prefix = phone.substring(2, 5); 
                             if (!PREFIX_OPERATOR[opId].includes(prefix)) {
                                 btn.innerHTML = `⚠️ BUKAN ${opId.toUpperCase()}! GANTI...`;
                                 await apiSMSBower(`orders/cancel`, 'POST', { id: createdOrder.id }).catch(e=>{});
-                                await new Promise(r => setTimeout(r, 1500)); // Beri nafas API
+                                await new Promise(r => setTimeout(r, 1500)); 
                                 continue; 
                             }
                         }
 
-                        // 2. CEK DATABASE FIREBASE (NOMOR BEKAS)
                         const dbRef = ref(db);
                         const snapshot = await get(child(dbRef, `blocklist/${phone}`));
 
@@ -375,6 +370,7 @@
                         waktu_dibuat: Date.now(), 
                         status: "pending", 
                         otp: "",
+                        otp_count: 1, // SET OTP KE-1 SAAT PERTAMA BELI
                         is_recycled: isRecycled 
                     });
                     bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive();
@@ -425,10 +421,22 @@
             }
         }
 
+        // === FUNGSI KIRIM ULANG (RESEND) YANG DIPERBARUI ===
         window.bower_eksekusiResend = async function(index) {
             const item = bower_daftarOrderan[index];
-            try { await apiSMSBower('orders/resend', 'POST', { id: item.order_id }); bower_showToast("Resend Diminta!"); } catch (e) {}
+            try { 
+                await apiSMSBower('orders/resend', 'POST', { id: item.order_id }); 
+                item.otp_count = (item.otp_count || 1) + 1; // Tambah counter ke-2, ke-3 dst
+                item.otp = ""; // Kosongkan layar dari OTP yang lama
+                item.status = "pending"; // Ubah status kembali ke pencarian loading
+                bower_renderUILayout();
+                bower_simpanDaftarOrderanKeLokal();
+                bower_showToast(`Meminta OTP ke-${item.otp_count}...`); 
+            } catch (e) {
+                alert("Gagal Kirim Ulang: " + e.message);
+            }
         }
+
         window.bower_eksekusiSelesai = async function(index) {
             const item = bower_daftarOrderan[index];
             try { await apiSMSBower(`orders/finish`, 'POST', { id: item.order_id }); item.status = "completed"; bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive(); bower_showToast("Selesai!"); } catch(err) {}
@@ -465,8 +473,15 @@
             let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
 
             bower_daftarOrderan.forEach((item, index) => {
+                let currentOtpCount = item.otp_count || 1; // Pastikan counter selalu terbaca minimal 1
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                if (item.status === "pending" && sec >= 300) { item.status = "cancelled"; apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>{}); }
+                
+                // MENCEGAH BUG: Auto-Cancel 5 menit HANYA berlaku untuk OTP ke-1.
+                if (item.status === "pending" && currentOtpCount === 1 && sec >= 300) { 
+                    item.status = "cancelled"; 
+                    apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>{}); 
+                }
+                
                 if (item.status === "cancelled") return; 
 
                 let d = new Date(item.waktu_dibuat);
@@ -481,7 +496,7 @@
                     <div class="history-card">
                         <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;"><span>${item.layanan} ${labelWarning} • ${teksHargaHistory}</span><span>⏱️ ${timeStr}</span></div>
                         <div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:14px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>
-                        <div class="box-copy-statik otp-masuk" style="margin-top:6px;"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div><div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button></div>
+                        <div class="box-copy-statik otp-masuk" style="margin-top:6px;"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP ke-${currentOtpCount}:</div><div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button></div>
                         ${btnKirimUlang}
                     </div>`; countRiwayat++; return;
                 }
@@ -493,7 +508,8 @@
                 
                 if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) { cool = 0; }
 
-                let textStat = `⚡ Cek OTP... (${sec}s)`; let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
+                let textStat = `⚡ Cek OTP ke-${currentOtpCount}... (${sec}s)`; 
+                let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`; let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
                 
                 let btnBlokirManual = item.status === "pending" ? `<button onclick="bower_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir 3x24 Jam"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
@@ -501,8 +517,8 @@
                 let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal SMSBower"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
 
                 if (item.status === "received") { 
-                    textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
-                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
+                    textStat = `🎉 OTP ke-${currentOtpCount} Berhasil Masuk!`; colStat = "#50fa7b"; 
+                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP ke-${currentOtpCount}:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
                     btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="bower_eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button><button onclick="bower_eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button></div>`;
                 } else if (item.status === "pending") {
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="bower_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
@@ -525,56 +541,18 @@
 
         window.bower_putarSuaraNotifKeras = function() {
             try { 
-                const AudioContext = window.AudioContext || window.webkitAudioContext; 
-                if (!AudioContext) return;
-                const ctx = new AudioContext(); 
-                const now = ctx.currentTime; 
-
-                // Fungsi perakit nada 3D
-                function putarNada(freq, tipe, mulai, durasi, panAwal, panAkhir, volMaks) {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = tipe;
-                    osc.frequency.setValueAtTime(freq, mulai);
-
-                    // Membentuk lengkungan suara (Fading out natural)
-                    gain.gain.setValueAtTime(0, mulai);
-                    gain.gain.linearRampToValueAtTime(volMaks, mulai + 0.02);
-                    gain.gain.exponentialRampToValueAtTime(0.002, mulai + durasi);
-
-                    // Efek Stereo Bergerak
-                    if (ctx.createStereoPanner) {
-                        const panner = ctx.createStereoPanner();
-                        panner.pan.setValueAtTime(panAwal, mulai);
-                        if (panAwal !== panAkhir) {
-                            panner.pan.linearRampToValueAtTime(panAkhir, mulai + durasi);
-                        }
-                        osc.connect(gain).connect(panner).connect(ctx.destination);
-                    } else {
-                        osc.connect(gain).connect(ctx.destination);
-                    }
-
-                    osc.start(mulai);
-                    osc.stop(mulai + durasi);
-                }
-
-                // 1. Ketukan Kiri Mentok (-1)
-                putarNada(1046.50, 'sine', now, 0.15, -1, -1, 0.6); 
-                
-                // 2. Ketukan Kanan Mentok (1)
-                putarNada(1318.51, 'sine', now + 0.1, 0.15, 1, 1, 0.6); 
-                
-                // 3. Ketukan Kiri Mentok (-1)
-                putarNada(1567.98, 'sine', now + 0.2, 0.15, -1, -1, 0.6); 
-                
-                // 4. EFEK PERSILANGAN 3D (Berputar melintasi kepala)
-                // Nada tinggi meluncur dari Kanan ke Kiri
-                putarNada(2093.00, 'triangle', now + 0.3, 0.7, 1, -1, 0.4); 
-                // Nada rendah meluncur bersamaan dari Kiri ke Kanan
-                putarNada(1046.50, 'sine', now + 0.3, 0.9, -1, 1, 0.5); 
-
+                const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return;
+                const audioCtx = new AudioContext(); let time = audioCtx.currentTime; 
+                const sequence = [523.25, 659.25, 783.99, 1046.50]; 
+                sequence.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                    osc.type = idx % 2 === 0 ? "sine" : "sawtooth"; let startTime = time + (idx * 0.09);
+                    osc.frequency.setValueAtTime(freq, startTime); gain.gain.setValueAtTime(0.4, startTime); gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+                    if (audioCtx.createStereoPanner) { const pan = audioCtx.createStereoPanner(); pan.pan.value = idx < 2 ? -0.5 : 0.5; osc.connect(gain).connect(pan).connect(audioCtx.destination); } else { osc.connect(gain).connect(audioCtx.destination); }
+                    osc.start(startTime); osc.stop(startTime + 0.4);
+                });
             } catch (e) { console.log(e); }
-            }
+        }
 
         window.bower_munculkanPopupNative = function(nomor, otp, layanan) {
             if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
