@@ -33,10 +33,10 @@
         .unified-select-op { border: 1px solid #2c2e5c; background: #0b0c16; border-radius: 10px; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 12px 14px; outline: none; cursor: pointer; width: 100%; }
         .dropdown-selected-bar { background: #0b0c16; border: 1px solid #2c2e5c; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
         
-        .dropdown-list-options { display: none; background: #121324; border: 1px solid #2c2e5c; border-radius: 10px; margin-top: 4px; max-height: 200px; overflow-y: auto; }
+        .dropdown-list-options { display: none; background: #121324; border: 1px solid #2c2e5c; border-radius: 10px; margin-top: 4px; max-height: 250px; overflow-y: auto; }
         .dropdown-list-options.active { display: block; }
         .dropdown-item-row { padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1b35; cursor: pointer; font-size: 13px; }
-        .dropdown-item-row.selected { background: #25204d; border-left: 3px solid var(--accent-purple); }
+        .dropdown-item-row.selected { background: #25204d; border-left: 3px solid var(--accent-cyan); }
         
         .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; }
@@ -125,9 +125,10 @@
             </div>
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
-            └> Tombol Batal & Blokir Auto Refresh Saldo Aktif.<br>
-            └> API V2 Sinkron Total.<br>
-            └> Suara Notifikasi Super Keras.
+            └> Tampilan & Posisi Kolom TETAP SAMA.<br>
+            └> Fitur Hybrid "Mode Sniper" (Centang) Ditambahkan.<br>
+            └> Pembelian loop berurutan aktif di Mode Sniper.<br>
+            └> Mode Otomatis (Auto-lowest) tetap berfungsi normal.
         </div>
     </div>
     
@@ -157,10 +158,13 @@
         let vak_cachedOffers = []; 
         let vak_lastServiceId = null; 
         
+        // VARIABEL BARU MODE SNIPER CENTANG
         let vak_produkTerpilihId = null; 
         let vak_namaProdukTerpilih = ""; 
         let vak_hargaProdukTerpilih = 0; 
         let vak_siklusCek = 0;
+        let vak_modeCentang = false;
+        let vak_hargaTercentang = [];
 
         function vak_formatRupiah(angka) { return "Rp " + Math.ceil(angka).toLocaleString("id-ID"); }
 
@@ -183,7 +187,6 @@
             try {
                 const res = await fetch(targetUrl);
                 const dataText = await res.text();
-                
                 try { 
                     let parsedData = JSON.parse(dataText);
                     if (parsedData.error) throw new Error(parsedData.error);
@@ -237,27 +240,19 @@
                 
                 try {
                     const resProd = await apiVakSmsV2('getOfferNumberList', { services: serviceId, country: 'id' });
-                    
                     if (!resProd.isJson) throw new Error(`RAW TXT: ${resProd.raw.substring(0, 100)}`); 
-
                     let rootData = resProd.data;
-                    
-                    if (!rootData[serviceId] || !rootData[serviceId].priceMap) {
-                        throw new Error(`Stok Kosong / Tidak Tersedia.`);
-                    }
+                    if (!rootData[serviceId] || !rootData[serviceId].priceMap) { throw new Error(`Stok Kosong / Tidak Tersedia.`); }
 
                     const priceMap = rootData[serviceId].priceMap;
-                    
                     vak_cachedOffers = [];
                     for (const [priceStr, count] of Object.entries(priceMap)) {
                         let p = parseFloat(priceStr);
                         let c = parseInt(count);
-                        if (!isNaN(p) && c > 0) vak_cachedOffers.push({ priceStr: priceStr, price: p, stock: c });
+                        if (!isNaN(p) && c > 0) vak_cachedOffers.push({ priceStr: p.toString(), price: p, stock: c });
                     }
 
-                    if (vak_cachedOffers.length === 0) {
-                        throw new Error(`Stok habis.`);
-                    }
+                    if (vak_cachedOffers.length === 0) throw new Error(`Stok habis.`);
 
                     vak_cachedOffers.sort((a, b) => a.price - b.price);
                     vak_lastServiceId = serviceId;
@@ -268,7 +263,6 @@
                     return;
                 }
             }
-
             window.vak_terapkanFilterOperator();
         }
 
@@ -283,22 +277,105 @@
                 return { id: offer.priceStr, opName: opName, price: offer.price, stock: offer.stock, prefix: prefixLayanan };
             });
 
-            vak_renderDropdownOptions();
-            vak_pilihServerDropdown(0); 
+            if (vak_modeCentang) {
+                let availablePrices = vak_daftarServerTersedia.map(s => s.price);
+                vak_hargaTercentang = vak_hargaTercentang.filter(p => availablePrices.includes(p));
+                if(vak_hargaTercentang.length === 0 && vak_daftarServerTersedia.length > 0) {
+                    vak_hargaTercentang.push(vak_daftarServerTersedia[0].price);
+                }
+                vak_renderDropdownOptions();
+                vak_updateLabelTerpilih();
+            } else {
+                vak_pilihServerDropdown(0); 
+            }
         }
 
+        // FUNGSI BARU: TOGGLE SAKLAR & CHECKBOX
+        window.vak_toggleModeCentang = function(isChecked) {
+            vak_modeCentang = isChecked;
+            if(isChecked) {
+                if(vak_hargaProdukTerpilih && !vak_hargaTercentang.includes(vak_hargaProdukTerpilih)) {
+                    vak_hargaTercentang = [vak_hargaProdukTerpilih];
+                }
+            }
+            vak_renderDropdownOptions();
+            vak_updateLabelTerpilih();
+        }
+
+        window.vak_toggleCentangHarga = function(index, e) {
+            if(e) e.stopPropagation(); 
+            const srv = vak_daftarServerTersedia[index];
+            const price = srv.price;
+            const idx = vak_hargaTercentang.indexOf(price);
+            
+            if(idx > -1) { vak_hargaTercentang.splice(idx, 1); } 
+            else { vak_hargaTercentang.push(price); }
+            
+            vak_hargaTercentang.sort((a,b) => a - b);
+            vak_renderDropdownOptions();
+            vak_updateLabelTerpilih();
+        }
+
+        // PEMBARUAN RENDER LIST HARGA DENGAN SAKLAR
         function vak_renderDropdownOptions() {
             const container = document.getElementById("vak_containerListDropdown");
             if(vak_daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center;">Kosong</div>`; return; }
-            let html = "";
+            
+            // Header Saklar Mode Sniper (Disembunyikan di dalam menu dropdown)
+            let html = `<div style="padding: 10px 14px; background: #1a1b35; border-bottom: 1px solid #2c2e5c; display: flex; justify-content: space-between; align-items: center; border-radius: 10px 10px 0 0;">
+                <span style="font-size: 11px; font-weight: bold; color: var(--accent-purple);">🎯 Mode Sniper (Spesifik)</span>
+                <label style="position: relative; display: inline-block; width: 34px; height: 18px; margin: 0;">
+                    <input type="checkbox" style="opacity: 0; width: 0; height: 0;" ${vak_modeCentang ? 'checked' : ''} onchange="vak_toggleModeCentang(this.checked)">
+                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${vak_modeCentang ? '#9d4edd' : '#444'}; border-radius: 34px; transition: .4s;">
+                        <span style="position: absolute; content: ''; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .4s; transform: ${vak_modeCentang ? 'translateX(16px)' : 'translateX(0)'};"></span>
+                    </span>
+                </label>
+            </div>`;
+
             vak_daftarServerTersedia.forEach((srv, index) => {
-                let sel = (vak_produkTerpilihId === srv.id) ? "selected" : "";
-                html += `<div class="dropdown-item-row ${sel}" onclick="vak_pilihServerDropdown(${index})">
-                            <span><span style="color:#fff; font-weight:bold;">${vak_formatRupiah(srv.price * KURS_USD_IDR)}</span> <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span>
-                            <span style="color:var(--accent-cyan); font-weight:bold;">${srv.price} USD</span>
-                        </div>`;
+                if (vak_modeCentang) {
+                    let isChecked = vak_hargaTercentang.includes(srv.price);
+                    html += `<div class="dropdown-item-row" onclick="vak_toggleCentangHarga(${index}, event)" style="cursor:pointer; display:flex; align-items:center; gap: 12px; background: ${isChecked ? '#25204d' : 'transparent'};">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} style="pointer-events: none; accent-color: var(--accent-purple); width: 16px; height: 16px; margin: 0;">
+                                <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+                                    <span><span style="color:#fff; font-weight:bold;">${vak_formatRupiah(srv.price * KURS_USD_IDR)}</span> <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span>
+                                    <span style="color:var(--accent-purple); font-weight:bold;">${srv.price} USD</span>
+                                </div>
+                            </div>`;
+                } else {
+                    let sel = (vak_produkTerpilihId === srv.id) ? "selected" : "";
+                    html += `<div class="dropdown-item-row ${sel}" onclick="vak_pilihServerDropdown(${index})">
+                                <span><span style="color:#fff; font-weight:bold;">${vak_formatRupiah(srv.price * KURS_USD_IDR)}</span> <span style="font-size:10px; color:#aaa;">(${srv.stock} stok)</span></span>
+                                <span style="color:var(--accent-cyan); font-weight:bold;">${srv.price} USD</span>
+                            </div>`;
+                }
             });
             container.innerHTML = html;
+        }
+
+        // FUNGSI UPDATE LABEL TANPA MENGUBAH UKURAN UI
+        window.vak_updateLabelTerpilih = function() {
+            if (vak_modeCentang) {
+                if(vak_hargaTercentang.length > 0) {
+                    let text = vak_hargaTercentang.length === 1 ? vak_formatRupiah(Math.min(...vak_hargaTercentang) * KURS_USD_IDR) : `${vak_hargaTercentang.length} Tier Dipilih`;
+                    document.getElementById("vak_labelServerTerpilih").innerHTML = `
+                        <span style="color:var(--accent-purple); font-weight:bold; font-size:14px; margin-right:8px;">🎯 Target: ${text}</span>
+                    `;
+                    document.getElementById("vak_btnPesanAksi").disabled = false;
+                } else {
+                    document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-weight:bold; font-size:13px; margin-right:8px;">Pilih minimal 1 harga</span>`;
+                    document.getElementById("vak_btnPesanAksi").disabled = true;
+                }
+            } else {
+                const srv = vak_daftarServerTersedia.find(s => s.id === vak_produkTerpilihId) || vak_daftarServerTersedia[0];
+                if(srv) {
+                    document.getElementById("vak_labelServerTerpilih").innerHTML = `
+                        <span style="color:var(--accent-cyan); font-weight:bold; font-size:14px; margin-right:8px;">${vak_formatRupiah(srv.price * KURS_USD_IDR)}</span>
+                        <span style="font-size:11px; color:#8b8da9;">(${srv.stock} stok) Auto</span>
+                    `;
+                    document.getElementById("vak_btnPesanAksi").disabled = false; 
+                }
+            }
         }
 
         window.vak_pilihServerDropdown = function(index) {
@@ -307,15 +384,12 @@
             vak_namaProdukTerpilih = `${srv.prefix} (${srv.opName})`;
             vak_hargaProdukTerpilih = srv.price; 
             
-            document.getElementById("vak_labelServerTerpilih").innerHTML = `
-                <span style="color:var(--accent-cyan); font-weight:bold; font-size:14px; margin-right:8px;">${vak_formatRupiah(srv.price * KURS_USD_IDR)}</span>
-                <span style="font-size:11px; color:#8b8da9;">(${srv.stock} stok)</span>
-            `;
+            vak_updateLabelTerpilih();
             document.getElementById("vak_containerListDropdown").classList.remove("active");
-            document.getElementById("vak_btnPesanAksi").disabled = false; 
             vak_renderDropdownOptions();
         }
 
+        // PEMBARUAN LOGIKA ORDER (LOOP BERDASARKAN MODE)
         window.vak_eksekusiBeliTerpilih = async function() {
             const btn = document.getElementById("vak_btnPesanAksi"); 
             const teksAsli = btn.innerHTML;
@@ -333,49 +407,78 @@
             try {
                 let serviceId = document.getElementById("vak_dropdownLayanan").value;
                 let opId = document.getElementById("vak_dropdownOperator").value;
-                let selectedMaxPrice = vak_hargaProdukTerpilih;
                 
-                let maxRetries = 3; 
-                let attempt = 0;
+                let targetPrices = vak_modeCentang ? vak_hargaTercentang : [vak_hargaProdukTerpilih];
+                if (targetPrices.length === 0) throw new Error("Pilih harga terlebih dahulu.");
+
                 let finalOrder = null;
                 let isRecycled = false;
 
-                while (attempt < maxRetries) {
-                    attempt++;
-                    if(attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
-                    
-                    let apiParams = { service: serviceId, country: 'id', price: true };
-                    if (opId !== "any") {
-                        apiParams.operator = opId;
-                        apiParams.maxPrice = selectedMaxPrice + 0.015; 
-                    } else {
-                        apiParams.maxPrice = selectedMaxPrice;
-                    }
-                    
-                    const responseData = await apiVakSmsV2('getNumber', apiParams);
-                    
-                    let pPhone = responseData.data.tel; 
-                    let pId = responseData.data.idNum;
-                    let pCost = responseData.data.price || selectedMaxPrice;
-                    
-                    if (responseData.isJson && pPhone && pId) {
-                        let phoneStr = pPhone.toString();
-                        let actIdStr = pId.toString();
-                        
-                        const dbRef = ref(db);
-                        const snapshot = await get(child(dbRef, `blocklist/${phoneStr}`));
+                // Loop Berurutan untuk setiap harga yang dicentang
+                for (let i = 0; i < targetPrices.length; i++) {
+                    if (finalOrder) break; 
 
-                        if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
-                            btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
-                            await apiVakSmsV2('setStatus', { idNum: actIdStr, status: 'bad' }); 
-                            window.vak_ambilSaldoLive(); // Auto refresh saldo saat banned otomatis
-                            await new Promise(r => setTimeout(r, 1500)); 
-                            continue; 
+                    let currentPriceTarget = targetPrices[i];
+                    let maxRetries = vak_modeCentang ? 2 : 3; // Retry lebih sedikit di mode centang agar cepat geser ke harga lain
+                    let attempt = 0;
+
+                    while (attempt < maxRetries) {
+                        attempt++;
+                        if (vak_modeCentang) {
+                            btn.innerHTML = `🎯 TARGET ($${currentPriceTarget})...`;
                         } else {
-                            finalOrder = { phone: phoneStr, id: actIdStr, cost: parseFloat(pCost) }; 
-                            break;
+                            if (attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                         }
-                    } else { throw new Error(responseData.raw || "Gagal mendapatkan nomor dari API"); }
+                        
+                        let apiParams = { service: serviceId, country: 'id', price: true };
+                        
+                        if (vak_modeCentang) {
+                            if (opId !== "any") apiParams.operator = opId;
+                            apiParams.price = currentPriceTarget; 
+                            apiParams.fixedPrice = true; // Paksa server HANYA berikan harga ini
+                        } else {
+                            if (opId !== "any") {
+                                apiParams.operator = opId;
+                                apiParams.maxPrice = currentPriceTarget + 0.015; 
+                            } else {
+                                apiParams.maxPrice = currentPriceTarget;
+                            }
+                        }
+                        
+                        try {
+                            const responseData = await apiVakSmsV2('getNumber', apiParams);
+                            let pPhone = responseData.data.tel; 
+                            let pId = responseData.data.idNum;
+                            let pCost = responseData.data.price || currentPriceTarget;
+                            
+                            if (responseData.isJson && pPhone && pId) {
+                                let phoneStr = pPhone.toString();
+                                let actIdStr = pId.toString();
+                                
+                                const dbRef = ref(db);
+                                const snapshot = await get(child(dbRef, `blocklist/${phoneStr}`));
+
+                                if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
+                                    btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
+                                    await apiVakSmsV2('setStatus', { idNum: actIdStr, status: 'bad' }).catch(e=>{}); 
+                                    window.vak_ambilSaldoLive(); 
+                                    await new Promise(r => setTimeout(r, 1500)); 
+                                    continue; 
+                                } else {
+                                    finalOrder = { phone: phoneStr, id: actIdStr, cost: parseFloat(pCost) }; 
+                                    break; 
+                                }
+                            } else {
+                                throw new Error(responseData.raw || "Gagal mendapatkan nomor");
+                            }
+                        } catch (apiErr) {
+                            // Jika server bilang stok harga itu habis, hentikan loop 'while' dan geser ke harga centang berikutnya
+                            if (apiErr.message.includes("noNumbers") || apiErr.message.includes("noNumber") || apiErr.message.includes("Stok")) {
+                                break; 
+                            }
+                            await new Promise(r => setTimeout(r, 1000));
+                        }
+                    }
                 }
 
                 if (finalOrder) {
@@ -383,7 +486,7 @@
                         order_id: finalOrder.id, phone: finalOrder.phone, layanan: vak_namaProdukTerpilih, harga: finalOrder.cost, waktu_dibuat: Date.now(), status: "pending", otp: "", is_recycled: isRecycled 
                     });
                     vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive();
-                } else { alert("Sistem membatalkan orderan berulang karena mendeteksi nomor bekas."); }
+                } else { alert("Gagal mendapatkan nomor. Stok mungkin kosong atau error pada harga yang dipilih."); }
             } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
         }
 
@@ -408,23 +511,16 @@
             } catch(e) { document.getElementById("vak_txtSaldoLive").innerText = "Error"; }
         }
 
-        // --- TOMBOL BATAL DENGAN AUTO REFRESH SALDO ---
         window.vak_eksekusiBatalkanServer = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
                 await apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'bad' }); 
                 item.status = "cancelled"; 
-                vak_renderUILayout(); 
-                vak_simpanDaftarOrderanKeLokal(); 
-                vak_showToast("Dibatalkan & Saldo Kembali!"); 
-                // Auto refresh saldo instan tanpa jeda lama
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Dibatalkan & Saldo Kembali!"); 
                 window.vak_ambilSaldoLive();
-            } catch (e) { 
-                alert("Gagal membatalkan: " + e.message); 
-            }
+            } catch (e) { alert("Gagal membatalkan: " + e.message); }
         }
         
-        // --- TOMBOL BLOKIR DENGAN AUTO REFRESH SALDO ---
         window.vak_blokirManual = async function(index) {
             const item = vak_daftarOrderan[index];
             if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel?`)) return;
@@ -432,10 +528,7 @@
                 set(ref(db, 'blocklist/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
                 await apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'bad' });
                 item.status = "cancelled"; 
-                vak_renderUILayout(); 
-                vak_simpanDaftarOrderanKeLokal(); 
-                vak_showToast("Nomor di-BAN & Saldo Kembali!"); 
-                // Auto refresh saldo instan
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Nomor di-BAN & Saldo Kembali!"); 
                 window.vak_ambilSaldoLive();
             } catch (e) { alert("Gagal memblokir: " + e.message); }
         }
@@ -507,7 +600,7 @@
                 if (item.status === "pending" && sec >= 300) { 
                     item.status = "cancelled"; 
                     apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'bad' }).catch(e=>{});
-                    window.vak_ambilSaldoLive(); // Refresh saldo jika timeout otomatis
+                    window.vak_ambilSaldoLive(); 
                 }
                 if (item.status === "cancelled") return; 
 
