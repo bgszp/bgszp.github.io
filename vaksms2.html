@@ -126,9 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Fitur Hybrid "Mode Sniper" (Centang) Ditambahkan.<br>
-            └> Pembelian loop berurutan aktif di Mode Sniper.<br>
-            └> Mode Otomatis (Auto-lowest) tetap berfungsi normal.
+            └> Bug maxPrice Mode Sniper (Centang) Diperbaiki.<br>
+            └> Harga lencana akurat sesuai target tembakan.
         </div>
     </div>
     
@@ -158,7 +157,6 @@
         let vak_cachedOffers = []; 
         let vak_lastServiceId = null; 
         
-        // VARIABEL BARU MODE SNIPER CENTANG
         let vak_produkTerpilihId = null; 
         let vak_namaProdukTerpilih = ""; 
         let vak_hargaProdukTerpilih = 0; 
@@ -290,7 +288,6 @@
             }
         }
 
-        // FUNGSI BARU: TOGGLE SAKLAR & CHECKBOX
         window.vak_toggleModeCentang = function(isChecked) {
             vak_modeCentang = isChecked;
             if(isChecked) {
@@ -316,12 +313,10 @@
             vak_updateLabelTerpilih();
         }
 
-        // PEMBARUAN RENDER LIST HARGA DENGAN SAKLAR
         function vak_renderDropdownOptions() {
             const container = document.getElementById("vak_containerListDropdown");
             if(vak_daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center;">Kosong</div>`; return; }
             
-            // Header Saklar Mode Sniper (Disembunyikan di dalam menu dropdown)
             let html = `<div style="padding: 10px 14px; background: #1a1b35; border-bottom: 1px solid #2c2e5c; display: flex; justify-content: space-between; align-items: center; border-radius: 10px 10px 0 0;">
                 <span style="font-size: 11px; font-weight: bold; color: var(--accent-purple);">🎯 Mode Sniper (Spesifik)</span>
                 <label style="position: relative; display: inline-block; width: 34px; height: 18px; margin: 0;">
@@ -353,7 +348,6 @@
             container.innerHTML = html;
         }
 
-        // FUNGSI UPDATE LABEL TANPA MENGUBAH UKURAN UI
         window.vak_updateLabelTerpilih = function() {
             if (vak_modeCentang) {
                 if(vak_hargaTercentang.length > 0) {
@@ -389,7 +383,6 @@
             vak_renderDropdownOptions();
         }
 
-        // PEMBARUAN LOGIKA ORDER (LOOP BERDASARKAN MODE)
         window.vak_eksekusiBeliTerpilih = async function() {
             const btn = document.getElementById("vak_btnPesanAksi"); 
             const teksAsli = btn.innerHTML;
@@ -414,12 +407,11 @@
                 let finalOrder = null;
                 let isRecycled = false;
 
-                // Loop Berurutan untuk setiap harga yang dicentang
                 for (let i = 0; i < targetPrices.length; i++) {
                     if (finalOrder) break; 
 
                     let currentPriceTarget = targetPrices[i];
-                    let maxRetries = vak_modeCentang ? 2 : 3; // Retry lebih sedikit di mode centang agar cepat geser ke harga lain
+                    let maxRetries = vak_modeCentang ? 2 : 3; 
                     let attempt = 0;
 
                     while (attempt < maxRetries) {
@@ -431,18 +423,16 @@
                         }
                         
                         let apiParams = { service: serviceId, country: 'id', price: true };
-                        
+                        if (opId !== "any") {
+                            apiParams.operator = opId;
+                        }
+
+                        // PERBAIKAN LOGIKA HARGA SNIPER
                         if (vak_modeCentang) {
-                            if (opId !== "any") apiParams.operator = opId;
-                            apiParams.price = currentPriceTarget; 
-                            apiParams.fixedPrice = true; // Paksa server HANYA berikan harga ini
+                            apiParams.maxPrice = currentPriceTarget; 
+                            apiParams.fixedPrice = true;
                         } else {
-                            if (opId !== "any") {
-                                apiParams.operator = opId;
-                                apiParams.maxPrice = currentPriceTarget + 0.015; 
-                            } else {
-                                apiParams.maxPrice = currentPriceTarget;
-                            }
+                            apiParams.maxPrice = (opId !== "any") ? (currentPriceTarget + 0.015) : currentPriceTarget;
                         }
                         
                         try {
@@ -472,7 +462,6 @@
                                 throw new Error(responseData.raw || "Gagal mendapatkan nomor");
                             }
                         } catch (apiErr) {
-                            // Jika server bilang stok harga itu habis, hentikan loop 'while' dan geser ke harga centang berikutnya
                             if (apiErr.message.includes("noNumbers") || apiErr.message.includes("noNumber") || apiErr.message.includes("Stok")) {
                                 break; 
                             }
