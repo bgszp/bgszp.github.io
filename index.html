@@ -108,12 +108,9 @@
 
     <!-- === 1. MENU SERVERS === -->
     <div class="wrapper-menu-server" style="position: relative; margin-bottom: 18px;">
-        
-        <!-- TAMPILAN IP & PING JARINGAN -->
         <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Shopee / Ipify)" style="position: absolute; right: 0; top: -20px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
             <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
         </div>
-
         <div class="server-col">
             <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP1', 'panahSrv1')">
                 <span>🛠️ Server 1</span>
@@ -136,7 +133,7 @@
             <iframe src="smsbower.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
         </div>
         <div id="wadahOTP2" class="wadah-iframe-server">
-            <iframe src="vaksms2.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
+            <iframe src="smshero.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
         </div>
     </div>
 
@@ -159,9 +156,34 @@
             </div>
             <div class="history-card" style="margin-top: 20px; border: 1px solid #3d3463;">
                 <div class="history-title"><span>RIWAYAT GENERATOR</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()" title="Hapus Riwayat & Reset Batas 24 Jam">Hapus</span></div>
-                <!-- ID historyList sekarang di-handle oleh Firebase -->
                 <div id="historyList"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- === 2.5 AUTO GENERATE USERNAME === -->
+    <div class="wrapper-menu-server">
+        <div class="server-col">
+            <div class="pemicu-menu-utama" onclick="togglePanel('wadahGenUser', 'panahGenUser')" style="border-color: #ff9900;">
+                <span>👤 Auto Generate Username</span>
+                <span id="panahGenUser">▼</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="width: 100%; max-width: 900px;">
+        <div id="wadahGenUser" class="wadah-iframe-server" style="padding: 20px;">
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <input class="form-input" id="hasilGenUser" title="Klik untuk Salin" style="margin-bottom: 0; flex: 1; border-color: #ff9900; cursor: pointer;" readonly type="text" onclick="eksekusiSalinTeks(this.value).then(() => showToast('Username Disalin! ✨'))" />
+                <button class="btn-primary" style="width: auto; padding: 0 15px; border: 1px solid #ff9900;" onclick="eksekusiSalinTeks(document.getElementById('hasilGenUser').value).then(() => showToast('Username Disalin! ✨'))"><i class="fa-solid fa-copy"></i></button>
+                <button class="btn-primary" style="width: auto; padding: 0 15px; background: #ff4a4a; box-shadow: 0 4px 15px rgba(255, 74, 74, 0.4);" onclick="resetUrutanUser()" title="Reset Urutan ke 01"><i class="fa-solid fa-rotate-left"></i></button>
+            </div>
+            
+            <input class="form-input" id="inputLinkUser" placeholder="Masukkan Link / Data..." type="text" style="border-color: #ff9900; color: #fff; background: rgba(0,0,0,0.3);" />
+            
+            <button class="btn-primary" style="background: linear-gradient(45deg, #ff9900, #d35400); box-shadow: 0 4px 15px rgba(255, 153, 0, 0.4);" onclick="simpanKeCatatan()">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Simpan ke Catatan Utama
+            </button>
         </div>
     </div>
 
@@ -264,11 +286,69 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
+        // === VARIABEL GLOBAL GENERATOR USERNAME ===
+        let urutanGenUser = 1;
+
+        function generateUserAuto() {
+            const abjad = "abcdefghijklmnopqrstuvwxyz";
+            let kataAcak = "";
+            
+            for(let i=0; i<3; i++) {
+                let huruf = abjad[Math.floor(Math.random() * abjad.length)];
+                kataAcak += Math.random() > 0.5 ? huruf.toUpperCase() : huruf;
+            }
+
+            const today = new Date();
+            const tgl = String(today.getDate()).padStart(2, '0');
+            const urutan = String(urutanGenUser).padStart(2, '0');
+
+            const hasil = `${kataAcak}_${tgl}${urutan}`; 
+            document.getElementById('hasilGenUser').value = hasil;
+        }
+
+        window.resetUrutanUser = function() {
+            urutanGenUser = 1;
+            generateUserAuto();
+            if(window.showToast) window.showToast("Urutan direset ke 01! 🔄");
+        }
+
+        window.simpanKeCatatan = function() {
+            const rawUser = document.getElementById('hasilGenUser').value;
+            const link = document.getElementById('inputLinkUser').value;
+
+            if(!link.trim() || !rawUser.trim()) {
+                alert("Kolom Link tidak boleh kosong!");
+                return;
+            }
+
+            const userDisimpan = rawUser.replace('_', '_ ');
+
+            let currentLines = packInputsToArray();
+            currentLines = currentLines.filter(line => line.trim() !== "");
+            
+            currentLines.push(`${link.trim()} | ${userDisimpan.trim()}`);
+
+            const combinedText = currentLines.join("\n");
+            
+            if (window.simpanCatatanUtamaKeFirebase) {
+                window.simpanCatatanUtamaKeFirebase(combinedText);
+            }
+
+            renderNotesList(combinedText);
+
+            if(window.showToast) window.showToast("Tersimpan di Catatan Utama! ☁️");
+
+            urutanGenUser++;
+            document.getElementById('inputLinkUser').value = '';
+            generateUserAuto();
+        }
+
         function tutupSemuaMenu() {
             const daftarMenu = [
                 { wadah: 'wadahOTP1', panah: 'panahSrv1' },
                 { wadah: 'wadahOTP2', panah: 'panahSrv2' },
                 { wadah: 'wadahDataGen', panah: 'panahDataGen' },
+                { wadah: 'wadahGenUser', panah: 'panahGenUser' },
                 { wadah: 'wadahUtama', panah: 'panahUtama' },
                 { wadah: 'wadahAlarm', panah: 'panahAlarm' },
                 { wadah: 'wadahPublik', panah: 'panahPublik' },
@@ -458,6 +538,7 @@
 
             muatDataCopas();
             updateIPAddress(); 
+            generateUserAuto(); // Inisialisasi username pertama kali
         });
 
         window.addEventListener('online', updateIPAddress);
@@ -567,13 +648,15 @@
 
         function packInputsToArray() {
             let lineArray = [];
-            rawNotesLines.forEach((_, idx) => {
+            rawNotesLines.forEach((text, idx) => {
                 const elLeft = document.getElementById(`inp-note-left-${idx}`);
                 const elRight = document.getElementById(`inp-note-right-${idx}`);
                 if (elLeft || elRight) {
                     let l = elLeft ? elLeft.value.trim() : ""; let r = elRight ? elRight.value.trim() : "";
                     if (l === "" && r === "") { lineArray.push(""); } else { lineArray.push(l + " | " + r); }
-                } else { lineArray.push(""); }
+                } else { 
+                    lineArray.push(text);
+                }
             });
             return lineArray;
         }
@@ -605,10 +688,8 @@
             }
         }
 
-        // === FUNGSI ACAK WILAYAH DARI KOTA PULAU JAWA ===
         function dapatkanAlamatAcak() {
             if (Object.keys(DATA_KOTA_JAWA).length === 0) return "Alamat Tidak Tersedia";
-            
             const listProvinsi = Object.keys(DATA_KOTA_JAWA);
             const prov = listProvinsi[Math.floor(Math.random() * listProvinsi.length)];
             const listKabupaten = Object.keys(DATA_KOTA_JAWA[prov]);
@@ -626,14 +707,12 @@
             return `Kel. ${kel}, Kec. ${kec}, ${formatKab}, ${prov} ${kodePos}`;
         }
 
-        // === FUNGSI FILTER DATA TERSEDIA MENGGUNAKAN FIREBASE ===
         function dapatkanDataTersedia() {
             let dataTerpakai = window.DATA_TERPAKAI_FIREBASE || {};
             let tersedia = DATA_DUMMY_DATABASE.filter(item => !dataTerpakai[item.no_hp]);
             return tersedia;
         }
 
-        // === FUNGSI GENERATE (INSTAN) ===
         window.generateName = function() {
             if (DATA_DUMMY_DATABASE.length === 0) return;
             
@@ -647,21 +726,15 @@
             const item = dataTersedia[Math.floor(Math.random() * dataTersedia.length)];
             const wilayahAcak = dapatkanAlamatAcak();
             
-            // Mengambil alamat asli
             let jalanPatokan = item.alamat ? item.alamat.trim() : "";
-            
-            // MEMOTONG bagian Kelurahan, Kecamatan, Kota, Kabupaten, atau Desa dari data asli
             jalanPatokan = jalanPatokan.split(/,?\s*(?:Kel\.|Kec\.|Desa\b|Kab\.|Kota\b)/i)[0].trim();
-            // Hapus koma di akhir kalimat jika ada sisa
             if (jalanPatokan.endsWith(',')) jalanPatokan = jalanPatokan.slice(0, -1).trim();
             
-            // Menggabungkan Nama, Jalan/Patokan bersih, Wilayah Acak, dan No HP
             const res = `${item.nama}, ${jalanPatokan}, ${wilayahAcak}, ${item.no_hp}`;
             
             document.getElementById('genNameOutput').value = res;
             window.eksekusiSalinTeks(res).then(() => window.showToast("Berhasil Disalin! ✨")); 
             
-            // Kirim ke Firebase (Otomatis masuk ke Riwayat & mengunci No HP 24 Jam)
             if(window.tambahKeRiwayatFirebase) {
                 window.tambahKeRiwayatFirebase(res, item.no_hp);
             }
