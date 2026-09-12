@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Fitur Reset "Kirim Ulang" OTP Otomatis.<br>
-            └> Lencana Badge (OTP Ke-X) Aktif.
+            └> Logic "Shotgun" Sniper Parameter Aktif.<br>
+            └> Tombol Batal & Blokir MATI saat Kirim Ulang.
         </div>
     </div>
     
@@ -472,9 +472,8 @@
                 }
 
                 if (finalOrder) {
-                    // Penambahan parameter awal otp_count = 1
                     vak_daftarOrderan.unshift({ 
-                        order_id: finalOrder.id, phone: finalOrder.phone, layanan: vak_namaProdukTerpilih, harga: finalOrder.cost, waktu_dibuat: Date.now(), status: "pending", otp: "", is_recycled: isRecycled, otp_count: 1 
+                        order_id: finalOrder.id, phone: finalOrder.phone, layanan: vak_namaProdukTerpilih, harga: finalOrder.cost, waktu_dibuat: Date.now(), waktu_dibuat_asli: Date.now(), status: "pending", otp: "", is_recycled: isRecycled, otp_count: 1 
                     });
                     vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive();
                 } else { alert("Gagal mendapatkan nomor. Stok mungkin kosong atau error pada harga yang dipilih."); }
@@ -524,18 +523,17 @@
             } catch (e) { alert("Gagal memblokir: " + e.message); }
         }
 
-        // --- FITUR BARU: RESET OTP & HITUNG KIRIM ULANG ---
         window.vak_eksekusiResend = async function(index) {
             const item = vak_daftarOrderan[index];
             try { 
-                // Instruksikan server untuk meminta ulang SMS
                 await apiVakSmsV2('setStatus', { idNum: item.order_id, status: 'send' }); 
                 
-                // Ubah status lokal kembali ke loading
                 item.status = "pending";
-                item.otp = ""; // Bersihkan OTP lama
-                item.otp_count = (item.otp_count || 1) + 1; // Tambah hitungan percobaan
-                item.waktu_dibuat = Date.now(); // Reset timer dari nol
+                item.otp = ""; 
+                item.otp_count = (item.otp_count || 1) + 1; 
+                
+                if (!item.waktu_dibuat_asli) item.waktu_dibuat_asli = item.waktu_dibuat;
+                item.waktu_dibuat = Date.now(); 
                 
                 vak_renderUILayout(); 
                 vak_simpanDaftarOrderanKeLokal();
@@ -582,7 +580,6 @@
                             vak_simpanDaftarOrderanKeLokal();
                             window.vak_ambilSaldoLive(); 
                             
-                            // Hapus OTP dari database agar siap menerima OTP ke-2 jika diklik kirim ulang
                             remove(child(dbRef, `vaksms_otp/${i.order_id}`));
                         }
                     } else if (vak_siklusCek % 15 === 0) {
@@ -604,7 +601,6 @@
             let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
 
             vak_daftarOrderan.forEach((item, index) => {
-                // Jaga-jaga untuk item lama di memori yang belum punya otp_count
                 item.otp_count = item.otp_count || 1; 
 
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
@@ -620,7 +616,6 @@
 
                 let labelWarning = item.is_recycled ? `<span style="color:#ff5555; font-size:9px; border:1px solid #ff5555; padding:2px 4px; border-radius:4px; margin-left:4px;">⚠️ Pernah Dipakai</span>` : "";
                 
-                // Lencana OTP ke berapa (hanya muncul jika lebih dari 1)
                 let labelOtpKe = item.otp_count > 1 ? `<span style="background:#4a3c8c; color:#fff; font-size:8px; padding:1px 4px; border-radius:4px; margin-left:5px;">Ke-${item.otp_count}</span>` : '';
 
                 if (item.status === "completed" || item.status === "history_received") {
@@ -636,15 +631,20 @@
                 }
 
                 countAktif++; 
-                let sisa = Math.max(0, 300 - sec); let cool = Math.max(0, 120 - sec); let sisaMax = Math.max(0, 1200 - sec); 
+                let secAsli = Math.floor((Date.now() - (item.waktu_dibuat_asli || item.waktu_dibuat)) / 1000);
+                
+                let sisa = Math.max(0, 300 - sec); 
+                let cool = Math.max(0, 120 - sec); 
+                let sisaMax = Math.max(0, 1200 - secAsli); 
                 if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) { cool = 0; }
 
-                // Pembaruan teks loading dengan hitungan
-                let textStat = item.otp_count > 1 ? `⚡ Cek OTP Ke-${item.otp_count}... (${sec}s)` : `⚡ Cek OTP... (${sec}s)`; 
+                let textStat = item.otp_count > 1 ? `⚡ Cek Ke-${item.otp_count}... (${sec}s)` : `⚡ Cek OTP... (${sec}s)`; 
                 let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`; let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
                 
-                let btnBlokirManual = item.status === "pending" ? `<button onclick="vak_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir & Batal"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
+                // Matikan tombol blokir manual jika sudah pernah menerima OTP
+                let btnBlokirManual = (item.status === "pending" && item.otp_count === 1) ? `<button onclick="vak_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir & Batal"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
+                
                 let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal Vak-SMS"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
 
                 let teksHargaAsli = item.harga ? vak_formatRupiah(item.harga * KURS_USD_IDR) : '-';
@@ -655,7 +655,12 @@
                     kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold; display:flex; align-items:center;">KodeOTP: ${labelOtpKe}</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="vak_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
                     btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="vak_eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button><button onclick="vak_eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button></div>`;
                 } else if (item.status === "pending") {
-                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="vak_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
+                    // --- PERUBAHAN: Matikan tombol batal jika nomor sudah dipakai (Kirim Ulang) ---
+                    if (item.otp_count > 1) {
+                        btnAksi = `<button class="btn-batal" disabled style="background:#444; cursor:not-allowed;">🔒 Tidak Bisa Batal (Kirim Ulang)</button>`;
+                    } else {
+                        btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="vak_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
+                    }
                 }
                 
                 htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span style="display:flex; align-items:center;">${item.layanan} ${labelWarning} ${btnBlokirManual} ${badgeMaxTime}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="vak_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;"><div style="font-size:11px; font-weight:600; color:${colStat};">${textStat}</div>${badgeHargaAsli}</div>${btnAksi}</div>`;
