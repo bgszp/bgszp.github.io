@@ -105,35 +105,45 @@
 </head>
 <body>
 
-    <!-- === 1. MENU SERVERS === -->
-    <div class="wrapper-menu-server" style="position: relative; margin-bottom: 18px;">
+<!-- === 1. MENU SERVERS === -->
+    <div class="wrapper-menu-server" style="position: relative; margin-bottom: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+        
+        <!-- TAMPILAN IP & PING JARINGAN -->
         <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Shopee / Ipify)" style="position: absolute; right: 0; top: -20px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
             <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
         </div>
-        <div class="server-col">
-            <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP1', 'panahSrv1')">
-                <span>🛠️ Server 1</span>
-                <span id="panahSrv1">▼</span>
-            </div>
+
+        <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP1', 'panahSrv1')" style="padding: 10px; justify-content: center;">
+            <span>🛠️ S1</span><span id="panahSrv1" style="margin-left: 5px;">▼</span>
         </div>
-        <div class="server-col">
-            <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP2', 'panahSrv2')" style="border-color: #00e5ff;"> 
-                <span>🔵 Server 2</span>
-                <span id="panahSrv2">▼</span>
-            </div>
+        <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP2', 'panahSrv2')" style="border-color: #00e5ff; padding: 10px; justify-content: center;"> 
+            <span>🔵 S2</span><span id="panahSrv2" style="margin-left: 5px;">▼</span>
         </div>
+        <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP3', 'panahSrv3')" style="border-color: #00ff00; padding: 10px; justify-content: center;"> 
+            <span>🟢 S3</span><span id="panahSrv3" style="margin-left: 5px;">▼</span>
+        </div>
+        <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP4', 'panahSrv4')" style="border-color: #ff9900; padding: 10px; justify-content: center;"> 
+            <span>🟠 S4</span><span id="panahSrv4" style="margin-left: 5px;">▼</span>
+        </div>
+        <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP5', 'panahSrv5')" style="border-color: #ff007f; padding: 10px; justify-content: center;"> 
+            <span>🔴 S5</span><span id="panahSrv5" style="margin-left: 5px;">▼</span>
+        </div>
+        <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP6', 'panahSrv6')" style="border-color: #f1c40f; padding: 10px; justify-content: center;"> 
+            <span>🟡 S6</span><span id="panahSrv6" style="margin-left: 5px;">▼</span>
+        </div>
+
         <div class="btn-minimize-server" onclick="tutupSemuaMenu()" title="Tutup Semua Menu Terbuka">
             <i class="fa-solid fa-angles-up"></i>
         </div>
     </div>
     
-    <div style="width: 100%; max-width: 900px;">
-        <div id="wadahOTP1" class="wadah-iframe-server">
-            <iframe src="smsbower.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
-        </div>
-        <div id="wadahOTP2" class="wadah-iframe-server">
-            <iframe src="vaksms2.html" width="100%" height="680px" style="border: none; display: block;"></iframe>
-        </div>
+<div style="width: 100%; max-width: 900px;">
+        <div id="wadahOTP1" class="wadah-iframe-server"><iframe src="smsbower.html" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+        <div id="wadahOTP2" class="wadah-iframe-server"><iframe src="smshero.html" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+        <div id="wadahOTP3" class="wadah-iframe-server"><iframe src="otpinstan.html" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+        <div id="wadahOTP4" class="wadah-iframe-server"><iframe src="smscode.html" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+        <div id="wadahOTP5" class="wadah-iframe-server"><iframe src="kosong" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+        <div id="wadahOTP6" class="wadah-iframe-server"><iframe src="vaksms2.html" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
     </div>
 
     <!-- === 2. DATA GENERATOR === -->
@@ -312,17 +322,21 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-        function tutupSemuaMenu() {
+function tutupSemuaMenu() {
             const daftarMenu = [
                 { wadah: 'wadahOTP1', panah: 'panahSrv1' },
                 { wadah: 'wadahOTP2', panah: 'panahSrv2' },
+                { wadah: 'wadahOTP3', panah: 'panahSrv3' },
+                { wadah: 'wadahOTP4', panah: 'panahSrv4' },
+                { wadah: 'wadahOTP5', panah: 'panahSrv5' },
+                { wadah: 'wadahOTP6', panah: 'panahSrv6' },
                 { wadah: 'wadahDataGen', panah: 'panahDataGen' },
+                { wadah: 'wadahGenUser', panah: 'panahGenUser' },
                 { wadah: 'wadahUtama', panah: 'panahUtama' },
                 { wadah: 'wadahAlarm', panah: 'panahAlarm' },
                 { wadah: 'wadahPublik', panah: 'panahPublik' },
-                { wadah: 'wadahScanner', panah: 'panahScanner' },
-                { wadah: 'wadahGenUser', panah: 'panahGenUser' },
-                { wadah: 'wadahPublik2', panah: 'panahPublik2' }
+                { wadah: 'wadahPublik2', panah: 'panahPublik2' },
+                { wadah: 'wadahScanner', panah: 'panahScanner' }
             ];
 
             daftarMenu.forEach(item => {
@@ -332,7 +346,7 @@
             });
             stopScannerCamera();
             window.showToast("Semua menu ditutup! 🧹");
-        }
+}
 
         function togglePanel(wadahId, panahId) {
             const wadah = document.getElementById(wadahId);
