@@ -256,7 +256,7 @@
         </div>
     </div>
 
-    <!-- === 7. AUTO GENERATE USERNAME === -->
+<!-- === 7. AUTO GENERATE USERNAME === -->
     <div class="wrapper-menu-server">
         <div class="server-col">
             <div class="pemicu-menu-utama" onclick="togglePanel('wadahGenUser', 'panahGenUser')" style="border-color: #ff9900;">
@@ -269,8 +269,12 @@
     <div style="width: 100%; max-width: 900px;">
         <div id="wadahGenUser" class="wadah-iframe-server" style="padding: 20px;">
             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                <input class="form-input" id="hasilGenUser" title="Klik untuk Salin" style="margin-bottom: 0; flex: 1; border-color: #ff9900; cursor: pointer;" readonly type="text" onclick="eksekusiSalinTeks(this.value).then(() => showToast('Username Disalin! ✨'))" />
-                <button class="btn-primary" style="width: auto; padding: 0 15px; border: 1px solid #ff9900;" onclick="eksekusiSalinTeks(document.getElementById('hasilGenUser').value).then(() => showToast('Username Disalin! ✨'))"><i class="fa-solid fa-copy"></i></button>
+                <input class="form-input" id="hasilGenUser" title="Klik untuk Salin (Tanpa merubah huruf)" style="margin-bottom: 0; flex: 1; border-color: #ff9900; cursor: pointer;" readonly type="text" onclick="eksekusiSalinTeks(this.value).then(() => showToast('Username Disalin! ✨'))" />
+                
+                <!-- Tombol Baru: Acak Huruf Saja -->
+                <button class="btn-primary" style="width: auto; padding: 0 15px; background: #9b59b6; box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);" onclick="acakHurufSaja()" title="Acak Huruf Saja (Angka Tetap)"><i class="fa-solid fa-dice"></i></button>
+                
+                <button class="btn-primary" style="width: auto; padding: 0 15px; border: 1px solid #ff9900;" onclick="eksekusiSalinTeks(document.getElementById('hasilGenUser').value).then(() => showToast('Username Disalin! ✨'))" title="Salin Username"><i class="fa-solid fa-copy"></i></button>
                 <button class="btn-primary" style="width: auto; padding: 0 15px; background: #ff4a4a; box-shadow: 0 4px 15px rgba(255, 74, 74, 0.4);" onclick="resetUrutanUser()" title="Reset Urutan ke 01"><i class="fa-solid fa-rotate-left"></i></button>
             </div>
             
@@ -732,8 +736,8 @@
             setTimeout(() => { t.classList.remove('show'); }, 2000); 
         }
         
-        // === LOGIKA AUTO GENERATE USERNAME ===
-        let urutanGenUser = 1;
+// === LOGIKA AUTO GENERATE USERNAME ===
+        let urutanGenUser = parseInt(localStorage.getItem('urutan_gen_user')) || 1;
 
         function generateUserAuto() {
             const abjad = "abcdefghijklmnopqrstuvwxyz";
@@ -752,8 +756,15 @@
             document.getElementById('hasilGenUser').value = hasil;
         }
 
+        // Fungsi baru untuk mengacak huruf tanpa merubah memori urutan angka
+        window.acakHurufSaja = function() {
+            generateUserAuto();
+            if(window.showToast) window.showToast("Huruf diacak ulang! 🎲");
+        }
+
         window.resetUrutanUser = function() {
             urutanGenUser = 1;
+            localStorage.setItem('urutan_gen_user', urutanGenUser); 
             generateUserAuto();
             if(window.showToast) window.showToast("Urutan direset ke 01! 🔄");
         }
@@ -785,9 +796,14 @@
             if(window.showToast) window.showToast("Tersimpan di Catatan Utama! ☁️");
 
             urutanGenUser++;
+            localStorage.setItem('urutan_gen_user', urutanGenUser); 
+            
             document.getElementById('inputLinkUser').value = '';
             generateUserAuto();
         }
+    </script>
+</body>
+</html>
     </script>
 </body>
 </html>
