@@ -617,21 +617,38 @@ function tutupSemuaMenu() {
                     deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>'; deleteBtn.title = "Hapus baris ini";
                     deleteBtn.onclick = function(e) { e.stopPropagation(); hapusBarisCatatanUtama(index); }; rowDiv.appendChild(deleteBtn);
                 } else {
-                    const displayWrapper = document.createElement("div"); displayWrapper.className = "note-display-wrapper";
+                    const displayWrapper = document.createElement("div"); 
+                    displayWrapper.className = "note-display-wrapper";
+                    
                     if(text.includes("|")) {
                         const parts = text.split("|");
-                        // Tanda | dihilangkan dari tampilan layar dan diganti dengan bungkus keterangan
-                        displayWrapper.innerHTML = `<div><span class="text-before-pipe">${parts[0].trim()}</span><span class="text-after-pipe"><i class="fa-solid fa-user-tag" style="margin-right:4px;"></i>${parts.slice(1).join("|").trim()}</span></div>`;
+                        const linkIsi = parts[0].trim();
+                        const keteranganIsi = parts.slice(1).join("|").trim();
+                        
+                        // Tampilkan hanya keterangan (Username) di dalam kotak, sembunyikan Link/Data di baliknya
+                        displayWrapper.innerHTML = `<div style="width: 100%;"><div style="background: rgba(255, 153, 0, 0.15); color: #ff9900; border: 1px dashed rgba(255, 153, 0, 0.5); padding: 8px 10px; border-radius: 6px; font-size: 14px; font-weight: bold; width: 100%; text-align: center; letter-spacing: 0.5px;" title="${linkIsi} (Klik untuk menyalin)"><i class="fa-solid fa-user-tag" style="margin-right:6px;"></i>${keteranganIsi}</div></div>`;
+                        displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`; 
+                        
+                        rowDiv.appendChild(displayWrapper);
+                        
+                        // Saat diklik, yang disalin adalah Link/Data (kiri pipa)
+                        rowDiv.onclick = function() {
+                            if(linkIsi !== "") {
+                                window.eksekusiSalinTeks(linkIsi).then(() => { window.showToast(`Data/Link Disalin! ✨`); }); 
+                            }
+                        };
                     } else { 
                         displayWrapper.innerHTML = `<div><span class="text-before-pipe">${text || '<span style="color:#555;">(Baris Kosong)</span>'}</span></div>`; 
+                        displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`; 
+                        
+                        rowDiv.appendChild(displayWrapper);
+                        
+                        rowDiv.onclick = function() {
+                            if(text.trim() !== "") {
+                                window.eksekusiSalinTeks(text).then(() => { window.showToast(`Baris ${rowNum} Disalin! ✨`); }); 
+                            }
+                        };
                     }
-                    displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`; rowDiv.appendChild(displayWrapper);
-                    rowDiv.onclick = function() {
-                        if(text.trim() !== "") {
-                            let finalCopyText = text.includes("|") ? text.split("|")[0].trim() : text;
-                            if(finalCopyText !== "") { window.eksekusiSalinTeks(finalCopyText).then(() => { window.showToast(`Baris ${rowNum} Disalin! ✨`); }); }
-                        }
-                    };
                 }
                 container.appendChild(rowDiv);
             });
