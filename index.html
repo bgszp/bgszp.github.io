@@ -150,14 +150,13 @@
     </div>
     
 <div style="width: 100%; max-width: 900px;">
-        <div id="wadahOTP1" class="wadah-iframe-server"><iframe src="smsbower.html" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
-        <div id="wadahOTP2" class="wadah-iframe-server"><iframe src="smshero.html" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
-        <div id="wadahOTP3" class="wadah-iframe-server"><iframe src="otpinstan.html" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
-        <div id="wadahOTP4" class="wadah-iframe-server"><iframe src="smscode.html" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
-        <div id="wadahOTP5" class="wadah-iframe-server"><iframe src="kosong" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
-        <div id="wadahOTP6" class="wadah-iframe-server"><iframe src="vaksms2.html" loading="lazy" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
-    </div>
-
+        <div id="wadahOTP1" class="wadah-iframe-server"><iframe data-src="smsbower.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+        <div id="wadahOTP2" class="wadah-iframe-server"><iframe data-src="smshero.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+        <div id="wadahOTP3" class="wadah-iframe-server"><iframe data-src="otpinstan.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+        <div id="wadahOTP4" class="wadah-iframe-server"><iframe data-src="smscode.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+        <div id="wadahOTP5" class="wadah-iframe-server"><iframe data-src="vaksms.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+        <div id="wadahOTP6" class="wadah-iframe-server"><iframe data-src="vaksms2.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
+</div>
     <!-- === 2. DATA GENERATOR === -->
     <div class="wrapper-menu-server">
         <div class="server-col">
@@ -360,9 +359,19 @@ function tutupSemuaMenu() {
             window.showToast("Semua menu ditutup! 🧹");
 }
 
-        function togglePanel(wadahId, panahId) {
+function togglePanel(wadahId, panahId) {
             const wadah = document.getElementById(wadahId);
             const panah = document.getElementById(panahId);
+            
+            // LOGIKA SMART LAZY LOAD UNTUK SERVER SMS
+            if (wadahId.startsWith('wadahOTP')) {
+                const iframe = wadah.querySelector('iframe');
+                // Jika iframe belum punya link sumber, suntikkan linknya sekarang
+                if (iframe && !iframe.getAttribute('src')) {
+                    iframe.setAttribute('src', iframe.getAttribute('data-src'));
+                }
+            }
+
             if (wadah.style.display === "none" || wadah.style.display === "") {
                 wadah.style.display = "block"; panah.style.transform = "rotate(180deg)";
                 if (wadahId === 'wadahScanner') startScannerCamera();
@@ -370,7 +379,7 @@ function tutupSemuaMenu() {
                 wadah.style.display = "none"; panah.style.transform = "rotate(0deg)";
                 if (wadahId === 'wadahScanner') stopScannerCamera();
             }
-        }
+}
 
         const video = document.getElementById('kamera');
         const canvasScanner = document.getElementById('canvasScanner');
