@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generator Data Futuristik v3.6</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
+    <!-- Panggilan Script Firebase Publik & Utama -->
     <script type="module" src="firebase-publik.js"></script>
 
     <style>
@@ -27,7 +27,6 @@
             border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
         }
         .btn-primary:disabled { background: #3d3463 !important; cursor: not-allowed; box-shadow: none; color: #aaa; }
-        #btn-username { background: linear-gradient(45deg, #00b4db, #0083b0); box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4); }
         .history-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; width: 100%; max-height: 200px; overflow-y: auto; }
         .history-title { font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 10px; display: flex; justify-content: space-between; }
         .history-item { font-size: 12px; padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -45,7 +44,9 @@
         .note-row.admin-mode .note-num-badge { background: rgba(255, 0, 127, 0.15); color: #ff007f; border-color: rgba(255, 0, 127, 0.4); }
         
         .note-display-wrapper { flex: 1; font-size: 14px; word-break: break-all; display: flex; align-items: center; justify-content: space-between; }
-.text-before-pipe { color: #ffffff; font-weight: 600; word-break: break-all; }
+        
+        /* Modifikasi CSS untuk Catatan Utama */
+        .text-before-pipe { color: #ffffff; font-weight: 600; word-break: break-all; }
         .text-after-pipe { 
             background: rgba(255, 153, 0, 0.15); 
             color: #ff9900; 
@@ -59,6 +60,7 @@
             display: inline-block;
             vertical-align: middle;
         }
+
         .copy-hint-icon { color: #6e678a; font-size: 14px; opacity: 0.5; transition: all 0.2s ease; flex-shrink: 0; margin-left: 8px; }
         .note-row:hover .copy-hint-icon { color: #00ffcc; opacity: 1; transform: scale(1.1); }
         
@@ -81,17 +83,6 @@
             align-items: center; justify-content: center; cursor: pointer; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.4); transition: all 0.2s ease;
         }
         .btn-minimize-server:hover { background: #ff4a4a; color: #fff; box-shadow: 0 0 12px rgba(255, 74, 74, 0.6); transform: translateX(-50%) scale(1.1); }
-
-        .kamera-container { position: relative; width: 100%; max-width: 350px; height: 120px; margin: 15px auto; border: 4px solid #00ff00; border-radius: 12px; overflow: hidden; background-color: #000; box-shadow: 0 5px 15px rgba(0,255,0,0.15); }
-        .kamera-container video { width: 100%; height: 100%; object-fit: cover; }
-        .btn-scanner { padding: 12px 15px; font-size: 15px; margin: 5px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
-        .btn-scan-biru { background-color: #007bff; color: white; }
-        .btn-scan-biru:hover { background-color: #0056b3; }
-        .btn-scan-kuning { background-color: #f0ad4e; color: white; }
-        .btn-scan-kuning:hover { background-color: #ec971f; }
-        .btn-scanner:disabled { background-color: #2c2547 !important; cursor: not-allowed; color: #6e678a; box-shadow: none; }
-        #hasil-scan-input { width: 90%; max-width: 350px; height: 45px; font-size: 22px; font-weight: bold; margin: 15px 0; padding: 10px; text-align: center; letter-spacing: 2px; border: 2px solid #3d3463; border-radius: 8px; background-color: #1a1535; color: #00ffcc; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
-        #status-scanner { color: #aaa; font-weight: bold; margin-bottom: 10px; min-height: 20px; font-size: 13px; }
 
         .header-copas { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .btn-tambah-copas { background: #00ffcc; color: #0f0c1b; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; padding: 4px 8px; }
@@ -117,7 +108,7 @@
 </head>
 <body>
 
-<!-- === 1. MENU SERVERS === -->
+    <!-- === 1. MENU SERVERS (GRID BARIS) === -->
     <div class="wrapper-menu-server" style="position: relative; margin-top: 24px; margin-bottom: 18px; display: flex; width: 100%; gap: 6px;">
         
         <!-- TAMPILAN IP & PING JARINGAN -->
@@ -149,14 +140,16 @@
         </div>
     </div>
     
-<div style="width: 100%; max-width: 900px;">
+    <!-- IFRAME SERVERS DENGAN LOGIKA LAZY LOAD -->
+    <div style="width: 100%; max-width: 900px;">
         <div id="wadahOTP1" class="wadah-iframe-server"><iframe data-src="smsbower.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
         <div id="wadahOTP2" class="wadah-iframe-server"><iframe data-src="smshero.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
         <div id="wadahOTP3" class="wadah-iframe-server"><iframe data-src="otpinstan.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
         <div id="wadahOTP4" class="wadah-iframe-server"><iframe data-src="smscode.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
         <div id="wadahOTP5" class="wadah-iframe-server"><iframe data-src="vaksms.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
         <div id="wadahOTP6" class="wadah-iframe-server"><iframe data-src="vaksms2.html" src="" width="100%" height="680px" style="border: none; display: block;"></iframe></div>
-</div>
+    </div>
+
     <!-- === 2. DATA GENERATOR === -->
     <div class="wrapper-menu-server">
         <div class="server-col">
@@ -172,7 +165,6 @@
             <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
             <div class="btn-group">
                 <button class="btn-primary" id="btn-acak-data" onclick="generateName()"><i class="fa-solid fa-shuffle"></i> Acak &amp; Salin Data</button>
-                <button class="btn-primary" id="btn-username" onclick="generateUsername()"><i class="fa-solid fa-user"></i> NaPaSi</button>
             </div>
             <div class="history-card" style="margin-top: 20px; border: 1px solid #3d3463;">
                 <div class="history-title"><span>RIWAYAT GENERATOR</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()" title="Hapus Riwayat & Reset Batas 24 Jam">Hapus</span></div>
@@ -249,7 +241,7 @@
         </div>
     </div>
 
-    <!-- === 6. MENU SCANNER === -->
+    <!-- === 6. MENU SCANNER (MEMANGGIL DARI GITHUB) === -->
     <div class="wrapper-menu-server">
         <div class="server-col">
             <div class="pemicu-menu-utama" onclick="togglePanel('wadahScanner', 'panahScanner')" style="border-color: #00ff00;">
@@ -260,24 +252,12 @@
     </div>
 
     <div style="width: 100%; max-width: 900px;">
-        <div id="wadahScanner" class="wadah-iframe-server" style="padding: 20px; text-align: center;">
-            <p style="color: #aaa; font-size: 13px; margin-top: 0;">Posisikan nomor di tengah kotak hijau. Hindari garis tepi atau kursor.</p>
-            <div class="kamera-container">
-                <video id="kamera" autoplay playsinline></video>
-            </div>
-            <div id="status-scanner">Kamera standby (Buka menu untuk menyalakan)...</div>
-            <canvas id="canvasScanner" style="display:none;"></canvas>
-            <div>
-                <button id="btn-scan" class="btn-scanner btn-scan-biru">📸 Ambil & Scan</button>
-                <button id="btn-ulangi" class="btn-scanner btn-scan-kuning" style="display:none;">🔄 Ulangi</button>
-            </div>
-            <input type="text" id="hasil-scan-input" placeholder="Hasil scan di sini..." readonly>
-            <br>
-            <button id="btn-copy-scanner" class="btn-scanner btn-scan-biru" disabled>📋 Salin Nomor</button>
+        <div id="wadahScanner" class="wadah-iframe-server">
+            <iframe data-src="scannomor.html" src="" width="100%" height="420px" style="border: none; display: block; padding-top: 10px;"></iframe>
         </div>
     </div>
 
-<!-- === 7. AUTO GENERATE USERNAME === -->
+    <!-- === 7. AUTO GENERATE USERNAME === -->
     <div class="wrapper-menu-server">
         <div class="server-col">
             <div class="pemicu-menu-utama" onclick="togglePanel('wadahGenUser', 'panahGenUser')" style="border-color: #ff9900;">
@@ -292,7 +272,6 @@
             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
                 <input class="form-input" id="hasilGenUser" title="Klik untuk Salin (Tanpa merubah huruf)" style="margin-bottom: 0; flex: 1; border-color: #ff9900; cursor: pointer;" readonly type="text" onclick="eksekusiSalinTeks(this.value).then(() => showToast('Username Disalin! ✨'))" />
                 
-                <!-- Tombol Baru: Acak Huruf Saja -->
                 <button class="btn-primary" style="width: auto; padding: 0 15px; background: #9b59b6; box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);" onclick="acakHurufSaja()" title="Acak Huruf Saja (Angka Tetap)"><i class="fa-solid fa-dice"></i></button>
                 
                 <button class="btn-primary" style="width: auto; padding: 0 15px; border: 1px solid #ff9900;" onclick="eksekusiSalinTeks(document.getElementById('hasilGenUser').value).then(() => showToast('Username Disalin! ✨'))" title="Salin Username"><i class="fa-solid fa-copy"></i></button>
@@ -333,7 +312,32 @@
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
 
     <script>
-function tutupSemuaMenu() {
+        function togglePanel(wadahId, panahId) {
+            const wadah = document.getElementById(wadahId);
+            const panah = document.getElementById(panahId);
+            
+            // LOGIKA SMART LAZY LOAD (Server SMS & Scanner)
+            if (wadahId.startsWith('wadahOTP') || wadahId === 'wadahScanner') {
+                const iframe = wadah.querySelector('iframe');
+                if (iframe && !iframe.getAttribute('src')) {
+                    iframe.setAttribute('src', iframe.getAttribute('data-src'));
+                }
+            }
+
+            if (wadah.style.display === "none" || wadah.style.display === "") {
+                wadah.style.display = "block"; panah.style.transform = "rotate(180deg)";
+            } else {
+                wadah.style.display = "none"; panah.style.transform = "rotate(0deg)";
+                
+                // Khusus Scanner: Matikan kamera sepenuhnya saat menu ditutup
+                if (wadahId === 'wadahScanner') {
+                    const iframe = wadah.querySelector('iframe');
+                    if (iframe) iframe.setAttribute('src', ''); 
+                }
+            }
+        }
+
+        function tutupSemuaMenu() {
             const daftarMenu = [
                 { wadah: 'wadahOTP1', panah: 'panahSrv1' },
                 { wadah: 'wadahOTP2', panah: 'panahSrv2' },
@@ -342,103 +346,29 @@ function tutupSemuaMenu() {
                 { wadah: 'wadahOTP5', panah: 'panahSrv5' },
                 { wadah: 'wadahOTP6', panah: 'panahSrv6' },
                 { wadah: 'wadahDataGen', panah: 'panahDataGen' },
-                { wadah: 'wadahGenUser', panah: 'panahGenUser' },
                 { wadah: 'wadahUtama', panah: 'panahUtama' },
                 { wadah: 'wadahAlarm', panah: 'panahAlarm' },
                 { wadah: 'wadahPublik', panah: 'panahPublik' },
-                { wadah: 'wadahPublik2', panah: 'panahPublik2' },
-                { wadah: 'wadahScanner', panah: 'panahScanner' }
+                { wadah: 'wadahScanner', panah: 'panahScanner' },
+                { wadah: 'wadahGenUser', panah: 'panahGenUser' },
+                { wadah: 'wadahPublik2', panah: 'panahPublik2' }
             ];
 
             daftarMenu.forEach(item => {
                 const w = document.getElementById(item.wadah);
                 const p = document.getElementById(item.panah);
-                if (w && p) { w.style.display = "none"; p.style.transform = "rotate(0deg)"; }
+                if (w && p) { 
+                    w.style.display = "none"; 
+                    p.style.transform = "rotate(0deg)"; 
+                    // Matikan scanner jika sedang terbuka
+                    if (item.wadah === 'wadahScanner') {
+                        const iframe = w.querySelector('iframe');
+                        if (iframe) iframe.setAttribute('src', ''); 
+                    }
+                }
             });
-            stopScannerCamera();
             window.showToast("Semua menu ditutup! 🧹");
-}
-
-function togglePanel(wadahId, panahId) {
-            const wadah = document.getElementById(wadahId);
-            const panah = document.getElementById(panahId);
-            
-            // LOGIKA SMART LAZY LOAD UNTUK SERVER SMS
-            if (wadahId.startsWith('wadahOTP')) {
-                const iframe = wadah.querySelector('iframe');
-                // Jika iframe belum punya link sumber, suntikkan linknya sekarang
-                if (iframe && !iframe.getAttribute('src')) {
-                    iframe.setAttribute('src', iframe.getAttribute('data-src'));
-                }
-            }
-
-            if (wadah.style.display === "none" || wadah.style.display === "") {
-                wadah.style.display = "block"; panah.style.transform = "rotate(180deg)";
-                if (wadahId === 'wadahScanner') startScannerCamera();
-            } else {
-                wadah.style.display = "none"; panah.style.transform = "rotate(0deg)";
-                if (wadahId === 'wadahScanner') stopScannerCamera();
-            }
-}
-
-        const video = document.getElementById('kamera');
-        const canvasScanner = document.getElementById('canvasScanner');
-        const ctxScanner = canvasScanner.getContext('2d');
-        const btnScan = document.getElementById('btn-scan');
-        const btnUlangi = document.getElementById('btn-ulangi');
-        const btnCopyScanner = document.getElementById('btn-copy-scanner');
-        const hasilScanInput = document.getElementById('hasil-scan-input');
-        const statusScanner = document.getElementById('status-scanner');
-        let scannerStream = null;
-
-        function startScannerCamera() {
-            if (scannerStream) return;
-            statusScanner.innerText = "Menyalakan kamera...";
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 }, advanced: [{ focusMode: "continuous" }] } })
-            .then(stream => {
-                scannerStream = stream; video.srcObject = stream;
-                video.onloadedmetadata = () => { statusScanner.innerText = "Siap digunakan."; statusScanner.style.color = "#00ffcc"; };
-            }).catch(err => {
-                statusScanner.innerText = "Error: Akses kamera ditolak/tidak tersedia."; statusScanner.style.color = "#ff4a4a";
-            });
         }
-
-        function stopScannerCamera() {
-            if (scannerStream) {
-                scannerStream.getTracks().forEach(track => track.stop()); scannerStream = null; video.srcObject = null;
-                statusScanner.innerText = "Kamera dimatikan (Standby)."; statusScanner.style.color = "#aaa";
-            }
-        }
-
-        btnScan.addEventListener('click', () => {
-            if(!scannerStream) return;
-            video.pause(); btnScan.style.display = "none"; btnUlangi.style.display = "inline-block"; btnCopyScanner.disabled = true; hasilScanInput.value = "";
-            statusScanner.innerText = "Menajamkan gambar & memindai..."; statusScanner.style.color = "#f0ad4e";
-            const vWidth = video.videoWidth; const vHeight = video.videoHeight; const targetRatio = 350 / 120; const videoRatio = vWidth / vHeight;
-            let cropW, cropH;
-            if (videoRatio > targetRatio) { cropH = vHeight; cropW = vHeight * targetRatio; } else { cropW = vWidth; cropH = vWidth / targetRatio; }
-            const safeW = cropW * 0.8; const safeH = cropH * 0.8; const cropX = ((vWidth - cropW) / 2) + (cropW * 0.1); const cropY = ((vHeight - cropH) / 2) + (cropH * 0.1);
-            canvasScanner.width = safeW; canvasScanner.height = safeH;
-            ctxScanner.filter = 'grayscale(100%) contrast(300%) brightness(120%)';
-            ctxScanner.drawImage(video, cropX, cropY, safeW, safeH, 0, 0, safeW, safeH);
-            const imageData = canvasScanner.toDataURL('image/jpeg', 0.9);
-
-            Tesseract.recognize(imageData, 'eng').then(({ data: { text } }) => {
-                const hanyaAngka = text.replace(/[^0-9]/g, '');
-                if (hanyaAngka) {
-                    hasilScanInput.value = hanyaAngka; statusScanner.innerText = "Selesai! Akurasi telah ditingkatkan.";
-                    statusScanner.style.color = "#00ffcc"; btnCopyScanner.disabled = false;
-                } else {
-                    statusScanner.innerText = "Nomor tidak terdeteksi. Silakan ulangi."; statusScanner.style.color = "#d9534f";
-                }
-            }).catch(err => { statusScanner.innerText = "Gagal memindai gambar."; statusScanner.style.color = "#ff4a4a"; });
-        });
-
-        btnUlangi.addEventListener('click', () => {
-            video.play(); btnScan.style.display = "inline-block"; btnUlangi.style.display = "none"; btnCopyScanner.disabled = true; hasilScanInput.value = "";
-            statusScanner.innerText = "Siap digunakan."; statusScanner.style.color = "#00ffcc";
-        });
-        btnCopyScanner.addEventListener('click', () => { window.eksekusiSalinTeks(hasilScanInput.value).then(() => { window.showToast("Nomor Hasil Scan Disalin! ✨"); }); });
 
         let dataCopasTabel = [];
         function muatDataCopas() { const simpanan = localStorage.getItem("aplikasi_notes_2_tabel"); if (simpanan) { dataCopasTabel = JSON.parse(simpanan); } renderDataCopas(); }
@@ -527,7 +457,7 @@ function togglePanel(wadahId, panahId) {
 
         let DATA_DUMMY_DATABASE = [];
         let DATA_KOTA_JAWA = {}; 
-        const ADMIN_PIN = "0000"; 
+        const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
         let rawNotesLines = [];
 
@@ -764,21 +694,6 @@ function togglePanel(wadahId, panahId) {
                 window.tambahKeRiwayatFirebase(res, item.no_hp);
             }
         };
-        
-        window.generateUsername = function() {
-            let val = document.getElementById('genNameOutput').value;
-            let namaAsli = (!val || val.trim() === "") ? (DATA_DUMMY_DATABASE.length > 0 ? DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)].nama : "user") : val.split(',')[0].trim();
-            let usernameDasar = namaAsli.replace(/\s+/g, '_').toLowerCase();
-            if(usernameDasar === "") usernameDasar = "user";
-            const res = usernameDasar + (Math.floor(Math.random() * 9999) + 10);
-            
-            document.getElementById('genNameOutput').value = res;
-            window.eksekusiSalinTeks(res).then(() => window.showToast("Username Disalin! ✨")); 
-            
-            if(window.tambahKeRiwayatFirebase) {
-                window.tambahKeRiwayatFirebase(res, null);
-            }
-        };
 
         function clearHistory() { 
             if(window.hapusRiwayatFirebase) {
@@ -791,7 +706,7 @@ function togglePanel(wadahId, panahId) {
             setTimeout(() => { t.classList.remove('show'); }, 2000); 
         }
         
-// === LOGIKA AUTO GENERATE USERNAME ===
+        // === LOGIKA AUTO GENERATE USERNAME ===
         let urutanGenUser = parseInt(localStorage.getItem('urutan_gen_user')) || 1;
 
         function generateUserAuto() {
@@ -811,7 +726,6 @@ function togglePanel(wadahId, panahId) {
             document.getElementById('hasilGenUser').value = hasil;
         }
 
-        // Fungsi baru untuk mengacak huruf tanpa merubah memori urutan angka
         window.acakHurufSaja = function() {
             generateUserAuto();
             if(window.showToast) window.showToast("Huruf diacak ulang! 🎲");
@@ -856,9 +770,6 @@ function togglePanel(wadahId, panahId) {
             document.getElementById('inputLinkUser').value = '';
             generateUserAuto();
         }
-    </script>
-</body>
-</html>
     </script>
 </body>
 </html>
