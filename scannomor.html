@@ -3,26 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner & Penyalin Nomor</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f4f4f9; margin: 0; }
-        
-        .kamera-container {
-            position: relative;
-            width: 100%;
-            max-width: 350px;
-            height: 80px; /* Dibuat lebih pipih agar teks lain tidak masuk */
-            margin: 20px auto;
-            border: 4px solid #00ff00; 
-            border-radius: 12px;
-            overflow: hidden;
-            background-color: #000;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; 
+            background: transparent; color: #fff; text-align: center; overflow: hidden;
         }
         
-        video { width: 100%; height: 100%; object-fit: cover; }
-
+        .kamera-container { 
+            position: relative; width: 100%; max-width: 350px; 
+            height: 80px; /* Dibuat pipih sesuai skrip baru */
+            margin: 10px auto; border: 4px solid #00ff00; border-radius: 12px; overflow: hidden; 
+            background-color: #000; box-shadow: 0 5px 15px rgba(0,255,0,0.15); 
+        }
+        .kamera-container video { width: 100%; height: 100%; object-fit: cover; }
+        
         /* Garis bidik merah di tengah scanner */
         .garis-bidik {
             position: absolute;
@@ -36,144 +32,154 @@
             z-index: 10;
         }
 
-        button { padding: 12px 15px; font-size: 15px; margin: 5px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; }
-        .btn-biru { background-color: #007bff; color: white; }
-        .btn-biru:hover { background-color: #0056b3; }
-        .btn-kuning { background-color: #f0ad4e; color: white; }
-        .btn-kuning:hover { background-color: #ec971f; }
-        button:disabled { background-color: #ccc !important; cursor: not-allowed; color: #666; }
+        .btn-scanner { padding: 12px 15px; font-size: 15px; margin: 5px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.3); transition: all 0.3s; }
+        .btn-scan-biru { background-color: #007bff; color: white; }
+        .btn-scan-biru:hover { background-color: #0056b3; }
+        .btn-scan-kuning { background-color: #f0ad4e; color: white; }
+        .btn-scan-kuning:hover { background-color: #ec971f; }
+        .btn-scanner:disabled { background-color: #2c2547 !important; cursor: not-allowed; color: #6e678a; box-shadow: none; }
         
-        #hasil-scan { width: 90%; max-width: 350px; height: 45px; font-size: 22px; font-weight: bold; margin: 15px 0; padding: 10px; text-align: center; letter-spacing: 2px; border: 2px solid #ccc; border-radius: 8px; }
-        #status { color: #555; font-weight: bold; margin-bottom: 10px; min-height: 20px; }
+        #hasil-scan-input { width: 90%; max-width: 350px; height: 45px; font-size: 22px; font-weight: bold; margin: 15px 0; padding: 10px; text-align: center; letter-spacing: 2px; border: 2px solid #3d3463; border-radius: 8px; background-color: #1a1535; color: #00ffcc; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
+        #status-scanner { color: #aaa; font-weight: bold; margin-bottom: 5px; min-height: 20px; font-size: 13px; }
     </style>
 </head>
 <body>
-
-    <h2>Scanner Nomor 📷</h2>
-    <p style="color: #666; font-size: 14px;">Paskan nomor tepat di <b>garis merah</b>.</p>
-
+    <p style="color: #aaa; font-size: 13px; margin-top: 5px; margin-bottom: 5px;">Paskan nomor tepat di <b>garis merah</b>.</p>
+    
     <div class="kamera-container">
         <video id="kamera" autoplay playsinline></video>
         <div class="garis-bidik" id="garis-bidik"></div>
     </div>
     
-    <div id="status">Menyalakan kamera...</div>
-    <canvas id="canvas" style="display:none;"></canvas>
+    <div id="status-scanner">Menyalakan kamera...</div>
+    <canvas id="canvasScanner" style="display:none;"></canvas>
     
     <div>
-        <button id="btn-scan" class="btn-biru">📸 Ambil & Scan</button>
-        <button id="btn-ulangi" class="btn-kuning" style="display:none;">🔄 Ulangi</button>
+        <button id="btn-scan" class="btn-scanner btn-scan-biru">📸 Ambil & Scan</button>
+        <button id="btn-ulangi" class="btn-scanner btn-scan-kuning" style="display:none;">🔄 Ulangi</button>
     </div>
     
-    <input type="text" id="hasil-scan" placeholder="Hasil di sini..." readonly>
+    <input type="text" id="hasil-scan-input" placeholder="Hasil scan di sini..." readonly>
     <br>
-    <button id="btn-copy" class="btn-biru" disabled>📋 Salin Nomor</button>
+    <button id="btn-copy-scanner" class="btn-scanner btn-scan-biru" disabled>📋 Salin Nomor</button>
 
     <script>
         const video = document.getElementById('kamera');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+        const canvasScanner = document.getElementById('canvasScanner');
+        const ctxScanner = canvasScanner.getContext('2d');
         const btnScan = document.getElementById('btn-scan');
         const btnUlangi = document.getElementById('btn-ulangi');
-        const btnCopy = document.getElementById('btn-copy');
-        const hasilScan = document.getElementById('hasil-scan');
-        const statusTeks = document.getElementById('status');
+        const btnCopyScanner = document.getElementById('btn-copy-scanner');
+        const hasilScanInput = document.getElementById('hasil-scan-input');
+        const statusScanner = document.getElementById('status-scanner');
         const garisBidik = document.getElementById('garis-bidik');
+        let scannerStream = null;
 
-        navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 }, advanced: [{ focusMode: "continuous" }] } 
-        }).then(stream => {
-            video.srcObject = stream;
-            video.onloadedmetadata = () => { statusTeks.innerText = "Siap digunakan."; };
-        }).catch(err => {
-            statusTeks.innerText = "Error: Kamera tidak dapat diakses.";
-        });
+        function startScannerCamera() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 }, advanced: [{ focusMode: "continuous" }] } })
+            .then(stream => {
+                scannerStream = stream; 
+                video.srcObject = stream;
+                video.onloadedmetadata = () => { statusScanner.innerText = "Siap digunakan."; statusScanner.style.color = "#00ffcc"; };
+            }).catch(err => {
+                statusScanner.innerText = "Error: Akses kamera ditolak/tidak tersedia."; statusScanner.style.color = "#ff4a4a";
+            });
+        }
+
+        // Otomatis nyalakan kamera saat iframe dimuat
+        startScannerCamera();
 
         btnScan.addEventListener('click', () => {
+            if(!scannerStream) return;
             video.pause(); 
-            garisBidik.style.display = "none"; // Sembunyikan garis saat foto diambil
+            garisBidik.style.display = "none"; // Sembunyikan garis bidik
             
-            btnScan.style.display = "none";
-            btnUlangi.style.display = "inline-block";
-            btnCopy.disabled = true;
-            hasilScan.value = "";
-            statusTeks.innerText = "Mengekstrak nomor pintar...";
-            statusTeks.style.color = "#f0ad4e";
-
-            const vWidth = video.videoWidth;
-            const vHeight = video.videoHeight;
+            btnScan.style.display = "none"; 
+            btnUlangi.style.display = "inline-block"; 
+            btnCopyScanner.disabled = true; 
+            hasilScanInput.value = "";
+            
+            statusScanner.innerText = "Mengekstrak nomor pintar..."; 
+            statusScanner.style.color = "#f0ad4e";
+            
+            const vWidth = video.videoWidth; 
+            const vHeight = video.videoHeight; 
             // Rasio diubah menyesuaikan kotak yang lebih pipih (350x80)
-            const targetRatio = 350 / 80;
+            const targetRatio = 350 / 80; 
             const videoRatio = vWidth / vHeight;
             
             let cropW, cropH;
-            if (videoRatio > targetRatio) {
-                cropH = vHeight;
-                cropW = vHeight * targetRatio;
-            } else {
-                cropW = vWidth;
-                cropH = vWidth / targetRatio;
+            if (videoRatio > targetRatio) { 
+                cropH = vHeight; 
+                cropW = vHeight * targetRatio; 
+            } else { 
+                cropW = vWidth; 
+                cropH = vWidth / targetRatio; 
             }
             
-            const cropX = ((vWidth - cropW) / 2);
+            const cropX = ((vWidth - cropW) / 2); 
             const cropY = ((vHeight - cropH) / 2);
-
-            canvas.width = cropW;
-            canvas.height = cropH;
             
-            ctx.filter = 'grayscale(100%) contrast(250%) brightness(110%)';
-            ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+            canvasScanner.width = cropW; 
+            canvasScanner.height = cropH;
             
-            const imageData = canvas.toDataURL('image/jpeg', 0.9);
+            ctxScanner.filter = 'grayscale(100%) contrast(250%) brightness(110%)';
+            ctxScanner.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+            const imageData = canvasScanner.toDataURL('image/jpeg', 0.9);
 
-            Tesseract.recognize(imageData, 'eng')
-            .then(({ data: { text } }) => {
-                // LOGIKA PINTAR BARU:
+            Tesseract.recognize(imageData, 'eng').then(({ data: { text } }) => {
+                
+                // LOGIKA PINTAR BARU DARI SKRIP ANDA:
                 // Cari deretan angka (boleh ada spasi/strip) minimal 6 digit
                 const regexDeretanAngka = /(?:\d[ \-]*){6,}/g;
                 const temuan = text.match(regexDeretanAngka);
 
                 if (temuan && temuan.length > 0) {
-                    // Jika menemukan kumpulan angka, pilih deretan yang paling panjang
-                    // (Nomor rekening/VA pasti yang paling panjang dibanding teks acak)
+                    // Pilih deretan angka yang paling panjang (mengabaikan teks acak lain)
                     let angkaTerpanjang = temuan.reduce((a, b) => a.length > b.length ? a : b);
-                    
-                    // Hilangkan spasinya
+                    // Bersihkan dari spasi/strip sehingga murni angka
                     const hasilBersih = angkaTerpanjang.replace(/[^0-9]/g, '');
 
-                    hasilScan.value = hasilBersih;
-                    statusTeks.innerText = "Berhasil! Teks acak diabaikan.";
-                    statusTeks.style.color = "#5cb85c";
-                    btnCopy.disabled = false;
+                    hasilScanInput.value = hasilBersih; 
+                    statusScanner.innerText = "Berhasil! Teks acak diabaikan.";
+                    statusScanner.style.color = "#00ffcc"; 
+                    btnCopyScanner.disabled = false;
                 } else {
-                    statusTeks.innerText = "Nomor tidak terdeteksi. Silakan ulangi.";
-                    statusTeks.style.color = "#d9534f";
+                    statusScanner.innerText = "Nomor tidak terdeteksi. Silakan ulangi."; 
+                    statusScanner.style.color = "#ff4a4a";
                 }
-            }).catch(err => {
-                statusTeks.innerText = "Gagal memindai.";
-                statusTeks.style.color = "#d9534f";
+            }).catch(err => { 
+                statusScanner.innerText = "Gagal memindai gambar."; 
+                statusScanner.style.color = "#ff4a4a"; 
             });
         });
 
         btnUlangi.addEventListener('click', () => {
-            video.play();
-            garisBidik.style.display = "block";
-            btnScan.style.display = "inline-block";
-            btnUlangi.style.display = "none";
-            btnCopy.disabled = true;
-            hasilScan.value = "";
-            statusTeks.innerText = "Siap digunakan.";
-            statusTeks.style.color = "#555";
+            video.play(); 
+            garisBidik.style.display = "block"; // Tampilkan kembali garis bidik
+            btnScan.style.display = "inline-block"; 
+            btnUlangi.style.display = "none"; 
+            btnCopyScanner.disabled = true; 
+            hasilScanInput.value = "";
+            statusScanner.innerText = "Siap digunakan."; 
+            statusScanner.style.color = "#00ffcc";
         });
 
-        btnCopy.addEventListener('click', () => {
-            hasilScan.select();
-            hasilScan.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(hasilScan.value).then(() => {
-                alert("Berhasil disalin: " + hasilScan.value);
-            });
+        btnCopyScanner.addEventListener('click', () => { 
+            if (navigator.clipboard && window.isSecureContext) { 
+                navigator.clipboard.writeText(hasilScanInput.value);
+            } else {
+                const textArea = document.createElement("textarea"); textArea.value = hasilScanInput.value;
+                textArea.style.position = "fixed"; textArea.style.left = "-999999px"; document.body.appendChild(textArea); textArea.focus(); textArea.select();
+                try { document.execCommand('copy'); } catch (err) {}
+                document.body.removeChild(textArea);
+            }
+            
+            // Menyambungkan tombol salin dengan notifikasi panel utama
+            if(window.parent && window.parent.showToast) {
+                window.parent.showToast("Nomor Hasil Scan Disalin! ✨");
+            }
         });
     </script>
 </body>
 </html>
-
