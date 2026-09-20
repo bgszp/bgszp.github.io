@@ -163,9 +163,10 @@
     <div style="width: 100%; max-width: 900px;">
         <div id="wadahDataGen" class="wadah-iframe-server" style="padding: 20px;">
             <input class="form-input" id="genNameOutput" placeholder="Data akan muncul di sini" readonly type="text" />
-            <div class="btn-group">
+<div class="btn-group">
                 <button class="btn-primary" id="btn-acak-data" onclick="generateName()"><i class="fa-solid fa-shuffle"></i> Acak &amp; Salin Data</button>
-            </div>
+                <button class="btn-primary" id="btn-username" onclick="generateUsername()"><i class="fa-solid fa-user"></i> NaPaSi</button>
+</div>
             <div class="history-card" style="margin-top: 20px; border: 1px solid #3d3463;">
                 <div class="history-title"><span>RIWAYAT GENERATOR</span><span style="cursor:pointer;color:#ff4a4a;" onclick="clearHistory()" title="Hapus Riwayat & Reset Batas 24 Jam">Hapus</span></div>
                 <div id="historyList"></div>
