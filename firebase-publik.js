@@ -142,7 +142,7 @@ onValue(refRiwayat, (snapshot) => {
     if (!data) return;
 
     const sekarang = Date.now();
-    const WAKTU_COOLDOWN = 24 * 60 * 60 * 1000; 
+    const WAKTU_COOLDOWN = 48 * 60 * 60 * 1000; // Menjadi 2 hari (48 Jam)
     
     const keys = Object.keys(data).reverse();
 
