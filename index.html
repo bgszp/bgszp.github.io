@@ -706,6 +706,23 @@
             const t = document.getElementById('toastNotif'); t.innerText = m; t.classList.add('show'); 
             setTimeout(() => { t.classList.remove('show'); }, 2000); 
         }
+
+        window.generateUsername = function() {
+            let val = document.getElementById('genNameOutput').value;
+            let namaAsli = (!val || val.trim() === "") ? (DATA_DUMMY_DATABASE.length > 0 ? DATA_DUMMY_DATABASE[Math.floor(Math.random() * DATA_DUMMY_DATABASE.length)].nama : "user") : val.split(',')[0].trim();
+            let usernameDasar = namaAsli.replace(/\s+/g, '_').toLowerCase();
+            if(usernameDasar === "") usernameDasar = "user";
+            
+            // Membuat username dasar + angka acak
+            const res = usernameDasar + (Math.floor(Math.random() * 9999) + 10);
+            
+            document.getElementById('genNameOutput').value = res;
+            window.eksekusiSalinTeks(res).then(() => window.showToast("Username Disalin! ✨")); 
+            
+            if(window.tambahKeRiwayatFirebase) {
+                window.tambahKeRiwayatFirebase(res, null);
+            }
+        };
         
         // === LOGIKA AUTO GENERATE USERNAME ===
         let urutanGenUser = parseInt(localStorage.getItem('urutan_gen_user')) || 1;
