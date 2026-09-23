@@ -112,7 +112,7 @@
     <div class="wrapper-menu-server" style="position: relative; margin-top: 24px; margin-bottom: 18px; display: flex; width: 100%; gap: 6px;">
         
         <!-- TAMPILAN IP & PING JARINGAN -->
-        <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Shopee / Ipify)" style="position: absolute; right: 0; top: -22px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
+        <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Google / Ipify)" style="position: absolute; right: 0; top: -22px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
             <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
         </div>
 
@@ -435,9 +435,10 @@
                     labelTarget = "Ipify";
                 } else {
                     const startWaktu = performance.now();
-                    await fetch('https://shopee.co.id/favicon.ico?t=' + Date.now(), { mode: 'no-cors' });
+                    // Menggunakan server Google (Sangat ringan, hemat kuota, dan 100% aman dari blokir)
+                    await fetch('https://clients3.google.com/generate_204?t=' + Date.now(), { mode: 'no-cors' });
                     ping = Math.round(performance.now() - startWaktu);
-                    labelTarget = "Sho";
+                    labelTarget = "Ggl";
                 }
                 let warnaPing = "#00ffcc"; 
                 if (ping > 150) warnaPing = "#f0ad4e"; 
