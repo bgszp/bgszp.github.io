@@ -459,6 +459,8 @@
 
         let DATA_DUMMY_DATABASE = [];
         let DATA_KOTA_JAWA = {}; 
+        let DAFTAR_ALAMAT_FLAT = [];
+        let INDEKS_ALAMAT_TERSEDIA = [];
         const ADMIN_PIN = "1234"; 
         let isAdminAuthenticated = false;
         let rawNotesLines = [];
@@ -470,7 +472,10 @@
 
             fetch(`./kota_pulau_jawa.json?t=${Date.now()}`)
                 .then(r => r.ok?r.json():{})
-                .then(d => { DATA_KOTA_JAWA = d; })
+                .then(d => { 
+                    DATA_KOTA_JAWA = d; 
+                    siapkanDataAlamat(); // Panggil sistem antrean alamat
+                })
                 .catch(err => console.log("Gagal memuat kota_pulau_jawa.json"));
 
             muatDataCopas();
@@ -645,23 +650,68 @@
             }
         }
 
+        function siapkanDataAlamat() {
+            DAFTAR_ALAMAT_FLAT = [];
+            // Bongkar seluruh file JSON menjadi satu daftar panjang
+            for (const prov in DATA_KOTA_JAWA) {
+                for (const kab in DATA_KOTA_JAWA[prov]) {
+                    for (const kec in DATA_KOTA_JAWA[prov][kab]) {
+                        for (const kel in DATA_KOTA_JAWA[prov][kab][kec]) {
+                            const kodePos = DATA_KOTA_JAWA[prov][kab][kec][kel];
+                            let formatKab = kab;
+                            if(kab.includes(", Kota")) formatKab = "Kota " + kab.replace(", Kota", "");
+                            if(kab.includes(", Kabupaten")) formatKab = "Kab. " + kab.replace(", Kabupaten", "");
+                            
+                            DAFTAR_ALAMAT_FLAT.push(`Kel. ${kel}, Kec. ${kec}, ${formatKab}, ${prov} ${kodePos}`);
+                        }
+                    }
+                }
+            }
+            window.sinkronkanAlamat();
+        }
+
+        // Fungsi ini akan otomatis dipanggil oleh Firebase setiap kali ada data baru
+        window.sinkronkanAlamat = function() {
+            if (DAFTAR_ALAMAT_FLAT.length === 0) return;
+            
+            INDEKS_ALAMAT_TERSEDIA = [];
+            // Saring alamat: Hanya masukkan yang TIDAK ADA di Firebase
+            for(let i = 0; i < DAFTAR_ALAMAT_FLAT.length; i++) {
+                if(!window.ALAMAT_TERPAKAI_GLOBAL || !window.ALAMAT_TERPAKAI_GLOBAL[i]) {
+                    INDEKS_ALAMAT_TERSEDIA.push(i);
+                }
+            }
+
+            // Jika daftar sisa kosong (semua alamat habis dipakai), perintahkan Firebase untuk Reset!
+            if(INDEKS_ALAMAT_TERSEDIA.length === 0 && Object.keys(window.ALAMAT_TERPAKAI_GLOBAL || {}).length > 0) {
+                if(window.resetAlamatFirebase) {
+                    window.resetAlamatFirebase();
+                    if(window.showToast) window.showToast("Seluruh alamat di Cloud habis. Siklus direset ulang! 🔄");
+                }
+            }
+        };
+
         function dapatkanAlamatAcak() {
-            if (Object.keys(DATA_KOTA_JAWA).length === 0) return "Alamat Tidak Tersedia";
-            const listProvinsi = Object.keys(DATA_KOTA_JAWA);
-            const prov = listProvinsi[Math.floor(Math.random() * listProvinsi.length)];
-            const listKabupaten = Object.keys(DATA_KOTA_JAWA[prov]);
-            const kab = listKabupaten[Math.floor(Math.random() * listKabupaten.length)];
-            const listKecamatan = Object.keys(DATA_KOTA_JAWA[prov][kab]);
-            const kec = listKecamatan[Math.floor(Math.random() * listKecamatan.length)];
-            const listKelurahan = Object.keys(DATA_KOTA_JAWA[prov][kab][kec]);
-            const kel = listKelurahan[Math.floor(Math.random() * listKelurahan.length)];
-            const kodePos = DATA_KOTA_JAWA[prov][kab][kec][kel];
+            if (DAFTAR_ALAMAT_FLAT.length === 0) return "Alamat Tidak Tersedia";
             
-            let formatKab = kab;
-            if(kab.includes(", Kota")) formatKab = "Kota " + kab.replace(", Kota", "");
-            if(kab.includes(", Kabupaten")) formatKab = "Kab. " + kab.replace(", Kabupaten", "");
+            // Jaga-jaga jika sinkronisasi telat, gunakan acak biasa
+            if (INDEKS_ALAMAT_TERSEDIA.length === 0) {
+                return DAFTAR_ALAMAT_FLAT[Math.floor(Math.random() * DAFTAR_ALAMAT_FLAT.length)];
+            }
+
+            // Ambil indeks secara acak dari SISA daftar yang tersedia
+            const acakIndeks = Math.floor(Math.random() * INDEKS_ALAMAT_TERSEDIA.length);
+            const nomorAsliAlamat = INDEKS_ALAMAT_TERSEDIA[acakIndeks];
             
-            return `Kel. ${kel}, Kec. ${kec}, ${formatKab}, ${prov} ${kodePos}`;
+            // Coret sementara dari lokal agar perangkat ini tidak memakai data ganda sebelum merespon Firebase
+            INDEKS_ALAMAT_TERSEDIA.splice(acakIndeks, 1);
+            
+            // Tembakkan data ke Firebase agar HP lain tahu alamat ini sudah dipakai
+            if (window.simpanAlamatTerpakai) {
+                window.simpanAlamatTerpakai(nomorAsliAlamat);
+            }
+
+            return DAFTAR_ALAMAT_FLAT[nomorAsliAlamat];
         }
 
         function dapatkanDataTersedia() {
