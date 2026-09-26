@@ -127,7 +127,7 @@ window.simpanCatatanUtamaKeFirebase = function(teksUtama) {
     });
 };
 
-// === 3. LOGIKA RIWAYAT GENERATOR & COOLDOWN 24 JAM (GLOBAL) ===
+// === 3. LOGIKA RIWAYAT GENERATOR & COOLDOWN (GLOBAL) ===
 window.DATA_TERPAKAI_FIREBASE = {};
 
 const refRiwayat = ref(db, 'riwayat_generator');
@@ -142,7 +142,7 @@ onValue(refRiwayat, (snapshot) => {
     if (!data) return;
 
     const sekarang = Date.now();
-    const WAKTU_COOLDOWN = 48 * 60 * 60 * 1000; // Menjadi 2 hari (48 Jam)
+    const WAKTU_COOLDOWN = 48 * 60 * 60 * 1000; // Cooldown 2 hari (48 Jam)
     
     const keys = Object.keys(data).reverse();
 
@@ -180,7 +180,7 @@ window.tambahKeRiwayatFirebase = function(teks, no_hp) {
 
 window.hapusRiwayatFirebase = function() {
     remove(ref(db, 'riwayat_generator')).then(() => {
-        if(window.showToast) window.showToast("Riwayat & Batas 24 Jam Global Direset! 🔄");
+        if(window.showToast) window.showToast("Riwayat & Batas Waktu Global Direset! 🔄");
     });
 };
 
@@ -278,3 +278,26 @@ onValue(dbRefPublik2, (snapshot) => {
         wadah.appendChild(row);
     });
 });
+
+// === 5. LOGIKA SINKRONISASI ALAMAT GLOBAL ===
+window.ALAMAT_TERPAKAI_GLOBAL = {};
+
+// Memantau alamat mana saja yang sudah dipakai dari server
+const alamatRef = ref(db, 'alamat_terpakai');
+onValue(alamatRef, (snapshot) => {
+    window.ALAMAT_TERPAKAI_GLOBAL = snapshot.val() || {};
+    // Picu pembaruan daftar di index.html setiap kali ada perangkat lain memakai alamat
+    if (typeof window.sinkronkanAlamat === "function") {
+        window.sinkronkanAlamat();
+    }
+});
+
+// Fungsi untuk mengirim indeks alamat yang baru dipakai ke server
+window.simpanAlamatTerpakai = function(indeks) {
+    set(ref(db, 'alamat_terpakai/' + indeks), true);
+};
+
+// Fungsi untuk mereset seluruh alamat di server jika sudah habis
+window.resetAlamatFirebase = function() {
+    remove(ref(db, 'alamat_terpakai'));
+};
