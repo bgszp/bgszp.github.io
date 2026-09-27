@@ -140,7 +140,7 @@
     <script>
         let daftarOrderan = []; 
         let daftarServerTersedia = [];
-        let produkTerpilihArray = []; // MENDUKUNG MULTI-SELECT TIER
+        let produkTerpilihArray = []; 
         let shopeePlatformId = null; 
         let siklusCek = 0;
 
@@ -214,7 +214,6 @@
                     pindah = true;
                 }
             });
-            
             if (pindah) { renderUILayout(); simpanDaftarOrderanKeLokal(); }
             refreshSemuaDataLive();
             showToast("Dibersihkan & Katalog Diperbarui!");
@@ -246,7 +245,6 @@
                         dropdownOp.appendChild(opt);
                     });
                 }
-                
                 await muatProdukShopee(false);
             } catch (e) {
                 printLog(`⚠️ Error Inisialisasi: ${e.message}`);
@@ -263,6 +261,14 @@
                 let queryUrl = `catalog/products?country_id=7&platform_id=${shopeePlatformId}&limit=100`;
                 if (opIdRaw && opIdRaw !== "null") queryUrl += `&operator_id=${opIdRaw}`;
 
+                // PERBAIKAN MEMORI: Simpan ID yang sedang dicentang sebelum data ditimpa
+                // Jika autoOpen bernilai true (user mengganti operator), maka reset centangan.
+                // Jika autoOpen bernilai false (refresh data/saldo), maka ingat centangan sebelumnya.
+                let idYangSudahDicentang = [];
+                if (!autoOpen) {
+                    idYangSudahDicentang = produkTerpilihArray.map(p => p.id);
+                }
+
                 const resProd = await apiSMSCode(queryUrl, 'GET');
                 let arrData = resProd.data;
                 if (!arrData || arrData.length === 0) throw new Error("Stok tier harga kosong.");
@@ -275,15 +281,33 @@
                 }));
 
                 produkTerpilihArray = [];
+                let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
+
                 if (daftarServerTersedia.length > 0) { 
-                    // Auto-select pilihan termurah pertama kali dimuat
-                    let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
-                    let firstSrv = daftarServerTersedia[0];
-                    produkTerpilihArray.push({
-                        id: firstSrv.id,
-                        price: firstSrv.price,
-                        name: `Shopee ${opText} (Rp ${firstSrv.price.toLocaleString('id-ID')})`
-                    });
+                    
+                    // Coba masukkan kembali item yang sebelumnya dicentang (jika masih tersedia)
+                    if (!autoOpen && idYangSudahDicentang.length > 0) {
+                        daftarServerTersedia.forEach(srv => {
+                            if (idYangSudahDicentang.includes(srv.id)) {
+                                produkTerpilihArray.push({
+                                    id: srv.id,
+                                    price: srv.price,
+                                    name: `Shopee ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`
+                                });
+                            }
+                        });
+                    }
+
+                    // Jika memori kosong (karena ganti operator) atau tier lama sudah habis stoknya
+                    // Auto-select pilihan termurah pertama kali
+                    if (produkTerpilihArray.length === 0) {
+                        let firstSrv = daftarServerTersedia[0];
+                        produkTerpilihArray.push({
+                            id: firstSrv.id,
+                            price: firstSrv.price,
+                            name: `Shopee ${opText} (Rp ${firstSrv.price.toLocaleString('id-ID')})`
+                        });
+                    }
                     
                     perbaruiLabelTerpilih();
                     renderDropdownOptions();
@@ -310,13 +334,10 @@
             const srv = daftarServerTersedia[index];
             if(!srv) return;
             
-            // Cek apakah item sudah dicentang
             const existingIndex = produkTerpilihArray.findIndex(p => p.id === srv.id);
             if (existingIndex > -1) {
-                // Jika sudah ada, hapus dari array (uncheck)
                 produkTerpilihArray.splice(existingIndex, 1);
             } else {
-                // Jika belum ada, tambahkan ke array (check)
                 let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
                 produkTerpilihArray.push({
                     id: srv.id,
@@ -325,12 +346,9 @@
                 });
             }
             
-            // Urutkan kembali berdasarkan harga termurah
             produkTerpilihArray.sort((a, b) => a.price - b.price);
-
             perbaruiLabelTerpilih();
             renderDropdownOptions();
-            // JANGAN TUTUP DROPDOWN agar user bisa centang beberapa opsi sekaligus
         }
 
         function perbaruiLabelTerpilih() {
@@ -359,7 +377,6 @@
                 let isChecked = produkTerpilihArray.some(p => p.id === srv.id);
                 let isSelectedClass = isChecked ? "selected" : "";
                 
-                // MENGGUNAKAN FLEX 1 UNTUK MEMBAGI 3 BAGIAN RATA (Checkbox di tengah)
                 html += `
                 <div class="dropdown-item-row ${isSelectedClass}" onclick="toggleServerSelection(${index})" style="display:flex; justify-content:space-between; align-items:center;">
                     <span style="flex: 1; text-align: left;">Stok: <span style="color:var(--text-sub); font-size:11px;">(${srv.stock})</span></span>
@@ -385,7 +402,6 @@
 
             let berhasil = false;
 
-            // LOOP AUTO-FALLBACK: Coba beli dari harga termurah, jika gagal, coba harga cadangan berikutnya
             for (let i = 0; i < produkTerpilihArray.length; i++) {
                 let prod = produkTerpilihArray[i];
                 try {
@@ -399,11 +415,10 @@
                         printLog(`🎉 Nomor didapat: ${createdOrder.phone_number}`); 
                         ambilSaldoLive();
                         berhasil = true;
-                        break; // Hentikan perulangan jika sudah sukses dapat 1 nomor
+                        break; 
                     }
                 } catch (e) {
                     printLog(`⚠️ Tier Rp ${prod.price.toLocaleString('id-ID')} Gagal/Kosong.`);
-                    // Lanjut ke perulangan berikutnya jika masih ada tier cadangan
                 }
             }
 
@@ -574,10 +589,9 @@
                 let sisa = Math.max(0, batasWaktu - sec); 
                 let cool = Math.max(0, 120 - sec); 
                 
-                let textStat = `⚡ Cek OTP... (${sec}s / ${batasWaktu}s)`; 
-                let colStat = "#ffb86c"; 
-                let kotakOtp = ""; 
-                let btnAksi = "";
+                let textStat = countAktif === 1 ? `⚡ Cek OTP... (${sec}s / ${batasWaktu}s)` : `⏸️ Antri... (${sec}s / ${batasWaktu}s)`; 
+                let colStat = countAktif === 1 ? "#ffb86c" : "#6272a4"; 
+                let kotakOtp = ""; let btnAksi = "";
 
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`;
                 let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
@@ -630,6 +644,7 @@
             if (flagSimpan) simpanDaftarOrderanKeLokal();
         }
 
+        // --- FUNGSI PEMBANTU (HELPERS) ---
         function simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_srv2_shopee", JSON.stringify(daftarOrderan)); }
         function hapusSemuaRiwayatBawah() { daftarOrderan = daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); renderUILayout(); simpanDaftarOrderanKeLokal(); showToast("Riwayat Selesai Dibersihkan!"); }
         function mesinWaktuTerpusat() { if (daftarOrderan.some(i => i.status === "pending")) renderUILayout(); }
@@ -645,23 +660,25 @@
                 let time = audioCtx.currentTime; 
                 
                 for (let r = 0; r < 2; r++) { 
+                    // Nada Dasar (Pemisahan Stereo Kiri & Kanan Ekstrem)
                     const oscL = audioCtx.createOscillator();
                     const gainL = audioCtx.createGain();
                     oscL.type = "square";
-                    oscL.frequency.setValueAtTime(987.77, time); 
+                    oscL.frequency.setValueAtTime(987.77, time); // B5 (kiri)
                     gainL.gain.setValueAtTime(0.3, time);
                     gainL.gain.setTargetAtTime(0, time + 0.1, 0.1);
 
                     const oscR = audioCtx.createOscillator();
                     const gainR = audioCtx.createGain();
                     oscR.type = "square";
-                    oscR.frequency.setValueAtTime(991.00, time); 
+                    oscR.frequency.setValueAtTime(991.00, time); // B5 Sedikit dinaikkan (kanan)
                     gainR.gain.setValueAtTime(0.3, time);
                     gainR.gain.setTargetAtTime(0, time + 0.1, 0.1);
 
+                    // Terapkan Efek Stereo (Jika Peramban Mendukung)
                     if (audioCtx.createStereoPanner) {
-                        const panL = audioCtx.createStereoPanner(); panL.pan.value = -1; 
-                        const panR = audioCtx.createStereoPanner(); panR.pan.value = 1;  
+                        const panL = audioCtx.createStereoPanner(); panL.pan.value = -1; // Full Kiri
+                        const panR = audioCtx.createStereoPanner(); panR.pan.value = 1;  // Full Kanan
                         oscL.connect(gainL).connect(panL).connect(audioCtx.destination);
                         oscR.connect(gainR).connect(panR).connect(audioCtx.destination);
                     } else {
@@ -672,7 +689,8 @@
                     oscL.start(time); oscL.stop(time + 0.3);
                     oscR.start(time); oscR.stop(time + 0.3);
 
-                    const arpFreq = [1318.51, 1567.98, 1975.53]; 
+                    // Melodi Arpeggio Cepat (Di Tengah)
+                    const arpFreq = [1318.51, 1567.98, 1975.53]; // E6, G6, B6
                     arpFreq.forEach((f, idx) => {
                         const oscM = audioCtx.createOscillator();
                         const gainM = audioCtx.createGain();
@@ -689,9 +707,11 @@
                         oscM.stop(tOffset + 0.2);
                     });
 
-                    time += 0.45; 
+                    time += 0.45; // Jeda sebelum mengulang lagi
                 } 
-            } catch (e) { console.log(e); }
+            } catch (e) { 
+                console.log(e); 
+            }
         }
 
         function munculkanPopupNative(nomor, otp, layanan) {
