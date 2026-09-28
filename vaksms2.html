@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Sistem Auto-Bypass CORS Error Aktif.<br>
-            └> Proxy Jalur Belakang Diaktifkan untuk Aplikasi WebView.
+            └> Sistem Multi-Proxy Fallback (Anti-Blokir WebView) Diaktifkan.<br>
+            └> Mampu Menembus Proteksi Cloudflare Berlapis.
         </div>
     </div>
     
@@ -174,36 +174,45 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
-        // --- SISTEM AUTO-BYPASS CORS & CLOUDFLARE UNTUK APLIKASI WEBVIEW ---
+        // --- SISTEM MULTI-PROXY AUTO FALLBACK ---
         async function apiVakSmsV2(endpoint, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
             
-            // Format URL standar yang dikembalikan
-            let targetUrl = `https://vak-sms.com/api/${endpoint}/?apiKey=${token.trim()}`;
+            let targetUrl = `https://vak-sms.com/api/${endpoint}?apiKey=${token.trim()}`;
             for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
             targetUrl += `&nocache=${Date.now()}`;
             
             let dataText = "";
-            try {
-                // Percobaan Tembakan Utama
-                const res = await fetch(targetUrl);
-                dataText = await res.text();
-                
-                // Jika Vak-SMS merespons dengan halaman HTML (Tanda ditilang Cloudflare)
-                if (dataText.includes("<html") && (dataText.toLowerCase().includes("cloudflare") || dataText.includes("Just a moment"))) {
-                    throw new Error("Cloudflare Block");
-                }
-            } catch (e) { 
-                // Jika terjadi FAILED TO FETCH (CORS WebView) atau DITILANG CLOUDFLARE
-                // Skrip otomatis berpindah ke jalur belakang (Proxy AllOrigins)
+            let success = false;
+            
+            // Daftar URL yang akan dicoba berurutan jika diblokir
+            let proxyList = [
+                targetUrl, // Tembakan langsung (Normal)
+                'https://corsproxy.io/?' + encodeURIComponent(targetUrl), // Proxy 1
+                'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(targetUrl) // Proxy 2
+            ];
+
+            for (let url of proxyList) {
                 try {
-                    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
-                    const resProxy = await fetch(proxyUrl);
-                    dataText = await resProxy.text();
-                } catch (errProxy) {
-                    throw new Error("Koneksi diblokir server. Pastikan internet stabil.");
+                    const res = await fetch(url);
+                    const text = await res.text();
+                    
+                    // Cek proteksi halaman Cloudflare
+                    if (text.includes("<html") && (text.toLowerCase().includes("cloudflare") || text.includes("Just a moment"))) {
+                        throw new Error("Cloudflare Block"); // Lempar ke blok catch untuk coba proxy berikutnya
+                    }
+                    
+                    dataText = text;
+                    success = true;
+                    break; // Berhasil tembus, hentikan pencarian proxy
+                } catch (e) {
+                    // Gagal, loop akan berlanjut ke proxy berikutnya
                 }
+            }
+
+            if (!success) {
+                throw new Error("Koneksi diblokir server. Pastikan internet stabil.");
             }
 
             try { 
@@ -232,7 +241,6 @@
             if (orderanLokal) { vak_daftarOrderan = JSON.parse(orderanLokal); vak_renderUILayout(); }
 
             setInterval(window.vak_mesinWaktuTerpusat, 1000);
-            // Tetap di angka 5 detik agar server mereka tidak marah lagi
             setInterval(window.vak_mesinCekSmsTerpusat, 5000); 
             setInterval(window.vak_updateKursLive, 3600000); 
         });
