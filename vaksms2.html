@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Sistem Multi-Proxy Fallback (Anti-Blokir WebView) Diaktifkan.<br>
-            └> Mampu Menembus Proteksi Cloudflare Berlapis.
+            └> Proxy corsproxy.io (keyless_legacy) Dihapus.<br>
+            └> Multi-Proxy AllOrigins & CodeTabs Stabil.
         </div>
     </div>
     
@@ -174,7 +174,7 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
-        // --- SISTEM MULTI-PROXY AUTO FALLBACK ---
+        // --- SISTEM MULTI-PROXY AUTO FALLBACK (UPDATE) ---
         async function apiVakSmsV2(endpoint, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
@@ -186,10 +186,11 @@
             let dataText = "";
             let success = false;
             
-            // Daftar URL yang akan dicoba berurutan jika diblokir
+            // HAPUS corsproxy.io karena menyebabkan error keyless_legacy_url
+            // Fokus menggunakan proxy yang murni mengembalikan data raw JSON
             let proxyList = [
-                targetUrl, // Tembakan langsung (Normal)
-                'https://corsproxy.io/?' + encodeURIComponent(targetUrl), // Proxy 1
+                targetUrl, // Jalur utama
+                'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl), // Proxy 1
                 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(targetUrl) // Proxy 2
             ];
 
@@ -198,16 +199,19 @@
                     const res = await fetch(url);
                     const text = await res.text();
                     
-                    // Cek proteksi halaman Cloudflare
+                    // Cek jika halaman diblokir Cloudflare atau proxy mengembalikan error HTML/Teks palsu
                     if (text.includes("<html") && (text.toLowerCase().includes("cloudflare") || text.includes("Just a moment"))) {
-                        throw new Error("Cloudflare Block"); // Lempar ke blok catch untuk coba proxy berikutnya
+                        throw new Error("Cloudflare Block"); 
+                    }
+                    if (text.includes("keyless_legacy_url") || text.includes("Missing target URL") || text.includes("Proxy Error")) {
+                        throw new Error("Proxy Invalid");
                     }
                     
                     dataText = text;
                     success = true;
-                    break; // Berhasil tembus, hentikan pencarian proxy
+                    break; 
                 } catch (e) {
-                    // Gagal, loop akan berlanjut ke proxy berikutnya
+                    // Loop berlanjut diam-diam ke proxy cadangan berikutnya
                 }
             }
 
