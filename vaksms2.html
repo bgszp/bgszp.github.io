@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Perbaikan Trailing Slash di Mesin API.<br>
-            └> Sistem Auto-Bypass CORS Error.
+            └> Sistem Auto-Bypass CORS Error Aktif.<br>
+            └> Proxy Jalur Belakang Diaktifkan untuk Aplikasi WebView.
         </div>
     </div>
     
@@ -174,33 +174,47 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
+        // --- SISTEM AUTO-BYPASS CORS & CLOUDFLARE UNTUK APLIKASI WEBVIEW ---
         async function apiVakSmsV2(endpoint, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
             
-            // PERBAIKAN FATAL: Menghapus garis miring (/) untuk mencegah Error "Failed to fetch" akibat CORS Redirect
-            let targetUrl = `https://vak-sms.com/api/${endpoint}?apiKey=${token.trim()}`;
+            // Format URL standar yang dikembalikan
+            let targetUrl = `https://vak-sms.com/api/${endpoint}/?apiKey=${token.trim()}`;
             for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
             targetUrl += `&nocache=${Date.now()}`;
             
+            let dataText = "";
             try {
+                // Percobaan Tembakan Utama
                 const res = await fetch(targetUrl);
-                const dataText = await res.text();
-                try { 
-                    let parsedData = JSON.parse(dataText);
-                    if (parsedData.error) throw new Error(parsedData.error);
-                    return { isJson: true, data: parsedData, raw: dataText }; 
-                } catch(e) { 
-                    if (e.message.includes("Unexpected") || !e.message) {
-                        return { isJson: false, raw: dataText }; 
-                    }
-                    throw new Error(e.message);
+                dataText = await res.text();
+                
+                // Jika Vak-SMS merespons dengan halaman HTML (Tanda ditilang Cloudflare)
+                if (dataText.includes("<html") && (dataText.toLowerCase().includes("cloudflare") || dataText.includes("Just a moment"))) {
+                    throw new Error("Cloudflare Block");
                 }
             } catch (e) { 
-                if (e.message.includes("Failed to fetch")) {
-                    throw new Error("Koneksi diblokir server / Jaringan terputus.");
+                // Jika terjadi FAILED TO FETCH (CORS WebView) atau DITILANG CLOUDFLARE
+                // Skrip otomatis berpindah ke jalur belakang (Proxy AllOrigins)
+                try {
+                    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+                    const resProxy = await fetch(proxyUrl);
+                    dataText = await resProxy.text();
+                } catch (errProxy) {
+                    throw new Error("Koneksi diblokir server. Pastikan internet stabil.");
                 }
-                throw new Error(e.message || "Ditolak Peramban / Koneksi."); 
+            }
+
+            try { 
+                let parsedData = JSON.parse(dataText);
+                if (parsedData.error) throw new Error(parsedData.error);
+                return { isJson: true, data: parsedData, raw: dataText }; 
+            } catch(e) { 
+                if (e.message.includes("Unexpected") || !e.message) {
+                    return { isJson: false, raw: dataText }; 
+                }
+                throw new Error(e.message);
             }
         }
 
@@ -218,7 +232,7 @@
             if (orderanLokal) { vak_daftarOrderan = JSON.parse(orderanLokal); vak_renderUILayout(); }
 
             setInterval(window.vak_mesinWaktuTerpusat, 1000);
-            // Mengerem kecepatan ketukan API agar tidak dianggap SPAM oleh server (naik ke 5 detik)
+            // Tetap di angka 5 detik agar server mereka tidak marah lagi
             setInterval(window.vak_mesinCekSmsTerpusat, 5000); 
             setInterval(window.vak_updateKursLive, 3600000); 
         });
