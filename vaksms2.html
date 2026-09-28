@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Proxy corsproxy.io (keyless_legacy) Dihapus.<br>
-            └> Multi-Proxy AllOrigins & CodeTabs Stabil.
+            └> Sistem Proxy JSON Wrapper (Bungkus Paket) Aktif.<br>
+            └> Anti-Blokir Cloudflare WebView Level 3.
         </div>
     </div>
     
@@ -174,7 +174,7 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
-        // --- SISTEM MULTI-PROXY AUTO FALLBACK (UPDATE) ---
+        // --- SISTEM PROXY JSON WRAPPER (ANTI-CLOUDFLARE LEVEL 3) ---
         async function apiVakSmsV2(endpoint, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
@@ -184,41 +184,39 @@
             targetUrl += `&nocache=${Date.now()}`;
             
             let dataText = "";
-            let success = false;
             
-            // HAPUS corsproxy.io karena menyebabkan error keyless_legacy_url
-            // Fokus menggunakan proxy yang murni mengembalikan data raw JSON
-            let proxyList = [
-                targetUrl, // Jalur utama
-                'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl), // Proxy 1
-                'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(targetUrl) // Proxy 2
-            ];
-
-            for (let url of proxyList) {
+            try {
+                // 1. Coba tembak langsung (Siapa tahu jaringan sedang tidak diblokir)
+                const resDirect = await fetch(targetUrl);
+                dataText = await resDirect.text();
+                
+                // Jika isinya HTML/Cloudflare, lemparkan error agar masuk ke Catch (Proxy)
+                if (dataText.includes("<html") && dataText.toLowerCase().includes("cloudflare")) {
+                    throw new Error("Direct Blocked");
+                }
+            } catch (errDirect) {
+                // 2. Jika tembakan langsung diblokir WebView/CORS, gunakan JSON Wrapper AllOrigins
                 try {
-                    const res = await fetch(url);
-                    const text = await res.text();
+                    // Perhatikan kita menggunakan /get (Bukan /raw) untuk membungkus data
+                    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(targetUrl);
+                    const resProxy = await fetch(proxyUrl);
+                    const jsonProxy = await resProxy.json();
                     
-                    // Cek jika halaman diblokir Cloudflare atau proxy mengembalikan error HTML/Teks palsu
-                    if (text.includes("<html") && (text.toLowerCase().includes("cloudflare") || text.includes("Just a moment"))) {
-                        throw new Error("Cloudflare Block"); 
-                    }
-                    if (text.includes("keyless_legacy_url") || text.includes("Missing target URL") || text.includes("Proxy Error")) {
-                        throw new Error("Proxy Invalid");
+                    if (jsonProxy && jsonProxy.contents) {
+                        dataText = jsonProxy.contents; // Ekstrak data mentah dari dalam bungkus JSON
+                    } else {
+                        throw new Error("Proxy Empty");
                     }
                     
-                    dataText = text;
-                    success = true;
-                    break; 
-                } catch (e) {
-                    // Loop berlanjut diam-diam ke proxy cadangan berikutnya
+                    if (dataText.includes("<html") && dataText.toLowerCase().includes("cloudflare")) {
+                        throw new Error("Koneksi diblokir server. Pastikan internet stabil.");
+                    }
+                } catch (errProxy) {
+                    throw new Error("Koneksi diblokir server. Pastikan internet stabil.");
                 }
             }
 
-            if (!success) {
-                throw new Error("Koneksi diblokir server. Pastikan internet stabil.");
-            }
-
+            // Parsing hasil akhir
             try { 
                 let parsedData = JSON.parse(dataText);
                 if (parsedData.error) throw new Error(parsedData.error);
