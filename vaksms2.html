@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Anti-Tabrakan / Rate Limit Proxy Aktif.<br>
-            └> Permintaan Saldo & Tier diantrekan (Delay 1.5s).
+            └> Perbaikan Filter Operator.<br>
+            └> Logika Anti-Error Filter Ditingkatkan.
         </div>
     </div>
     
@@ -219,15 +219,9 @@
             }
         }
 
-        // --- SISTEM PERBAIKAN ANTREAN REQUEST (MENCEGAH TABRAKAN/ERROR SALDO) ---
         window.vak_refreshSemuaDataLive = async function() { 
-            // Ubah tampilan saldo jadi loading dulu
             document.getElementById("vak_txtSaldoLive").innerText = "...";
-            
-            // 1. Eksekusi tarik daftar harga duluan
             await window.vak_muatProdukLayanan();
-            
-            // 2. Beri jeda napas 1,5 detik agar proxy tidak kaget (Rate Limit Bypass)
             setTimeout(() => {
                 window.vak_ambilSaldoLive();
             }, 1500);
@@ -240,7 +234,6 @@
             if(savedKey) {
                 document.getElementById("vak_otpKey").value = savedKey;
                 document.getElementById("vak_statusKey").innerText = "✅ Token Aktif."; document.getElementById("vak_statusKey").style.color = "#50fa7b";
-                // Panggil sistem antrean pembaruan data
                 window.vak_refreshSemuaDataLive();
             } else window.vak_toggleApiKeyDropdown();
 
@@ -296,30 +289,53 @@
                     return;
                 }
             }
+            // Setelah data baru dimuat, selalu reset filter dan harga tercentang
+            vak_hargaTercentang = [];
             window.vak_terapkanFilterOperator();
         }
 
         window.vak_terapkanFilterOperator = function() {
-            if (!vak_cachedOffers || vak_cachedOffers.length === 0) return;
-
-            let elemNamaSrv = document.getElementById("vak_dropdownLayanan").options[document.getElementById("vak_dropdownLayanan").selectedIndex].text;
-            let prefixLayanan = elemNamaSrv.split(' ')[0]; 
-            let opName = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
-
-            vak_daftarServerTersedia = vak_cachedOffers.map(offer => {
-                return { id: offer.priceStr, opName: opName, price: offer.price, stock: offer.stock, prefix: prefixLayanan };
-            });
-
-            if (vak_modeCentang) {
-                let availablePrices = vak_daftarServerTersedia.map(s => s.price);
-                vak_hargaTercentang = vak_hargaTercentang.filter(p => availablePrices.includes(p));
-                if(vak_hargaTercentang.length === 0 && vak_daftarServerTersedia.length > 0) {
-                    vak_hargaTercentang.push(vak_daftarServerTersedia[0].price);
-                }
+            // Perbaikan Filter: Jika data kosong, keluar perlahan tanpa menyebabkan error fatal
+            if (!vak_cachedOffers || vak_cachedOffers.length === 0) {
+                vak_daftarServerTersedia = [];
                 vak_renderDropdownOptions();
-                vak_updateLabelTerpilih();
-            } else {
-                vak_pilihServerDropdown(0); 
+                document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-weight:bold; font-size:13px; margin-right:8px;">Data Tidak Ditemukan</span>`;
+                document.getElementById("vak_btnPesanAksi").disabled = true;
+                return;
+            }
+
+            try {
+                let elemNamaSrv = document.getElementById("vak_dropdownLayanan").options[document.getElementById("vak_dropdownLayanan").selectedIndex].text;
+                let prefixLayanan = elemNamaSrv.split(' ')[0]; 
+                let opName = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
+
+                // Vak-SMS V2 tidak merinci stok operator di awal, jadi kita pakai stok gabungan.
+                vak_daftarServerTersedia = vak_cachedOffers.map(offer => {
+                    return { id: offer.priceStr, opName: opName, price: offer.price, stock: offer.stock, prefix: prefixLayanan };
+                });
+
+                if (vak_modeCentang) {
+                    let availablePrices = vak_daftarServerTersedia.map(s => s.price);
+                    vak_hargaTercentang = vak_hargaTercentang.filter(p => availablePrices.includes(p));
+                    if(vak_hargaTercentang.length === 0 && vak_daftarServerTersedia.length > 0) {
+                        vak_hargaTercentang.push(vak_daftarServerTersedia[0].price);
+                    }
+                    vak_renderDropdownOptions();
+                    vak_updateLabelTerpilih();
+                } else {
+                    // Paksa pilih opsi pertama jika mode centang mati
+                    if (vak_daftarServerTersedia.length > 0) {
+                        vak_pilihServerDropdown(0);
+                    } else {
+                        document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-weight:bold; font-size:13px; margin-right:8px;">Stok Kosong</span>`;
+                        document.getElementById("vak_btnPesanAksi").disabled = true;
+                    }
+                }
+            } catch (error) {
+                console.error("Filter Error:", error);
+                // Tangani error agar tidak merambat dan menghancurkan tampilan
+                document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-weight:bold; font-size:13px; margin-right:8px;">Filter Gagal</span>`;
+                document.getElementById("vak_btnPesanAksi").disabled = true;
             }
         }
 
@@ -409,13 +425,15 @@
 
         window.vak_pilihServerDropdown = function(index) {
             const srv = vak_daftarServerTersedia[index];
-            vak_produkTerpilihId = srv.id; 
-            vak_namaProdukTerpilih = `${srv.prefix} (${srv.opName})`;
-            vak_hargaProdukTerpilih = srv.price; 
-            
-            vak_updateLabelTerpilih();
-            document.getElementById("vak_containerListDropdown").classList.remove("active");
-            vak_renderDropdownOptions();
+            if(srv) {
+                vak_produkTerpilihId = srv.id; 
+                vak_namaProdukTerpilih = `${srv.prefix} (${srv.opName})`;
+                vak_hargaProdukTerpilih = srv.price; 
+                
+                vak_updateLabelTerpilih();
+                document.getElementById("vak_containerListDropdown").classList.remove("active");
+                vak_renderDropdownOptions();
+            }
         }
 
         window.vak_eksekusiBeliTerpilih = async function() {
