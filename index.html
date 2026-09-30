@@ -433,13 +433,15 @@
                     await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
                     ping = Math.round(performance.now() - startWaktu);
                     labelTarget = "Ipify";
-                } else {
+
+                 } else {
                     const startWaktu = performance.now();
-                    // Menggunakan server Google (Sangat ringan, hemat kuota, dan 100% aman dari blokir)
-                    await fetch('https://clients3.google.com/generate_204?t=' + Date.now(), { mode: 'no-cors' });
+                    // Menggunakan server Cloudflare (Sangat ringan, cepat, dan anti-blokir)
+                    await fetch('https://cp.cloudflare.com/generate_204?t=' + Date.now(), { mode: 'no-cors' });
                     ping = Math.round(performance.now() - startWaktu);
-                    labelTarget = "Ggl";
-                }
+                    labelTarget = "CF";
+                }   
+
                 let warnaPing = "#00ffcc"; 
                 if (ping > 150) warnaPing = "#f0ad4e"; 
                 if (ping > 300) warnaPing = "#ff4a4a"; 
