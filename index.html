@@ -34,9 +34,9 @@
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .btn-admin-control { margin-top: 8px; padding: 8px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #3d3463; background: #1a1535; color: #d6c7ff; cursor: pointer; width: 100%; }
         .notes-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }
-        
-        .note-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #1a1535; border: 1px solid #3d3463; border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; }
+        .notes-list-container { width: 100%; min-height: 220px; max-height: 350px; overflow-y: auto; background: #141026; border: 1px solid #3d3463; border-radius: 8px; padding: 10px; text-align: left; }      
+
+        .note-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; background: #1a1535; border: 1px solid #3d3463; border-radius: 8px; padding: 5px 10px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; }
         .note-row:hover { background: #251e4a; border-color: #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.25); transform: translateY(-1px); }
         .note-row:active { transform: scale(0.98); }
         .note-row.admin-mode { cursor: default; background: #1e1233; border-color: #ff007f; }
@@ -572,7 +572,7 @@
                         const keteranganIsi = parts.slice(1).join("|").trim();
                         
                         // Tampilkan hanya keterangan (Username) di dalam kotak, sembunyikan Link/Data di baliknya
-                        displayWrapper.innerHTML = `<div style="width: 100%;"><div style="background: rgba(255, 153, 0, 0.15); color: #ff9900; border: 1px dashed rgba(255, 153, 0, 0.5); padding: 8px 10px; border-radius: 6px; font-size: 14px; font-weight: bold; width: 100%; text-align: center; letter-spacing: 0.5px;" title="${linkIsi} (Klik untuk menyalin)"><i class="fa-solid fa-user-tag" style="margin-right:6px;"></i>${keteranganIsi}</div></div>`;
+                        displayWrapper.innerHTML = `<div style="width: 100%;"><div style="background: rgba(255, 153, 0, 0.15); color: #ff9900; border: 1px dashed rgba(255, 153, 0, 0.5); padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: bold; width: 100%; text-align: center; letter-spacing: 0.5px;" title="${linkIsi} (Klik untuk menyalin)"><i class="fa-solid fa-user-tag" style="margin-right:6px;"></i>${keteranganIsi}</div></div>`;
                         displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`; 
                         
                         rowDiv.appendChild(displayWrapper);
