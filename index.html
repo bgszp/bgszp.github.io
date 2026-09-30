@@ -112,7 +112,7 @@
     <div class="wrapper-menu-server" style="position: relative; margin-top: 24px; margin-bottom: 18px; display: flex; width: 100%; gap: 6px;">
         
         <!-- TAMPILAN IP & PING JARINGAN -->
-        <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Google / Ipify)" style="position: absolute; right: 0; top: -22px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
+        <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Cloudflare / Ipify)" style="position: absolute; right: 0; top: -22px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
             <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
         </div>
 
@@ -414,7 +414,8 @@
         window.gantiTargetPing = function() {
             modePingTarget = (modePingTarget === "shopee") ? "ipify" : "shopee";
             updateIPAddress(); 
-            if(window.showToast) window.showToast("Target Ping diubah ke: " + modePingTarget.toUpperCase());
+            let namaTarget = (modePingTarget === "shopee") ? "CLOUDFLARE" : "IPIFY";
+            if(window.showToast) window.showToast("Target Ping diubah ke: " + namaTarget);
         }
 
         async function updateIPAddress() {
