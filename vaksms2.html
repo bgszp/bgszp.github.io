@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Proxy Timeout Error Fix.<br>
-            └> 3-Way Auto Fallback Network Aktif.
+            └> Anti-Tabrakan / Rate Limit Proxy Aktif.<br>
+            └> Permintaan Saldo & Tier diantrekan (Delay 1.5s).
         </div>
     </div>
     
@@ -174,7 +174,6 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
-        // --- SISTEM JARINGAN 3 JALUR CEPAT (MENGATASI LOADING MACET) ---
         async function apiVakSmsV2(endpoint, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
@@ -183,7 +182,7 @@
             for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
             targetUrl += `&nocache=${Date.now()}`;
             
-            // Jalur 1: Direct (Langsung) - Biasanya diblokir WebView Cloudflare, tapi dicoba dulu
+            // Jalur 1: Direct
             try {
                 const res = await fetch(targetUrl, { headers: { 'Accept': 'application/json' } });
                 const text = await res.text();
@@ -194,7 +193,7 @@
                 }
             } catch (e) { /* Lanjut ke Proxy 1 */ }
 
-            // Jalur 2: Proxy CodeTabs (Stabil untuk API ringan)
+            // Jalur 2: Proxy CodeTabs
             try {
                 const proxy1 = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(targetUrl);
                 const res1 = await fetch(proxy1);
@@ -206,7 +205,7 @@
                 }
             } catch (e) { /* Lanjut ke Proxy 2 */ }
 
-            // Jalur 3: Proxy AllOrigins Raw (Sebagai cadangan terakhir)
+            // Jalur 3: Proxy AllOrigins Raw
             try {
                 const proxy2 = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
                 const res2 = await fetch(proxy2);
@@ -216,9 +215,22 @@
                 if (parsed.error) throw new Error(parsed.error);
                 return { isJson: true, data: parsed, raw: text2 };
             } catch (e) {
-                // Jika ketiga jalur di atas gagal, MAKA tampilkan ERROR (bukan loading abadi)
                 throw new Error("Koneksi ditolak server (Cloudflare / Proxy Error).");
             }
+        }
+
+        // --- SISTEM PERBAIKAN ANTREAN REQUEST (MENCEGAH TABRAKAN/ERROR SALDO) ---
+        window.vak_refreshSemuaDataLive = async function() { 
+            // Ubah tampilan saldo jadi loading dulu
+            document.getElementById("vak_txtSaldoLive").innerText = "...";
+            
+            // 1. Eksekusi tarik daftar harga duluan
+            await window.vak_muatProdukLayanan();
+            
+            // 2. Beri jeda napas 1,5 detik agar proxy tidak kaget (Rate Limit Bypass)
+            setTimeout(() => {
+                window.vak_ambilSaldoLive();
+            }, 1500);
         }
 
         document.addEventListener("DOMContentLoaded", async function() {
@@ -228,6 +240,7 @@
             if(savedKey) {
                 document.getElementById("vak_otpKey").value = savedKey;
                 document.getElementById("vak_statusKey").innerText = "✅ Token Aktif."; document.getElementById("vak_statusKey").style.color = "#50fa7b";
+                // Panggil sistem antrean pembaruan data
                 window.vak_refreshSemuaDataLive();
             } else window.vak_toggleApiKeyDropdown();
 
@@ -279,7 +292,7 @@
                 } catch (e) {
                     document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block; word-wrap:break-word;">🚨 ERROR: ${e.message}</span>`;
                     document.getElementById("vak_btnPesanAksi").disabled = true;
-                    vak_cachedOffers = []; // Reset agar bisa dicoba lagi
+                    vak_cachedOffers = [];
                     return;
                 }
             }
@@ -509,8 +522,6 @@
             document.getElementById("vak_statusKey").innerText = "✅ Token Disimpan!";
             window.vak_refreshSemuaDataLive(); window.vak_toggleApiKeyDropdown();
         }
-
-        window.vak_refreshSemuaDataLive = function() { window.vak_ambilSaldoLive(); window.vak_muatProdukLayanan(); }
         
         window.vak_ambilSaldoLive = async function() {
             try {
