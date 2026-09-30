@@ -89,7 +89,7 @@
                 </select>
                 
                 <div class="dropdown-selected-bar" onclick="vak_toggleDropdownList()">
-                    <span id="vak_labelServerTerpilih" style="color: #fff;">Mencari harga...</span>
+                    <span id="vak_labelServerTerpilih" style="color: #fff;">Mencari data V2...</span>
                     <span style="font-size: 11px; color: var(--accent-cyan); font-weight: bold;">▼ Ubah Tier</span>
                 </div>
                 <div id="vak_containerListDropdown" class="dropdown-list-options"></div>
@@ -126,8 +126,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Logic "Shotgun" Sniper Parameter Aktif.<br>
-            └> Tombol Batal & Blokir MATI saat Kirim Ulang.
+            └> Proxy Timeout Error Fix.<br>
+            └> 3-Way Auto Fallback Network Aktif.
         </div>
     </div>
     
@@ -174,29 +174,50 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
+        // --- SISTEM JARINGAN 3 JALUR CEPAT (MENGATASI LOADING MACET) ---
         async function apiVakSmsV2(endpoint, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
             
-            let targetUrl = `https://vak-sms.com/api/${endpoint}/?apiKey=${token.trim()}`;
+            let targetUrl = `https://vak-sms.com/api/${endpoint}?apiKey=${token.trim()}`;
             for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
             targetUrl += `&nocache=${Date.now()}`;
             
+            // Jalur 1: Direct (Langsung) - Biasanya diblokir WebView Cloudflare, tapi dicoba dulu
             try {
-                const res = await fetch(targetUrl);
-                const dataText = await res.text();
-                try { 
-                    let parsedData = JSON.parse(dataText);
-                    if (parsedData.error) throw new Error(parsedData.error);
-                    return { isJson: true, data: parsedData, raw: dataText }; 
-                } catch(e) { 
-                    if (e.message.includes("Unexpected") || !e.message) {
-                        return { isJson: false, raw: dataText }; 
-                    }
-                    throw new Error(e.message);
+                const res = await fetch(targetUrl, { headers: { 'Accept': 'application/json' } });
+                const text = await res.text();
+                if (!text.includes("<html")) {
+                    let parsed = JSON.parse(text);
+                    if (parsed.error) throw new Error(parsed.error);
+                    return { isJson: true, data: parsed, raw: text };
                 }
-            } catch (e) { 
-                throw new Error(e.message || "Ditolak Peramban / Koneksi."); 
+            } catch (e) { /* Lanjut ke Proxy 1 */ }
+
+            // Jalur 2: Proxy CodeTabs (Stabil untuk API ringan)
+            try {
+                const proxy1 = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(targetUrl);
+                const res1 = await fetch(proxy1);
+                const text1 = await res1.text();
+                if (!text1.includes("<html") && !text1.includes("Proxy Error")) {
+                    let parsed = JSON.parse(text1);
+                    if (parsed.error) throw new Error(parsed.error);
+                    return { isJson: true, data: parsed, raw: text1 };
+                }
+            } catch (e) { /* Lanjut ke Proxy 2 */ }
+
+            // Jalur 3: Proxy AllOrigins Raw (Sebagai cadangan terakhir)
+            try {
+                const proxy2 = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+                const res2 = await fetch(proxy2);
+                const text2 = await res2.text();
+                if (text2.includes("<html")) throw new Error("Jaringan diblokir.");
+                let parsed = JSON.parse(text2);
+                if (parsed.error) throw new Error(parsed.error);
+                return { isJson: true, data: parsed, raw: text2 };
+            } catch (e) {
+                // Jika ketiga jalur di atas gagal, MAKA tampilkan ERROR (bukan loading abadi)
+                throw new Error("Koneksi ditolak server (Cloudflare / Proxy Error).");
             }
         }
 
@@ -214,7 +235,7 @@
             if (orderanLokal) { vak_daftarOrderan = JSON.parse(orderanLokal); vak_renderUILayout(); }
 
             setInterval(window.vak_mesinWaktuTerpusat, 1000);
-            setInterval(window.vak_mesinCekSmsTerpusat, 2000); 
+            setInterval(window.vak_mesinCekSmsTerpusat, 5000); 
             setInterval(window.vak_updateKursLive, 3600000); 
         });
 
@@ -258,6 +279,7 @@
                 } catch (e) {
                     document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block; word-wrap:break-word;">🚨 ERROR: ${e.message}</span>`;
                     document.getElementById("vak_btnPesanAksi").disabled = true;
+                    vak_cachedOffers = []; // Reset agar bisa dicoba lagi
                     return;
                 }
             }
@@ -642,7 +664,6 @@
                 let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
                 let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`; let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
                 
-                // Matikan tombol blokir manual jika sudah pernah menerima OTP
                 let btnBlokirManual = (item.status === "pending" && item.otp_count === 1) ? `<button onclick="vak_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir & Batal"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
                 
                 let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal Vak-SMS"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
@@ -655,7 +676,6 @@
                     kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold; display:flex; align-items:center;">KodeOTP: ${labelOtpKe}</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="vak_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
                     btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="vak_eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button><button onclick="vak_eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button></div>`;
                 } else if (item.status === "pending") {
-                    // --- PERUBAHAN: Matikan tombol batal jika nomor sudah dipakai (Kirim Ulang) ---
                     if (item.otp_count > 1) {
                         btnAksi = `<button class="btn-batal" disabled style="background:#444; cursor:not-allowed;">🔒 Tidak Bisa Batal (Kirim Ulang)</button>`;
                     } else {
