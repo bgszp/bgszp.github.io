@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vak-SMS Panel Integrasi</title>
+    <title>Vak Panel Integrasi</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -46,7 +46,7 @@
 <body>
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (Vak-SMS)</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (Vak)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="vak_txtSaldoLive">Rp 0</span>
                 <span onclick="vak_refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
@@ -59,8 +59,8 @@
                 <span id="vak_panahApiKey" style="font-size: 10px;">▼</span>
             </div>
             <div id="vak_wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
-                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Vak-SMS API Key:</label>
-                <input type="password" id="vak_otpKey" placeholder="API Key Vak-SMS" class="search-input">
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Vak API Key:</label>
+                <input type="password" id="vak_otpKey" placeholder="API Key Vak" class="search-input">
                 
                 <label style="font-size: 11px; color: var(--accent-purple); font-weight: bold; margin-bottom:4px; margin-top:4px; display:block;">🌐 Link Proxy Pribadi (Worker):</label>
                 <input type="text" id="vak_proxyUrl" placeholder="https://namaworker.workers.dev" class="search-input">
@@ -127,7 +127,7 @@
             </div>
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
-            └> Tampilan & Posisi Kolom TETAP SAMA.<br>
+            └> Perubahan Nama UI Menjadi "Vak".<br>
             └> Proxy Publik DIBUANG TOTAL.<br>
             └> Menggunakan Proxy Pribadi Cloudflare (Anti Limit).
         </div>
@@ -280,7 +280,7 @@
             let serviceId = document.getElementById("vak_dropdownLayanan").value;
             
             if (serviceId !== vak_lastServiceId || !vak_cachedOffers || vak_cachedOffers.length === 0) {
-                document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data V2...</span>`;
+                document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data...</span>`;
                 document.getElementById("vak_btnPesanAksi").disabled = true;
                 
                 try {
@@ -706,7 +706,7 @@
                 
                 let btnBlokirManual = (item.status === "pending" && item.otp_count === 1) ? `<button onclick="vak_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir & Batal"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
                 
-                let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal Vak-SMS"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
+                let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal Vak"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
 
                 let teksHargaAsli = item.harga ? vak_formatRupiah(item.harga * KURS_USD_IDR) : '-';
                 let badgeHargaAsli = `<div style="font-size:10px; font-weight:bold; color:var(--accent-cyan); background:#1d203f; padding:3px 7px; border-radius:5px; border:1px solid #3d3f7a;" title="Harga Asli">💰 ${teksHargaAsli}</div>`;
