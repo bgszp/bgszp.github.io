@@ -89,7 +89,7 @@
                 </select>
                 
                 <div class="dropdown-selected-bar" onclick="vak_toggleDropdownList()">
-                    <span id="vak_labelServerTerpilih" style="color: #fff;">Mencari data...</span>
+                    <span id="vak_labelServerTerpilih" style="color: #fff;">Mencari data V2...</span>
                     <span style="font-size: 11px; color: var(--accent-cyan); font-weight: bold;">▼ Ubah Tier</span>
                 </div>
                 <div id="vak_containerListDropdown" class="dropdown-list-options"></div>
@@ -126,9 +126,9 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Bypass Cloudflare Native (Custom User-Agent).<br>
-            └> Proxy Dihapus Total (Kecepatan Maksimal).<br>
-            └> Kecepatan Radar OTP Kembali ke 2 Detik.
+            └> Sistem Bypass CORS via Multi-Proxy 3 Jalur.<br>
+            └> Fitur Silent Retry (Anti-Error Background).<br>
+            └> Jeda Radar 6.5s (Anti Rate Limit).
         </div>
     </div>
     
@@ -175,8 +175,7 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
-        // --- SISTEM JALUR MURNI (TANPA PROXY) ---
-        // Karena aplikasi sudah menggunakan Custom User-Agent Chrome Asli.
+        // --- SISTEM JARINGAN MULTI-PROXY (MENEMBUS CORS ANDROID) ---
         async function apiVakSmsV2(endpoint, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             if (!token) throw new Error("API Key belum disetting.");
@@ -184,24 +183,35 @@
             let targetUrl = `https://vak-sms.com/api/${endpoint}?apiKey=${token.trim()}`;
             for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
             targetUrl += `&nocache=${Date.now()}`;
-            
-            try {
-                const res = await fetch(targetUrl, { headers: { 'Accept': 'application/json' } });
-                const text = await res.text();
-                
-                if (text.includes("<html") && text.toLowerCase().includes("cloudflare")) {
-                    throw new Error("Koneksi diblokir Cloudflare. Pastikan Rebuild APK berhasil.");
+
+            // Menggunakan 3 rotasi proxy berbeda untuk menghindari Rate Limit
+            const proxyList = [
+                'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(targetUrl),
+                'https://api.cors.lol/?url=' + encodeURIComponent(targetUrl), // Proxy baru, sangat cepat
+                'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl)
+            ];
+
+            for (let url of proxyList) {
+                try {
+                    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    const text = await res.text();
+                    
+                    // Filter Cerdas: Pastikan balasan murni JSON. Jika HTML/Cloudflare/Error, otomatis lompat.
+                    let trimmedText = text.trim();
+                    if (trimmedText.startsWith("{") || trimmedText.startsWith("[")) {
+                        let parsed = JSON.parse(trimmedText);
+                        if (parsed.error && parsed.error.includes("badKey")) throw new Error("API Key Salah.");
+                        return { isJson: true, data: parsed, raw: trimmedText };
+                    }
+                } catch (e) {
+                    if (e.message === "API Key Salah.") throw e; 
+                    // Lompat senyap ke proxy berikutnya
                 }
-                
-                let parsed = JSON.parse(text);
-                if (parsed.error) throw new Error(parsed.error);
-                return { isJson: true, data: parsed, raw: text };
-                
-            } catch (e) { 
-                throw new Error(e.message || "Koneksi ditolak server.");
             }
+            throw new Error("Koneksi ditolak server (Proxy sibuk).");
         }
 
+        // Fungsi Silent API: Jika gagal (karena proxy limit sesaat), tetap diam agar UI tidak memunculkan Error
         async function apiVakSmsV2_Silent(endpoint, params = {}) {
             try {
                 return await apiVakSmsV2(endpoint, params);
@@ -210,6 +220,7 @@
             }
         }
 
+        // --- PEMBARUAN: PERISAI SALDO ANTI-ERROR ---
         window.vak_ambilSaldoLive = async function(silent = false) {
             try {
                 if(!silent) document.getElementById("vak_txtSaldoLive").innerText = "...";
@@ -219,7 +230,7 @@
                 if (res.isJson && res.data && res.data.balance !== undefined) {
                     document.getElementById("vak_txtSaldoLive").innerText = vak_formatRupiah(parseFloat(res.data.balance) * KURS_USD_IDR);
                 } else if (!silent) {
-                    throw new Error("Gagal memuat saldo.");
+                    throw new Error("Gagal");
                 }
             } catch(e) { 
                 if(!silent) document.getElementById("vak_txtSaldoLive").innerText = "Error"; 
@@ -229,8 +240,7 @@
         window.vak_refreshSemuaDataLive = async function() { 
             document.getElementById("vak_txtSaldoLive").innerText = "...";
             await window.vak_muatProdukLayanan();
-            // Jeda singkat
-            setTimeout(() => { window.vak_ambilSaldoLive(false); }, 500);
+            setTimeout(() => { window.vak_ambilSaldoLive(false); }, 1500);
         }
 
         document.addEventListener("DOMContentLoaded", async function() {
@@ -248,8 +258,8 @@
 
             setInterval(window.vak_mesinWaktuTerpusat, 1000);
             
-            // JALUR MURNI: Waktu tunggu dikembalikan menjadi sangat cepat (2 detik)
-            setInterval(window.vak_mesinCekSmsTerpusat, 2000); 
+            // JEDA OTP KENDUR: Diatur ke 6.5 detik agar proxy tidak menolak permintaan akibat Rate Limit
+            setInterval(window.vak_mesinCekSmsTerpusat, 6500); 
             setInterval(window.vak_updateKursLive, 3600000); 
         });
 
@@ -268,12 +278,12 @@
             let serviceId = document.getElementById("vak_dropdownLayanan").value;
             
             if (serviceId !== vak_lastServiceId || !vak_cachedOffers || vak_cachedOffers.length === 0) {
-                document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data...</span>`;
+                document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data V2...</span>`;
                 document.getElementById("vak_btnPesanAksi").disabled = true;
                 
                 try {
                     const resProd = await apiVakSmsV2('getOfferNumberList', { services: serviceId, country: 'id' });
-                    if (!resProd.isJson) throw new Error(`Data tidak tersedia.`); 
+                    if (!resProd.isJson) throw new Error(`RAW TXT: ${resProd.raw.substring(0, 100)}`); 
                     let rootData = resProd.data;
                     if (!rootData[serviceId] || !rootData[serviceId].priceMap) { throw new Error(`Stok Kosong / Tidak Tersedia.`); }
 
@@ -508,7 +518,7 @@
                                 if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
                                     btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
                                     await apiVakSmsV2_Silent('setStatus', { idNum: actIdStr, status: 'bad' }); 
-                                    window.vak_ambilSaldoLive(); 
+                                    window.vak_ambilSaldoLive(true); 
                                     await new Promise(r => setTimeout(r, 1500)); 
                                     continue; 
                                 } else {
