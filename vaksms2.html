@@ -127,9 +127,9 @@
             </div>
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
-            └> Perubahan Nama UI Menjadi "Vak".<br>
-            └> Proxy Publik DIBUANG TOTAL.<br>
-            └> Menggunakan Proxy Pribadi Cloudflare (Anti Limit).
+            └> Tampilan & Posisi Kolom TETAP SAMA.<br>
+            └> Bug "Reset Centang Saat Bersihkan" Diperbaiki.<br>
+            └> Sniper terkunci kuat saat layar direfresh.
         </div>
     </div>
     
@@ -176,7 +176,6 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
-        // --- SISTEM PROXY PRIBADI (CLOUDFLARE WORKER) ---
         async function apiVakSmsV2(endpoint, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
             const proxyPribadi = localStorage.getItem("proxy_url_vaksms");
@@ -188,7 +187,6 @@
             for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
             targetUrl += `&nocache=${Date.now()}`;
 
-            // Menyusun format URL tujuan melewati Proxy Pribadi
             let finalUrl = proxyPribadi.trim();
             if (!finalUrl.endsWith("=")) {
                 finalUrl += (finalUrl.includes("?") ? "&url=" : "?url=");
@@ -259,8 +257,6 @@
             if (orderanLokal) { vak_daftarOrderan = JSON.parse(orderanLokal); vak_renderUILayout(); }
 
             setInterval(window.vak_mesinWaktuTerpusat, 1000);
-            
-            // JEDA OTP DIMAKSIMALKAN (CEPAT) KARENA PROXY SUDAH PRIBADI
             setInterval(window.vak_mesinCekSmsTerpusat, 3000); 
             setInterval(window.vak_updateKursLive, 3600000); 
         });
@@ -301,6 +297,10 @@
 
                     vak_cachedOffers.sort((a, b) => a.price - b.price);
                     vak_lastServiceId = serviceId;
+                    
+                    // FIXED: Hanya reset harga yang dicentang saat Layanan (misal Shopee -> WA) benar-benar diganti
+                    // dan memuat data baru dari server, BUKAN saat di-refresh.
+                    vak_hargaTercentang = []; 
 
                 } catch (e) {
                     document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block; word-wrap:break-word;">🚨 ERROR: ${e.message}</span>`;
@@ -309,7 +309,7 @@
                     return;
                 }
             }
-            vak_hargaTercentang = [];
+            // Tidak ada lagi vak_hargaTercentang = []; di luar blok IF ini.
             window.vak_terapkanFilterOperator();
         }
 
