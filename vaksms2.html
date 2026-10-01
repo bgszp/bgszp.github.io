@@ -55,16 +55,18 @@
 
         <div style="margin-bottom: 12px;">
             <div class="pemicu-dropdown" onclick="vak_toggleApiKeyDropdown()">
-                <span>🔑 Konfigurasi API Key (Vak-SMS)</span>
+                <span>🔑 Konfigurasi API Key & Proxy</span>
                 <span id="vak_panahApiKey" style="font-size: 10px;">▼</span>
             </div>
             <div id="vak_wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
                 <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 Vak-SMS API Key:</label>
-                <div style="display: flex; gap: 6px;">
-                    <input type="password" id="vak_otpKey" placeholder="API Key Vak-SMS" class="search-input" style="margin-bottom:0;">
-                    <button onclick="vak_simpanKonfigurasi()" style="padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan</button>
-                </div>
-                <small id="vak_statusKey" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px;">⚠️ Token belum aktif.</small>
+                <input type="password" id="vak_otpKey" placeholder="API Key Vak-SMS" class="search-input">
+                
+                <label style="font-size: 11px; color: var(--accent-purple); font-weight: bold; margin-bottom:4px; margin-top:4px; display:block;">🌐 Link Proxy Pribadi (Worker):</label>
+                <input type="text" id="vak_proxyUrl" placeholder="https://namaworker.workers.dev" class="search-input">
+                
+                <button onclick="vak_simpanKonfigurasi()" style="width: 100%; margin-top: 8px; padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan Semua</button>
+                <small id="vak_statusKey" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px; text-align: center;">⚠️ Konfigurasi belum lengkap.</small>
             </div>
         </div>
 
@@ -89,7 +91,7 @@
                 </select>
                 
                 <div class="dropdown-selected-bar" onclick="vak_toggleDropdownList()">
-                    <span id="vak_labelServerTerpilih" style="color: #fff;">Mencari data V2...</span>
+                    <span id="vak_labelServerTerpilih" style="color: #fff;">Mencari data...</span>
                     <span style="font-size: 11px; color: var(--accent-cyan); font-weight: bold;">▼ Ubah Tier</span>
                 </div>
                 <div id="vak_containerListDropdown" class="dropdown-list-options"></div>
@@ -126,9 +128,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Sistem Bypass CORS via Multi-Proxy 3 Jalur.<br>
-            └> Fitur Silent Retry (Anti-Error Background).<br>
-            └> Jeda Radar 6.5s (Anti Rate Limit).
+            └> Proxy Publik DIBUANG TOTAL.<br>
+            └> Menggunakan Proxy Pribadi Cloudflare (Anti Limit).
         </div>
     </div>
     
@@ -175,43 +176,42 @@
             } catch (e) { console.log("Gagal menarik live kurs."); }
         }
 
-        // --- SISTEM JARINGAN MULTI-PROXY (MENEMBUS CORS ANDROID) ---
+        // --- SISTEM PROXY PRIBADI (CLOUDFLARE WORKER) ---
         async function apiVakSmsV2(endpoint, params = {}) {
             const token = localStorage.getItem("otp_key_vaksms");
+            const proxyPribadi = localStorage.getItem("proxy_url_vaksms");
+            
             if (!token) throw new Error("API Key belum disetting.");
+            if (!proxyPribadi) throw new Error("Proxy Pribadi belum disetting.");
             
             let targetUrl = `https://vak-sms.com/api/${endpoint}?apiKey=${token.trim()}`;
             for (const [key, value] of Object.entries(params)) { targetUrl += `&${key}=${value}`; }
             targetUrl += `&nocache=${Date.now()}`;
 
-            // Menggunakan 3 rotasi proxy berbeda untuk menghindari Rate Limit
-            const proxyList = [
-                'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(targetUrl),
-                'https://api.cors.lol/?url=' + encodeURIComponent(targetUrl), // Proxy baru, sangat cepat
-                'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl)
-            ];
-
-            for (let url of proxyList) {
-                try {
-                    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                    const text = await res.text();
-                    
-                    // Filter Cerdas: Pastikan balasan murni JSON. Jika HTML/Cloudflare/Error, otomatis lompat.
-                    let trimmedText = text.trim();
-                    if (trimmedText.startsWith("{") || trimmedText.startsWith("[")) {
-                        let parsed = JSON.parse(trimmedText);
-                        if (parsed.error && parsed.error.includes("badKey")) throw new Error("API Key Salah.");
-                        return { isJson: true, data: parsed, raw: trimmedText };
-                    }
-                } catch (e) {
-                    if (e.message === "API Key Salah.") throw e; 
-                    // Lompat senyap ke proxy berikutnya
-                }
+            // Menyusun format URL tujuan melewati Proxy Pribadi
+            let finalUrl = proxyPribadi.trim();
+            if (!finalUrl.endsWith("=")) {
+                finalUrl += (finalUrl.includes("?") ? "&url=" : "?url=");
             }
-            throw new Error("Koneksi ditolak server (Proxy sibuk).");
+            finalUrl += encodeURIComponent(targetUrl);
+
+            try {
+                const res = await fetch(finalUrl, { headers: { 'Accept': 'application/json' } });
+                const text = await res.text();
+                
+                let parsed = JSON.parse(text);
+                if (parsed.error) {
+                    if (parsed.error.includes("badKey")) throw new Error("API Key Salah.");
+                    throw new Error(parsed.error);
+                }
+                return { isJson: true, data: parsed, raw: text };
+                
+            } catch (e) {
+                if (e.message === "API Key Salah.") throw e;
+                throw new Error("Gagal menyambung ke Proxy Pribadi Anda.");
+            }
         }
 
-        // Fungsi Silent API: Jika gagal (karena proxy limit sesaat), tetap diam agar UI tidak memunculkan Error
         async function apiVakSmsV2_Silent(endpoint, params = {}) {
             try {
                 return await apiVakSmsV2(endpoint, params);
@@ -220,7 +220,6 @@
             }
         }
 
-        // --- PEMBARUAN: PERISAI SALDO ANTI-ERROR ---
         window.vak_ambilSaldoLive = async function(silent = false) {
             try {
                 if(!silent) document.getElementById("vak_txtSaldoLive").innerText = "...";
@@ -247,9 +246,12 @@
             await window.vak_updateKursLive();
 
             const savedKey = localStorage.getItem("otp_key_vaksms");
-            if(savedKey) {
+            const savedProxy = localStorage.getItem("proxy_url_vaksms");
+            
+            if(savedKey && savedProxy) {
                 document.getElementById("vak_otpKey").value = savedKey;
-                document.getElementById("vak_statusKey").innerText = "✅ Token Aktif."; document.getElementById("vak_statusKey").style.color = "#50fa7b";
+                document.getElementById("vak_proxyUrl").value = savedProxy;
+                document.getElementById("vak_statusKey").innerText = "✅ Tersambung!"; document.getElementById("vak_statusKey").style.color = "#50fa7b";
                 window.vak_refreshSemuaDataLive();
             } else window.vak_toggleApiKeyDropdown();
 
@@ -258,8 +260,8 @@
 
             setInterval(window.vak_mesinWaktuTerpusat, 1000);
             
-            // JEDA OTP KENDUR: Diatur ke 6.5 detik agar proxy tidak menolak permintaan akibat Rate Limit
-            setInterval(window.vak_mesinCekSmsTerpusat, 6500); 
+            // JEDA OTP DIMAKSIMALKAN (CEPAT) KARENA PROXY SUDAH PRIBADI
+            setInterval(window.vak_mesinCekSmsTerpusat, 3000); 
             setInterval(window.vak_updateKursLive, 3600000); 
         });
 
@@ -283,7 +285,7 @@
                 
                 try {
                     const resProd = await apiVakSmsV2('getOfferNumberList', { services: serviceId, country: 'id' });
-                    if (!resProd.isJson) throw new Error(`RAW TXT: ${resProd.raw.substring(0, 100)}`); 
+                    if (!resProd.isJson) throw new Error(`Data gagal dimuat.`); 
                     let rootData = resProd.data;
                     if (!rootData[serviceId] || !rootData[serviceId].priceMap) { throw new Error(`Stok Kosong / Tidak Tersedia.`); }
 
@@ -545,6 +547,20 @@
                     window.vak_ambilSaldoLive(true);
                 } else { alert("Gagal mendapatkan nomor. Stok mungkin kosong atau error pada harga yang dipilih."); }
             } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
+        }
+
+        window.vak_simpanKonfigurasi = function() {
+            const key = document.getElementById("vak_otpKey").value.trim();
+            const proxy = document.getElementById("vak_proxyUrl").value.trim();
+            if(!key || !proxy) return alert("API Key dan Link Proxy Pribadi wajib diisi!");
+            
+            localStorage.setItem("otp_key_vaksms", key);
+            localStorage.setItem("proxy_url_vaksms", proxy);
+            
+            document.getElementById("vak_statusKey").innerText = "✅ Tersimpan! Memuat data...";
+            document.getElementById("vak_statusKey").style.color = "#50fa7b";
+            window.vak_refreshSemuaDataLive(); 
+            window.vak_toggleApiKeyDropdown();
         }
 
         window.vak_eksekusiBatalkanServer = async function(index) {
