@@ -261,9 +261,6 @@
                 let queryUrl = `catalog/products?country_id=7&platform_id=${shopeePlatformId}&limit=100`;
                 if (opIdRaw && opIdRaw !== "null") queryUrl += `&operator_id=${opIdRaw}`;
 
-                // PERBAIKAN MEMORI: Simpan ID yang sedang dicentang sebelum data ditimpa
-                // Jika autoOpen bernilai true (user mengganti operator), maka reset centangan.
-                // Jika autoOpen bernilai false (refresh data/saldo), maka ingat centangan sebelumnya.
                 let idYangSudahDicentang = [];
                 if (!autoOpen) {
                     idYangSudahDicentang = produkTerpilihArray.map(p => p.id);
@@ -284,8 +281,6 @@
                 let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
 
                 if (daftarServerTersedia.length > 0) { 
-                    
-                    // Coba masukkan kembali item yang sebelumnya dicentang (jika masih tersedia)
                     if (!autoOpen && idYangSudahDicentang.length > 0) {
                         daftarServerTersedia.forEach(srv => {
                             if (idYangSudahDicentang.includes(srv.id)) {
@@ -298,8 +293,6 @@
                         });
                     }
 
-                    // Jika memori kosong (karena ganti operator) atau tier lama sudah habis stoknya
-                    // Auto-select pilihan termurah pertama kali
                     if (produkTerpilihArray.length === 0) {
                         let firstSrv = daftarServerTersedia[0];
                         produkTerpilihArray.push({
@@ -374,15 +367,20 @@
             if(daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center; color: #888; font-size: 12px;">Kosong</div>`; return; }
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
-                let isChecked = produkTerpilihArray.some(p => p.id === srv.id);
+                let selectedIndex = produkTerpilihArray.findIndex(p => p.id === srv.id);
+                let isChecked = selectedIndex > -1;
                 let isSelectedClass = isChecked ? "selected" : "";
+                
+                // Menambahkan urutan angka [1], [2], dst di sebelah kotak centang tanpa menggeser tata letak asli
+                let numberBadge = isChecked ? `<span style="font-size: 11px; font-weight: bold; color: var(--accent-cyan); margin-left: 6px;">[${selectedIndex + 1}]</span>` : '';
                 
                 html += `
                 <div class="dropdown-item-row ${isSelectedClass}" onclick="toggleServerSelection(${index})" style="display:flex; justify-content:space-between; align-items:center;">
                     <span style="flex: 1; text-align: left;">Stok: <span style="color:var(--text-sub); font-size:11px;">(${srv.stock})</span></span>
                     
-                    <div style="flex: 1; text-align: center;">
+                    <div style="flex: 1; text-align: center; display: flex; justify-content: center; align-items: center;">
                         <input type="checkbox" style="accent-color: var(--accent-purple); transform: scale(1.2); pointer-events: none;" ${isChecked ? 'checked' : ''}>
+                        ${numberBadge}
                     </div>
 
                     <span style="font-weight:bold; color:var(--accent-cyan); flex: 1; text-align: right;">Rp ${srv.price.toLocaleString('id-ID')}</span>
@@ -410,7 +408,15 @@
                     const createdOrder = responseData.data?.orders?.[0];
                     
                     if (createdOrder && (createdOrder.id || createdOrder.phone_number)) {
-                        daftarOrderan.unshift({ order_id: createdOrder.id, phone: createdOrder.phone_number, layanan: prod.name, waktu_dibuat: Date.now(), status: "pending", otp: "" });
+                        daftarOrderan.unshift({ 
+                            order_id: createdOrder.id, 
+                            phone: createdOrder.phone_number, 
+                            layanan: prod.name, 
+                            waktu_dibuat: Date.now(), 
+                            status: "pending", 
+                            otp: "",
+                            resend_count: 0 // Menambahkan pelacak jumlah resend
+                        });
                         renderUILayout(); simpanDaftarOrderanKeLokal(); 
                         printLog(`🎉 Nomor didapat: ${createdOrder.phone_number}`); 
                         ambilSaldoLive();
@@ -471,6 +477,16 @@
                 if(res.data && res.data.resent) {
                     showToast("Resend Berhasil Diminta!");
                     printLog(`🔁 Permintaan Resend untuk ${item.phone} terkirim.`);
+                    
+                    // Mereset status untuk menunggu OTP baru
+                    item.last_otp = item.otp; // Simpan OTP lama agar diabaikan oleh webhook
+                    item.status = "pending";
+                    item.otp = "";
+                    item.waktu_dibuat = Date.now(); // Mulai ulang timer dari 0
+                    item.resend_count = (item.resend_count || 0) + 1; // Naikkan hitungan resend
+                    
+                    renderUILayout();
+                    simpanDaftarOrderanKeLokal();
                 } else {
                     showToast("Platform tidak mendukung resend.");
                 }
@@ -517,6 +533,12 @@
                     let stat = orderData.status ? orderData.status.toUpperCase() : "";
                     let otpCode = orderData.otp_code || orderData.otp_message || orderData.sms; 
 
+                    // Mengabaikan OTP lama jika sedang dalam status resend
+                    if (i.resend_count > 0 && i.last_otp && otpCode === i.last_otp) {
+                        otpCode = null; 
+                        stat = "PENDING"; 
+                    }
+
                     if (stat === "COMPLETED" || stat === "SUCCESS" || stat === "FINISHED") {
                         if (i.status !== "completed") {
                             i.status = "completed"; if(otpCode) i.otp = otpCode;
@@ -545,9 +567,18 @@
 
             daftarOrderan.forEach((item, index) => {
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
+                
+                // Menentukan posisi antrean teratas yang belum selesai
                 let isTopQueue = (countAktif === 0 && item.status !== "completed" && item.status !== "history_received" && item.status !== "cancelled");
+                
+                // Mengatur batas waktu (300 detik antrean pertama, 125 antrean selanjutnya. Jika resend menjadi 1200 detik / 20 menit)
                 let batasWaktu = isTopQueue ? 300 : 125;
                 let labelBatas = isTopQueue ? "5m" : "125s";
+                
+                if (item.resend_count > 0) {
+                    batasWaktu = 1200; 
+                    labelBatas = "20m";
+                }
                 
                 if (item.status === "pending" && sec >= batasWaktu) { 
                     item.status = "cancelled"; 
@@ -589,7 +620,13 @@
                 let sisa = Math.max(0, batasWaktu - sec); 
                 let cool = Math.max(0, 120 - sec); 
                 
-                let textStat = countAktif === 1 ? `⚡ Cek OTP... (${sec}s / ${batasWaktu}s)` : `⏸️ Antri... (${sec}s / ${batasWaktu}s)`; 
+                // Indikator Cek OTP Dinamis (Menyesuaikan jumlah klik Resend)
+                let baseText = "⚡ Cek OTP";
+                if (item.resend_count > 0) {
+                    baseText = `⚡ Cek OTP ke-${item.resend_count + 1}`;
+                }
+                
+                let textStat = countAktif === 1 ? `${baseText}... (${sec}s / ${batasWaktu}s)` : `⏸️️ Antri... (${sec}s / ${batasWaktu}s)`; 
                 let colStat = countAktif === 1 ? "#ffb86c" : "#6272a4"; 
                 let kotakOtp = ""; let btnAksi = "";
 
@@ -637,7 +674,7 @@
                 </div>`;
             });
 
-            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
+            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>`;
             containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
             if(badgeRiwayat) badgeRiwayat.innerText = countRiwayat;
             
@@ -660,25 +697,23 @@
                 let time = audioCtx.currentTime; 
                 
                 for (let r = 0; r < 2; r++) { 
-                    // Nada Dasar (Pemisahan Stereo Kiri & Kanan Ekstrem)
                     const oscL = audioCtx.createOscillator();
                     const gainL = audioCtx.createGain();
                     oscL.type = "square";
-                    oscL.frequency.setValueAtTime(987.77, time); // B5 (kiri)
+                    oscL.frequency.setValueAtTime(987.77, time); 
                     gainL.gain.setValueAtTime(0.3, time);
                     gainL.gain.setTargetAtTime(0, time + 0.1, 0.1);
 
                     const oscR = audioCtx.createOscillator();
                     const gainR = audioCtx.createGain();
                     oscR.type = "square";
-                    oscR.frequency.setValueAtTime(991.00, time); // B5 Sedikit dinaikkan (kanan)
+                    oscR.frequency.setValueAtTime(991.00, time); 
                     gainR.gain.setValueAtTime(0.3, time);
                     gainR.gain.setTargetAtTime(0, time + 0.1, 0.1);
 
-                    // Terapkan Efek Stereo (Jika Peramban Mendukung)
                     if (audioCtx.createStereoPanner) {
-                        const panL = audioCtx.createStereoPanner(); panL.pan.value = -1; // Full Kiri
-                        const panR = audioCtx.createStereoPanner(); panR.pan.value = 1;  // Full Kanan
+                        const panL = audioCtx.createStereoPanner(); panL.pan.value = -1; 
+                        const panR = audioCtx.createStereoPanner(); panR.pan.value = 1;  
                         oscL.connect(gainL).connect(panL).connect(audioCtx.destination);
                         oscR.connect(gainR).connect(panR).connect(audioCtx.destination);
                     } else {
@@ -689,8 +724,7 @@
                     oscL.start(time); oscL.stop(time + 0.3);
                     oscR.start(time); oscR.stop(time + 0.3);
 
-                    // Melodi Arpeggio Cepat (Di Tengah)
-                    const arpFreq = [1318.51, 1567.98, 1975.53]; // E6, G6, B6
+                    const arpFreq = [1318.51, 1567.98, 1975.53]; 
                     arpFreq.forEach((f, idx) => {
                         const oscM = audioCtx.createOscillator();
                         const gainM = audioCtx.createGain();
@@ -707,11 +741,9 @@
                         oscM.stop(tOffset + 0.2);
                     });
 
-                    time += 0.45; // Jeda sebelum mengulang lagi
+                    time += 0.45; 
                 } 
-            } catch (e) { 
-                console.log(e); 
-            }
+            } catch (e) { console.log(e); }
         }
 
         function munculkanPopupNative(nomor, otp, layanan) {
