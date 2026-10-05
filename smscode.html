@@ -367,12 +367,13 @@
             if(daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center; color: #888; font-size: 12px;">Kosong</div>`; return; }
             let html = "";
             daftarServerTersedia.forEach((srv, index) => {
-                let selectedIndex = produkTerpilihArray.findIndex(p => p.id === srv.id);
-                let isChecked = selectedIndex > -1;
+                let isChecked = produkTerpilihArray.some(p => p.id === srv.id);
                 let isSelectedClass = isChecked ? "selected" : "";
                 
-                // Menambahkan urutan angka [1], [2], dst di sebelah kotak centang tanpa menggeser tata letak asli
-                let numberBadge = isChecked ? `<span style="font-size: 11px; font-weight: bold; color: var(--accent-cyan); margin-left: 6px;">[${selectedIndex + 1}]</span>` : '';
+                // Menambahkan urutan statis [1], [2], [3] yang SELALU MUNCUL walau tidak dicentang
+                // Warnanya akan redup (abu-abu) jika tidak dicentang, dan menyala (cyan) jika dicentang
+                let colorBadge = isChecked ? 'var(--accent-cyan)' : '#6272a4';
+                let numberBadge = `<span style="font-size: 11px; font-weight: bold; color: ${colorBadge}; margin-left: 8px; width: 22px; text-align: left; display: inline-block;">[${index + 1}]</span>`;
                 
                 html += `
                 <div class="dropdown-item-row ${isSelectedClass}" onclick="toggleServerSelection(${index})" style="display:flex; justify-content:space-between; align-items:center;">
@@ -626,7 +627,7 @@
                     baseText = `⚡ Cek OTP ke-${item.resend_count + 1}`;
                 }
                 
-                let textStat = countAktif === 1 ? `${baseText}... (${sec}s / ${batasWaktu}s)` : `⏸️️ Antri... (${sec}s / ${batasWaktu}s)`; 
+                let textStat = countAktif === 1 ? `${baseText}... (${sec}s / ${batasWaktu}s)` : `⏸ Antri... (${sec}s / ${batasWaktu}s)`; 
                 let colStat = countAktif === 1 ? "#ffb86c" : "#6272a4"; 
                 let kotakOtp = ""; let btnAksi = "";
 
