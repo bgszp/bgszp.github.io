@@ -370,10 +370,8 @@
                 let isChecked = produkTerpilihArray.some(p => p.id === srv.id);
                 let isSelectedClass = isChecked ? "selected" : "";
                 
-                // Menambahkan urutan statis [1], [2], [3] yang SELALU MUNCUL walau tidak dicentang
-                // Warnanya akan redup (abu-abu) jika tidak dicentang, dan menyala (cyan) jika dicentang
-                let colorBadge = isChecked ? 'var(--accent-cyan)' : '#6272a4';
-                let numberBadge = `<span style="font-size: 11px; font-weight: bold; color: ${colorBadge}; margin-left: 8px; width: 22px; text-align: left; display: inline-block;">[${index + 1}]</span>`;
+                // PERBAIKAN: Angka selalu berwarna cyan menyala, meskipun tidak dicentang
+                let numberBadge = `<span style="font-size: 11px; font-weight: bold; color: var(--accent-cyan); margin-left: 8px; width: 22px; text-align: left; display: inline-block;">[${index + 1}]</span>`;
                 
                 html += `
                 <div class="dropdown-item-row ${isSelectedClass}" onclick="toggleServerSelection(${index})" style="display:flex; justify-content:space-between; align-items:center;">
@@ -414,9 +412,10 @@
                             phone: createdOrder.phone_number, 
                             layanan: prod.name, 
                             waktu_dibuat: Date.now(), 
+                            waktu_awal: Date.now(), // Tambahan variabel untuk menyimpan waktu awal mula pesanan
                             status: "pending", 
                             otp: "",
-                            resend_count: 0 // Menambahkan pelacak jumlah resend
+                            resend_count: 0 
                         });
                         renderUILayout(); simpanDaftarOrderanKeLokal(); 
                         printLog(`🎉 Nomor didapat: ${createdOrder.phone_number}`); 
@@ -479,12 +478,12 @@
                     showToast("Resend Berhasil Diminta!");
                     printLog(`🔁 Permintaan Resend untuk ${item.phone} terkirim.`);
                     
-                    // Mereset status untuk menunggu OTP baru
-                    item.last_otp = item.otp; // Simpan OTP lama agar diabaikan oleh webhook
+                    item.last_otp = item.otp; 
                     item.status = "pending";
                     item.otp = "";
-                    item.waktu_dibuat = Date.now(); // Mulai ulang timer dari 0
-                    item.resend_count = (item.resend_count || 0) + 1; // Naikkan hitungan resend
+                    item.waktu_dibuat = Date.now(); // Reset waktu pengecekan langkah ini
+                    item.resend_count = (item.resend_count || 0) + 1; 
+                    // Catatan: item.waktu_awal TIDAK direset agar timer 20 menit tetap berjalan normal
                     
                     renderUILayout();
                     simpanDaftarOrderanKeLokal();
@@ -534,7 +533,6 @@
                     let stat = orderData.status ? orderData.status.toUpperCase() : "";
                     let otpCode = orderData.otp_code || orderData.otp_message || orderData.sms; 
 
-                    // Mengabaikan OTP lama jika sedang dalam status resend
                     if (i.resend_count > 0 && i.last_otp && otpCode === i.last_otp) {
                         otpCode = null; 
                         stat = "PENDING"; 
@@ -567,12 +565,14 @@
             let flagSimpan = false; let countAktif = 0; let countRiwayat = 0;
 
             daftarOrderan.forEach((item, index) => {
+                // Waktu yang dihitung dari saat request terakhir (untuk limit cancel auto)
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
-                // Menentukan posisi antrean teratas yang belum selesai
+                // PERBAIKAN: Waktu yang dihitung mutlak dari awal order dibuat (untuk timer 20 menit dan cooldown batal)
+                let globalSec = Math.floor((Date.now() - (item.waktu_awal || item.waktu_dibuat)) / 1000); 
+
                 let isTopQueue = (countAktif === 0 && item.status !== "completed" && item.status !== "history_received" && item.status !== "cancelled");
                 
-                // Mengatur batas waktu (300 detik antrean pertama, 125 antrean selanjutnya. Jika resend menjadi 1200 detik / 20 menit)
                 let batasWaktu = isTopQueue ? 300 : 125;
                 let labelBatas = isTopQueue ? "5m" : "125s";
                 
@@ -618,16 +618,22 @@
                 }
 
                 countAktif++;
-                let sisa = Math.max(0, batasWaktu - sec); 
-                let cool = Math.max(0, 120 - sec); 
                 
-                // Indikator Cek OTP Dinamis (Menyesuaikan jumlah klik Resend)
+                // Cooldown Batal dihitung dari waktu AWAL order. Sehingga jika user resend (biasanya setelah >2 menit), mereka bisa langsung Batal.
+                let cool = Math.max(0, 120 - globalSec); 
+                
+                // Format Timer 20 Menit (1200 detik) berjalan mundur
+                let sisaTotal = Math.max(0, 1200 - globalSec);
+                let m = Math.floor(sisaTotal / 60);
+                let s = sisaTotal % 60;
+                let globalTimeStr = `${m}:${s.toString().padStart(2, '0')}`;
+
                 let baseText = "⚡ Cek OTP";
                 if (item.resend_count > 0) {
                     baseText = `⚡ Cek OTP ke-${item.resend_count + 1}`;
                 }
                 
-                let textStat = countAktif === 1 ? `${baseText}... (${sec}s / ${batasWaktu}s)` : `⏸ Antri... (${sec}s / ${batasWaktu}s)`; 
+                let textStat = countAktif === 1 ? `${baseText}... (${sec}s)` : `⏸ Antri... (${sec}s)`; 
                 let colStat = countAktif === 1 ? "#ffb86c" : "#6272a4"; 
                 let kotakOtp = ""; let btnAksi = "";
 
@@ -650,7 +656,16 @@
                         <button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button>
                     </div>`;
                 } else if (item.status === "pending") {
-                    btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
+                    if (item.resend_count > 0) {
+                        // PERBAIKAN: Jika ini fase Resend, beri dua tombol sekaligus: Batalkan atau Selesai
+                        btnAksi = `
+                        <div style="display:flex; gap: 8px; margin-top: 10px;">
+                            <button class="btn-action-half" style="background:var(--accent-red); color:white;" onclick="eksekusiBatalkanServer(${index})"><i class="fa-solid fa-xmark"></i> Batalkan</button>
+                            <button onclick="eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button>
+                        </div>`;
+                    } else {
+                        btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
+                    }
                 }
                 
                 htmlAktif += `
@@ -670,7 +685,13 @@
                         </button>
                     </div>
                     ${kotakOtp}
-                    <div style="font-size:11px; font-weight:600; color:${colStat}; margin-top:6px;">${textStat}</div>
+
+                    <!-- PERBAIKAN: Layout flexbox dengan posisi timer global 20 Menit di sebelah kanan (kotak oranye) -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+                        <div style="font-size:11px; font-weight:600; color:${colStat};">${textStat}</div>
+                        <div style="font-size:11px; font-weight:bold; color:var(--accent-cyan); background:#1a1b35; padding:3px 8px; border-radius:4px; border:1px solid var(--border-color);">⏱️ ${globalTimeStr}</div>
+                    </div>
+                    
                     ${btnAksi}
                 </div>`;
             });
