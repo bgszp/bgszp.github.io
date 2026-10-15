@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Data Generator Lengkap (6 Menu)</title>
+    <title>Panel Data Generator & Fingerprint</title>
     <style>
         * { box-sizing: border-box; }
         body { 
@@ -17,7 +17,7 @@
             width: 100%; 
             display: flex; 
             flex-direction: column; 
-            gap: 5px; /* Jarak super rapat untuk 6 menu */
+            gap: 4px; 
         }
         .card { 
             background: #161b22; 
@@ -49,52 +49,84 @@
         }
         .action-row {
             display: flex;
-            gap: 5px;
+            gap: 4px;
             width: 100%;
         }
-        input { 
+        input, select { 
             flex: 1;
             width: 100%;
-            padding: 5px; 
+            padding: 4px 6px; 
             border-radius: 4px; 
             border: 1px solid #30363d; 
             background: #0d1117; 
             color: #58a6ff; 
-            font-size: 12px; 
+            font-size: 11px; 
             text-align: center; 
             font-family: monospace; 
             font-weight: bold;
             outline: none; 
-            letter-spacing: 0.5px;
+        }
+        select {
+            font-family: inherit;
+            text-align: left;
+            color: #c9d1d9;
         }
         button { 
-            padding: 5px 8px; 
+            padding: 4px 8px; 
             background: #238636; 
             color: white; 
             border: none; 
             border-radius: 4px; 
-            font-size: 11px; 
+            font-size: 10px; 
             font-weight: 600; 
             cursor: pointer; 
             white-space: nowrap;
             transition: all 0.2s; 
-            min-width: 100px;
+            min-width: 90px;
+        }
+        button.btn-secondary {
+            background: #30363d;
+            min-width: 70px;
         }
         button:active { 
             transform: scale(0.97); 
         }
         button.copied {
-            background: #1f6feb; 
+            background: #1f6feb !important; 
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- 0. Preset Fingerprint & Display ID -->
+        <div class="card">
+            <div class="header-row">
+                <span class="title">🛡️ Preset Fingerprint (Base A12)</span>
+                <span class="badge" id="tacHint">IMEI: 86</span>
+            </div>
+            <div class="action-row">
+                <select id="deviceSelect" onchange="updateDevicePreset()">
+                    <option value="oppo_a6">OPPO A6 (PLS120)</option>
+                    <option value="oppo_fx7u">OPPO Find X7 Ultra</option>
+                    <option value="oppo_fx8">OPPO Find X8</option>
+                    <option value="vivo_neo10">VIVO iQOO Neo10</option>
+                    <option value="redmi_k80p">REDMI K80 Pro</option>
+                    <option value="honor_m6p">HONOR Magic6 PRO</option>
+                    <option value="s21">Galaxy S21 (Valid A12)</option>
+                    <option value="s23u">Galaxy S23 Ultra</option>
+                </select>
+                <button id="btnDisp" class="btn-secondary" onclick="copyPreset('dispOutput', 'btnDisp', 'Salin DispID')">Salin DispID</button>
+                <button id="btnFp" onclick="copyPreset('fpOutput', 'btnFp', 'Salin FP')">Salin FP</button>
+            </div>
+            <input type="hidden" id="dispOutput">
+            <input type="hidden" id="fpOutput">
+        </div>
+
         <!-- 1. IMEI Generator -->
         <div class="card">
             <div class="header-row">
                 <span class="title">⚡ IMEI (Luhn Algo)</span>
-                <span class="badge">15 Digit (86)</span>
+                <span class="badge" id="imeiBadge">15 Digit (86)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="imeiOutput" placeholder="Klik tombol 👉" readonly>
@@ -138,11 +170,11 @@
             </div>
         </div>
 
-        <!-- 5. Nomor HP Telkomsel Generator -->
+        <!-- 5. Nomor HP Telkomsel Generator (13 Karakter / 12 Digit Lokal) -->
         <div class="card">
             <div class="header-row">
                 <span class="title">📱 Nomor HP (Telkomsel)</span>
-                <span class="badge">12 Digit (628xx)</span>
+                <span class="badge">13 Digit (628xx)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="phoneOutput" placeholder="Klik tombol 👉" readonly>
@@ -164,32 +196,98 @@
     </div>
 
     <script>
-        // Fungsi Salin Otomatis
-        function copyToClipboard(inputId, btnId, originalText) {
-            const inputEl = document.getElementById(inputId);
-            const btnEl = document.getElementById(btnId);
-            
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(inputEl.value);
-            } else {
-                inputEl.select();
-                inputEl.setSelectionRange(0, 99999);
-                document.execCommand('copy');
-                window.getSelection().removeAllRanges();
+        // Database Preset Fingerprint & Display ID (Disesuaikan ke Android 12)
+        const devicePresets = {
+            oppo_a6: {
+                tac: '86',
+                disp: 'PLS120_12.0.1.200(CN01)',
+                fp: 'OPPO/PLS120/OP5E1C:12/SP1A.210812.016/12.0.1.200:user/release-keys'
+            },
+            oppo_fx7u: {
+                tac: '86',
+                disp: 'PHY110_12.0.0.402(CN01)',
+                fp: 'OPPO/PHY110/OP5929L1:12/SP1A.210812.016/12.0.0.402:user/release-keys'
+            },
+            oppo_fx8: {
+                tac: '86',
+                disp: 'PKB110_12.0.0.201(CN01)',
+                fp: 'OPPO/PKB110/OP5D0BL1:12/SP1A.210812.016/12.0.0.201:user/release-keys'
+            },
+            vivo_neo10: {
+                tac: '86',
+                disp: 'SP1A.210812.003 release-keys',
+                fp: 'vivo/PD2425/PD2425:12/SP1A.210812.003/compiler11201512:user/release-keys'
+            },
+            redmi_k80p: {
+                tac: '86',
+                disp: 'SKQ1.211006.001',
+                fp: 'Redmi/champion/champion:12/SKQ1.211006.001/V13.0.12.0.SLKCNXM:user/release-keys'
+            },
+            honor_m6p: {
+                tac: '86',
+                disp: 'BVL-AN16 12.0.0.132(C00E130R2P1)',
+                fp: 'HONOR/BVL-AN16/HNBVL:12/HONORBVL-AN16/12.0.0.132C00:user/release-keys'
+            },
+            s21: {
+                tac: '35',
+                disp: 'SP1A.210812.016.G991BXXS5CVH1',
+                fp: 'samsung/o1sxeea/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
+            },
+            s23u: {
+                tac: '35',
+                disp: 'SP1A.210812.016.S918BXXU1AWBD',
+                fp: 'samsung/dm3qxeea/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
             }
+        };
 
+        let currentImeiPrefix = '86';
+
+        function updateDevicePreset() {
+            const val = document.getElementById('deviceSelect').value;
+            const preset = devicePresets[val];
+            document.getElementById('dispOutput').value = preset.disp;
+            document.getElementById('fpOutput').value = preset.fp;
+            currentImeiPrefix = preset.tac;
+            document.getElementById('tacHint').innerText = 'IMEI: ' + preset.tac;
+            document.getElementById('imeiBadge').innerText = '15 Digit (' + preset.tac + ')';
+        }
+
+        // Inisialisasi awal
+        updateDevicePreset();
+
+        function copyTextRaw(text, btnId, originalText) {
+            const btnEl = document.getElementById(btnId);
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text);
+            } else {
+                const tempInput = document.createElement('input');
+                tempInput.value = text;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+            }
             btnEl.innerText = '✅ Tersalin!';
             btnEl.classList.add('copied');
-            
             setTimeout(() => {
                 btnEl.innerText = originalText;
                 btnEl.classList.remove('copied');
             }, 900);
         }
 
-        // 1. Fungsi IMEI
+        function copyPreset(hiddenId, btnId, originalText) {
+            const text = document.getElementById(hiddenId).value;
+            copyTextRaw(text, btnId, originalText);
+        }
+
+        function copyToClipboard(inputId, btnId, originalText) {
+            const val = document.getElementById(inputId).value;
+            copyTextRaw(val, btnId, originalText);
+        }
+
+        // 1. Fungsi IMEI (Otomatis mengikuti awalan 86 atau 35 sesuai HP yang dipilih)
         function handleIMEI() {
-            let imei = '86';
+            let imei = currentImeiPrefix;
             for (let i = 0; i < 12; i++) {
                 imei += Math.floor(Math.random() * 10);
             }
@@ -209,14 +307,13 @@
             copyToClipboard('imeiOutput', 'btnImei', 'Gen IMEI');
         }
 
-        // 2 & 3. Fungsi MAC Address (Wi-Fi & GSM)
+        // 2 & 3. Fungsi MAC Address
         function handleMAC(inputId, btnId, btnText) {
             let mac = '';
             const hexChars = '0123456789abcdef';
             for (let i = 0; i < 12; i++) {
                 mac += hexChars.charAt(Math.floor(Math.random() * 16));
             }
-            
             document.getElementById(inputId).value = mac;
             copyToClipboard(inputId, btnId, btnText);
         }
@@ -227,23 +324,19 @@
             for (let i = 0; i < 9; i++) {
                 msin += Math.floor(Math.random() * 10);
             }
-            
             document.getElementById('msinOutput').value = msin;
             copyToClipboard('msinOutput', 'btnMsin', 'Gen MSIN');
         }
 
-        // 5. Fungsi Nomor HP Telkomsel (12 Digit, Awalan 62)
+        // 5. Fungsi Nomor HP Telkomsel (13 Digit dengan 62 = 12 Digit Lokal 08xx)
         function handlePhone() {
-            // Daftar prefix resmi Telkomsel (5 digit awal)
             const prefixes = ['62811', '62812', '62813', '62821', '62822', '62823', '62852', '62853'];
-            // Pilih salah satu prefix secara acak
             let phone = prefixes[Math.floor(Math.random() * prefixes.length)];
             
-            // Tambahkan 7 digit angka acak (5 + 7 = 12 digit total)
-            for (let i = 0; i < 7; i++) {
+            // Tambahkan 8 digit angka acak (5 digit prefix + 8 digit = 13 digit total)
+            for (let i = 0; i < 8; i++) {
                 phone += Math.floor(Math.random() * 10);
             }
-            
             document.getElementById('phoneOutput').value = phone;
             copyToClipboard('phoneOutput', 'btnPhone', 'Gen No HP');
         }
@@ -255,7 +348,6 @@
             for (let i = 0; i < 15; i++) {
                 sn += chars.charAt(Math.floor(Math.random() * chars.length));
             }
-            
             document.getElementById('snOutput').value = sn;
             copyToClipboard('snOutput', 'btnSn', 'Gen SN');
         }
