@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Data Generator Compact</title>
+    <title>Panel Data Generator Lengkap (6 Menu)</title>
     <style>
         * { box-sizing: border-box; }
         body { 
-            background-color: transparent; /* Transparan agar menyatu dengan background panel utama */
+            background-color: transparent; 
             color: #c9d1d9; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            padding: 8px; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            padding: 4px; 
             margin: 0; 
         }
         .container { 
             width: 100%; 
             display: flex; 
             flex-direction: column; 
-            gap: 8px; /* Jarak antar kotak dibuat rapat */
+            gap: 5px; /* Jarak super rapat untuk 6 menu */
         }
         .card { 
             background: #161b22; 
             border: 1px solid #30363d; 
-            border-radius: 6px; 
-            padding: 10px 12px; 
+            border-radius: 5px; 
+            padding: 5px 8px; 
             display: flex; 
             flex-direction: column; 
-            gap: 6px; 
+            gap: 3px; 
         }
         .header-row {
             display: flex;
@@ -34,33 +34,33 @@
             align-items: center;
         }
         .title { 
-            font-size: 13px; 
+            font-size: 11px; 
             font-weight: 600; 
             color: #58a6ff; 
             margin: 0; 
         }
         .badge {
-            font-size: 10px;
+            font-size: 9px;
             color: #8b949e;
             background: #0d1117;
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 1px 4px;
+            border-radius: 3px;
             border: 1px solid #21262d;
         }
         .action-row {
             display: flex;
-            gap: 6px;
+            gap: 5px;
             width: 100%;
         }
         input { 
             flex: 1;
             width: 100%;
-            padding: 8px 6px; 
-            border-radius: 5px; 
+            padding: 5px; 
+            border-radius: 4px; 
             border: 1px solid #30363d; 
             background: #0d1117; 
             color: #58a6ff; 
-            font-size: 14px; 
+            font-size: 12px; 
             text-align: center; 
             font-family: monospace; 
             font-weight: bold;
@@ -68,29 +68,29 @@
             letter-spacing: 0.5px;
         }
         button { 
-            padding: 8px 12px; 
+            padding: 5px 8px; 
             background: #238636; 
             color: white; 
             border: none; 
-            border-radius: 5px; 
-            font-size: 12px; 
+            border-radius: 4px; 
+            font-size: 11px; 
             font-weight: 600; 
             cursor: pointer; 
             white-space: nowrap;
             transition: all 0.2s; 
-            min-width: 115px;
+            min-width: 100px;
         }
         button:active { 
             transform: scale(0.97); 
         }
         button.copied {
-            background: #1f6feb; /* Warna biru saat berhasil disalin */
+            background: #1f6feb; 
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- IMEI Generator -->
+        <!-- 1. IMEI Generator -->
         <div class="card">
             <div class="header-row">
                 <span class="title">⚡ IMEI (Luhn Algo)</span>
@@ -98,23 +98,59 @@
             </div>
             <div class="action-row">
                 <input type="text" id="imeiOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnImei" onclick="handleIMEI()">Generator IMEI</button>
+                <button id="btnImei" onclick="handleIMEI()">Gen IMEI</button>
             </div>
         </div>
 
-        <!-- MAC Generator -->
+        <!-- 2. MAC Wi-Fi Generator -->
         <div class="card">
             <div class="header-row">
-                <span class="title">🌐 MAC Address</span>
+                <span class="title">🌐 Alamat MAC (Wi-Fi)</span>
                 <span class="badge">12 Hex Murni</span>
             </div>
             <div class="action-row">
                 <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnMac" onclick="handleMAC()">Generator MAC Ad</button>
+                <button id="btnMac" onclick="handleMAC('macOutput', 'btnMac', 'Gen MAC WiFi')">Gen MAC WiFi</button>
             </div>
         </div>
 
-        <!-- SN Generator -->
+        <!-- 3. MAC GSM Generator -->
+        <div class="card">
+            <div class="header-row">
+                <span class="title">📡 Alamat MAC GSM</span>
+                <span class="badge">12 Hex Murni</span>
+            </div>
+            <div class="action-row">
+                <input type="text" id="macGsmOutput" placeholder="Klik tombol 👉" readonly>
+                <button id="btnMacGsm" onclick="handleMAC('macGsmOutput', 'btnMacGsm', 'Gen MAC GSM')">Gen MAC GSM</button>
+            </div>
+        </div>
+
+        <!-- 4. MSIN Generator -->
+        <div class="card">
+            <div class="header-row">
+                <span class="title">💳 MSIN (ID Kartu SIM)</span>
+                <span class="badge">10 Digit Angka</span>
+            </div>
+            <div class="action-row">
+                <input type="text" id="msinOutput" placeholder="Klik tombol 👉" readonly>
+                <button id="btnMsin" onclick="handleMSIN()">Gen MSIN</button>
+            </div>
+        </div>
+
+        <!-- 5. Nomor HP Telkomsel Generator -->
+        <div class="card">
+            <div class="header-row">
+                <span class="title">📱 Nomor HP (Telkomsel)</span>
+                <span class="badge">12 Digit (628xx)</span>
+            </div>
+            <div class="action-row">
+                <input type="text" id="phoneOutput" placeholder="Klik tombol 👉" readonly>
+                <button id="btnPhone" onclick="handlePhone()">Gen No HP</button>
+            </div>
+        </div>
+
+        <!-- 6. SN Generator -->
         <div class="card">
             <div class="header-row">
                 <span class="title">🏷️ Serial Number (SN)</span>
@@ -122,18 +158,17 @@
             </div>
             <div class="action-row">
                 <input type="text" id="snOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnSn" onclick="handleSN()">Generator SN</button>
+                <button id="btnSn" onclick="handleSN()">Gen SN</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Fungsi pembantu untuk menyalin teks & mengubah tampilan tombol
+        // Fungsi Salin Otomatis
         function copyToClipboard(inputId, btnId, originalText) {
             const inputEl = document.getElementById(inputId);
             const btnEl = document.getElementById(btnId);
             
-            // Metode salin modern dengan fallback untuk iframe/WebView
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(inputEl.value);
             } else {
@@ -143,23 +178,21 @@
                 window.getSelection().removeAllRanges();
             }
 
-            // Animasi umpan balik tombol
             btnEl.innerText = '✅ Tersalin!';
             btnEl.classList.add('copied');
             
             setTimeout(() => {
                 btnEl.innerText = originalText;
                 btnEl.classList.remove('copied');
-            }, 1000);
+            }, 900);
         }
 
-        // 1. Fungsi Generate + Copy IMEI
+        // 1. Fungsi IMEI
         function handleIMEI() {
             let imei = '86';
             for (let i = 0; i < 12; i++) {
                 imei += Math.floor(Math.random() * 10);
             }
-            
             let sum = 0;
             for (let i = 0; i < 14; i++) {
                 let digit = parseInt(imei.charAt(i));
@@ -169,27 +202,53 @@
                 }
                 sum += digit;
             }
-            
             let checkDigit = (10 - (sum % 10)) % 10;
             imei += checkDigit;
             
             document.getElementById('imeiOutput').value = imei;
-            copyToClipboard('imeiOutput', 'btnImei', 'Generator IMEI');
+            copyToClipboard('imeiOutput', 'btnImei', 'Gen IMEI');
         }
 
-        // 2. Fungsi Generate + Copy MAC Address
-        function handleMAC() {
+        // 2 & 3. Fungsi MAC Address (Wi-Fi & GSM)
+        function handleMAC(inputId, btnId, btnText) {
             let mac = '';
             const hexChars = '0123456789abcdef';
             for (let i = 0; i < 12; i++) {
                 mac += hexChars.charAt(Math.floor(Math.random() * 16));
             }
             
-            document.getElementById('macOutput').value = mac;
-            copyToClipboard('macOutput', 'btnMac', 'Generator MAC Ad');
+            document.getElementById(inputId).value = mac;
+            copyToClipboard(inputId, btnId, btnText);
         }
 
-        // 3. Fungsi Generate + Copy Serial Number
+        // 4. Fungsi MSIN (10 Digit)
+        function handleMSIN() {
+            let msin = '' + (Math.floor(Math.random() * 9) + 1);
+            for (let i = 0; i < 9; i++) {
+                msin += Math.floor(Math.random() * 10);
+            }
+            
+            document.getElementById('msinOutput').value = msin;
+            copyToClipboard('msinOutput', 'btnMsin', 'Gen MSIN');
+        }
+
+        // 5. Fungsi Nomor HP Telkomsel (12 Digit, Awalan 62)
+        function handlePhone() {
+            // Daftar prefix resmi Telkomsel (5 digit awal)
+            const prefixes = ['62811', '62812', '62813', '62821', '62822', '62823', '62852', '62853'];
+            // Pilih salah satu prefix secara acak
+            let phone = prefixes[Math.floor(Math.random() * prefixes.length)];
+            
+            // Tambahkan 7 digit angka acak (5 + 7 = 12 digit total)
+            for (let i = 0; i < 7; i++) {
+                phone += Math.floor(Math.random() * 10);
+            }
+            
+            document.getElementById('phoneOutput').value = phone;
+            copyToClipboard('phoneOutput', 'btnPhone', 'Gen No HP');
+        }
+
+        // 6. Fungsi Serial Number
         function handleSN() {
             let sn = '';
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -198,7 +257,7 @@
             }
             
             document.getElementById('snOutput').value = sn;
-            copyToClipboard('snOutput', 'btnSn', 'Generator SN');
+            copyToClipboard('snOutput', 'btnSn', 'Gen SN');
         }
     </script>
 </body>
