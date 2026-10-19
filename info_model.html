@@ -27,7 +27,7 @@
     .btn-primary { background: var(--accent); color: white; border: none; font-weight: 600; cursor: pointer; }
     .btn-primary:active { background: var(--accent-hover); }
     .btn-warn { background: var(--warn); color: #0f172a; border: none; font-weight: 600; cursor: pointer; padding: 4px 8px; font-size: 11px; }
-    .field-row { display: grid; grid-template-columns: 120px 1fr auto; gap: 6px; align-items: center; margin-bottom: 7px; }
+    .field-row { display: grid; grid-template-columns: 125px 1fr auto; gap: 6px; align-items: center; margin-bottom: 7px; }
     .field-label { color: var(--muted); font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .field-input { width: 100%; background: #0f172a; color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 6px 8px; font-size: 12px; font-family: monospace; }
     .btn-copy { background: #334155; color: var(--text); border: none; padding: 6px 9px; border-radius: 5px; cursor: pointer; font-size: 11px; }
@@ -53,21 +53,21 @@
     </div>
     <div class="preset-bar" style="margin-bottom: 0;">
       <select id="simOperator" onchange="generatePhoneParams()">
-        <option value="51010">Telkomsel (51010)</option>
-        <option value="51011">XL Axiata (51011)</option>
-        <option value="51001">Indosat Ooredoo (51001)</option>
-        <option value="51089">Tri / 3 (51089)</option>
-        <option value="51009">Smartfren (51009)</option>
+        <option value="0">Telkomsel (510 - 10)</option>
+        <option value="1">XL Axiata (510 - 11)</option>
+        <option value="2">Indosat Ooredoo (510 - 01)</option>
+        <option value="3">Tri / 3 (510 - 89)</option>
+        <option value="4">Smartfren (510 - 09)</option>
       </select>
       <button class="btn-primary" onclick="randomAll()">Acak Semua</button>
     </div>
   </div>
 
-  <!-- BAGIAN 1: PARAMETER PONSEL -->
+  <!-- BAGIAN 1: PARAMETER PONSEL (SESUAI URUTAN VPHONEOS) -->
   <div class="card">
     <div class="section-title">
-      <span>1. Parameter Ponsel (Identitas Unik)</span>
-      <button class="btn-warn" onclick="generatePhoneParams()">Acak Ulang ID</button>
+      <span>1. Parameter Ponsel</span>
+      <button class="btn-warn" onclick="generatePhoneParams()">Acak Ulang</button>
     </div>
     <div id="phoneParamFields"></div>
   </div>
@@ -90,11 +90,19 @@
 </div>
 
 <script>
+const operators = [
+  { name: "Telkomsel", mcc: "510", mnc: "10", prefixes: ["62811", "62812", "62813", "62821", "62822", "62852"] },
+  { name: "XL", mcc: "510", mnc: "11", prefixes: ["62817", "62818", "62819", "62859", "62877", "62878"] },
+  { name: "Indosat", mcc: "510", mnc: "01", prefixes: ["62814", "62815", "62816", "62855", "62856", "62857", "62858"] },
+  { name: "3", mcc: "510", mnc: "89", prefixes: ["62895", "62896", "62897", "62898", "62899"] },
+  { name: "Smartfren", mcc: "510", mnc: "09", prefixes: ["62881", "62882", "62887", "62888", "62889"] }
+];
+
 const presets = [
   {
     name: "Samsung Galaxy A52s 5G",
     tac: "35886655",
-    macPrefix: ["E4:5E:37", "C0:B8:83", "70:5A:0F"],
+    macPrefix: ["e45e37", "c0b883", "705a0f", "d8c4e9", "54b802"],
     modelInfo: {
       "Board": "lahaina",
       "Board Platform": "lahaina",
@@ -118,7 +126,7 @@ const presets = [
   {
     name: "Xiaomi Redmi Note 11",
     tac: "86483905",
-    macPrefix: ["AC:C1:EE", "64:09:80", "F4:F5:DB"],
+    macPrefix: ["acc1ee", "640980", "f4f5db"],
     modelInfo: {
       "Board": "spes",
       "Board Platform": "bengal",
@@ -142,7 +150,7 @@ const presets = [
   {
     name: "OPPO Reno8 5G",
     tac: "86119606",
-    macPrefix: ["94:D0:0D", "E8:BBA8", "BC:2D:EF"],
+    macPrefix: ["94d00d", "e8bba8", "bc2def"],
     modelInfo: {
       "Board": "mt6893",
       "Board Platform": "mt6893",
@@ -166,7 +174,7 @@ const presets = [
   {
     name: "Vivo V23 5G",
     tac: "86365805",
-    macPrefix: ["54:92:09", "C8:B2:1E", "78:02:F8"],
+    macPrefix: ["549209", "c8b21e", "7802f8"],
     modelInfo: {
       "Board": "k6877v1_64",
       "Board Platform": "mt6877",
@@ -190,7 +198,7 @@ const presets = [
   {
     name: "Realme 9 Pro+ 5G",
     tac: "86740205",
-    macPrefix: ["4C:1A:3A", "18:01:F1", "A4:B1:C1"],
+    macPrefix: ["4c1a3a", "1801f1", "a4b1c1"],
     modelInfo: {
       "Board": "mt6877",
       "Board Platform": "mt6877",
@@ -225,21 +233,20 @@ function randDigits(len, noZeroStart = false) {
   return res;
 }
 
-function randHex(len) {
+function randHexLower(len) {
   const chars = "0123456789abcdef";
   let res = "";
   for (let i = 0; i < len; i++) res += chars[Math.floor(Math.random() * 16)];
   return res;
 }
 
-function randAlphaNum(len) {
+function randAlphaNumUpper(len) {
   const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let res = "";
   for (let i = 0; i < len; i++) res += chars[Math.floor(Math.random() * chars.length)];
   return res;
 }
 
-// Perhitungan digit terakhir (Luhn Checksum) untuk IMEI & ICCID
 function calcLuhn(numStr) {
   let sum = 0;
   let shouldDouble = true;
@@ -260,22 +267,15 @@ function generateIMEI(tac) {
   return base14 + calcLuhn(base14);
 }
 
-function generateICCID(mccmnc) {
-  // Format standar: 89 + 62 (Indonesia) + 2 digit operator + 12 digit acak + 1 Luhn = 19/20 digit
-  const opCode = mccmnc.substring(3, 5);
-  const base18 = "8962" + opCode + randDigits(12);
-  return base18 + calcLuhn(base18);
+// Menghasilkan 12 karakter hex huruf kecil tanpa titik dua (sesuai format VphoneOS)
+function generateRawMAC(prefixList) {
+  const prefix = prefixList[Math.floor(Math.random() * prefixList.length)].toLowerCase();
+  return prefix + randHexLower(6);
 }
 
-function generateMAC(prefixList) {
-  const rawPrefix = prefixList[Math.floor(Math.random() * prefixList.length)].replace(/[^0-9A-Fa-f]/g, "");
-  const p1 = rawPrefix.substring(0, 2);
-  const p2 = rawPrefix.substring(2, 4);
-  const p3 = rawPrefix.substring(4, 6);
-  const s1 = randHex(2).toUpperCase();
-  const s2 = randHex(2).toUpperCase();
-  const s3 = randHex(2).toUpperCase();
-  return `${p1}:${p2}:${p3}:${s1}:${s2}:${s3}`;
+function generatePhoneNumber(prefixes) {
+  const pref = prefixes[Math.floor(Math.random() * prefixes.length)];
+  return pref + randDigits(7, true);
 }
 
 function renderFields(containerId, dataObj, prefix) {
@@ -295,22 +295,22 @@ function renderFields(containerId, dataObj, prefix) {
 }
 
 function generatePhoneParams() {
-  const idx = document.getElementById("devicePreset").value;
-  const mccmnc = document.getElementById("simOperator").value;
-  const p = presets[idx];
-  const msin = randDigits(10, true);
+  const devIdx = document.getElementById("devicePreset").value;
+  const opIdx = document.getElementById("simOperator").value;
+  const p = presets[devIdx];
+  const op = operators[opIdx];
 
+  // Urutan dan nama properti dibuat sama persis dengan menu Parameter ponsel VphoneOS
   const phoneParams = {
-    "IMEI 1": generateIMEI(p.tac),
-    "IMEI 2": generateIMEI(p.tac),
-    "Android ID": randHex(16),
-    "Serial Number": randAlphaNum(12),
-    "MCC + MNC": mccmnc,
-    "MSIN (10 Digit)": msin,
-    "IMSI (Full 15)": mccmnc + msin,
-    "ICCID (SIM)": generateICCID(mccmnc),
-    "Wi-Fi MAC": generateMAC(p.macPrefix),
-    "Bluetooth MAC": generateMAC(p.macPrefix)
+    "Alamat MAC GSM": generateRawMAC(p.macPrefix),
+    "Alamat MAC": generateRawMAC(p.macPrefix),
+    "MCC": op.mcc,
+    "MNC": op.mnc,
+    "MSIN": randDigits(10, true),
+    "IMEI": generateIMEI(p.tac),
+    "Operator": op.name,
+    "serialno": randAlphaNumUpper(12),
+    "Nomor HP": generatePhoneNumber(op.prefixes)
   };
 
   renderFields("phoneParamFields", phoneParams, "prm");
@@ -346,7 +346,7 @@ function copyVal(inputId, btn) {
   }, 900);
 }
 
-// Inisialisasi saat halaman dibuka
+// Inisialisasi awal
 generateAll();
 </script>
 
