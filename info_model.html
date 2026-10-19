@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preset Model & GPU (Android 12)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); margin: 0; padding: 12px; font-size: 13px; }
+    .container { max-width: 480px; margin: 0 auto; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+    .section-title { font-size: 14px; font-weight: 700; color: #60a5fa; margin: 0 0 10px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    .preset-bar { display: flex; gap: 6px; margin-bottom: 14px; }
+    select, button { border-radius: 6px; border: 1px solid var(--border); font-size: 12px; padding: 7px 10px; outline: none; }
+    select { flex: 1; background: #0f172a; color: var(--text); }
+    .btn-random { background: var(--accent); color: white; border: none; font-weight: 600; cursor: pointer; }
+    .btn-random:active { background: var(--accent-hover); }
+    .field-row { display: grid; grid-template-columns: 115px 1fr auto; gap: 6px; align-items: center; margin-bottom: 7px; }
+    .field-label { color: var(--muted); font-size: 12px; font-weight: 500; }
+    .field-input { width: 100%; background: #0f172a; color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 6px 8px; font-size: 12px; font-family: monospace; }
+    .btn-copy { background: #334155; color: var(--text); border: none; padding: 6px 9px; border-radius: 5px; cursor: pointer; font-size: 11px; }
+    .btn-copy.copied { background: var(--success); color: #fff; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Pemilih Preset -->
+  <div class="card">
+    <div class="section-title">
+      <span>Preset Perangkat (Android 12)</span>
+    </div>
+    <div class="preset-bar">
+      <select id="devicePreset" onchange="applyPreset()">
+        <option value="0">Samsung Galaxy A52s 5G (Snapdragon 778G)</option>
+        <option value="1">Xiaomi Redmi Note 11 (Snapdragon 680)</option>
+        <option value="2">OPPO Reno8 5G (Dimensity 1300)</option>
+        <option value="3">Vivo V23 5G (Dimensity 920)</option>
+        <option value="4">Realme 9 Pro+ 5G (Dimensity 920)</option>
+      </select>
+      <button class="btn-random" onclick="randomPreset()">Acak</button>
+    </div>
+
+    <!-- BAGIAN 1: INFO MODEL -->
+    <div class="section-title">
+      <span>Info Model (Model Ponsel)</span>
+    </div>
+    <div id="modelFields"></div>
+
+    <!-- BAGIAN 2: INFO GPU -->
+    <div class="section-title" style="margin-top: 16px;">
+      <span>Info GPU (Model GPU)</span>
+    </div>
+    <div id="gpuFields"></div>
+  </div>
+</div>
+
+<script>
+const presets = [
+  {
+    name: "Samsung Galaxy A52s 5G",
+    modelInfo: {
+      "Board": "lahaina",
+      "Board Platform": "lahaina",
+      "Brand": "samsung",
+      "Cpu Manufacturer": "Qualcomm",
+      "Cpu Model": "SM7325",
+      "Device": "a52sxq",
+      "Displayid": "SP1A.210812.016.A528BXXS1CVG2",
+      "Fingerprint": "samsung/a52sxqxx/a52sxq:12/SP1A.210812.016/A528BXXS1CVG2:user/release-keys",
+      "Hardware": "qcom",
+      "Manufacturer": "samsung",
+      "Model": "SM-A528B",
+      "Product": "a52sxqxx"
+    },
+    gpuInfo: {
+      "Hardware": "qcom",
+      "Renderer": "Adreno (TM) 642L",
+      "Vendor": "Qualcomm"
+    }
+  },
+  {
+    name: "Xiaomi Redmi Note 11",
+    modelInfo: {
+      "Board": "spes",
+      "Board Platform": "bengal",
+      "Brand": "Redmi",
+      "Cpu Manufacturer": "Qualcomm",
+      "Cpu Model": "SM6225",
+      "Device": "spes",
+      "Displayid": "SKQ1.211103.001",
+      "Fingerprint": "Redmi/spes_global/spes:12/SKQ1.211103.001/V13.0.4.0.SGCMIXM:user/release-keys",
+      "Hardware": "qcom",
+      "Manufacturer": "Xiaomi",
+      "Model": "2201117TG",
+      "Product": "spes_global"
+    },
+    gpuInfo: {
+      "Hardware": "qcom",
+      "Renderer": "Adreno (TM) 610",
+      "Vendor": "Qualcomm"
+    }
+  },
+  {
+    name: "OPPO Reno8 5G",
+    modelInfo: {
+      "Board": "mt6893",
+      "Board Platform": "mt6893",
+      "Brand": "OPPO",
+      "Cpu Manufacturer": "MediaTek",
+      "Cpu Model": "MT6893Z_B/CZA",
+      "Device": "OP535DL1",
+      "Displayid": "SP1A.210812.016",
+      "Fingerprint": "OPPO/CPH2359/OP535DL1:12/SP1A.210812.016/S.202209151800:user/release-keys",
+      "Hardware": "mt6893",
+      "Manufacturer": "OPPO",
+      "Model": "CPH2359",
+      "Product": "CPH2359"
+    },
+    gpuInfo: {
+      "Hardware": "mt6893",
+      "Renderer": "Mali-G77 MC9",
+      "Vendor": "ARM"
+    }
+  },
+  {
+    name: "Vivo V23 5G",
+    modelInfo: {
+      "Board": "k6877v1_64",
+      "Board Platform": "mt6877",
+      "Brand": "vivo",
+      "Cpu Manufacturer": "MediaTek",
+      "Cpu Model": "MT6877V/TZA",
+      "Device": "V2130",
+      "Displayid": "SP1A.210812.003",
+      "Fingerprint": "vivo/2130/V2130:12/SP1A.210812.003/compiler03221512:user/release-keys",
+      "Hardware": "mt6877",
+      "Manufacturer": "vivo",
+      "Model": "V2130",
+      "Product": "2130"
+    },
+    gpuInfo: {
+      "Hardware": "mt6877",
+      "Renderer": "Mali-G68 MC4",
+      "Vendor": "ARM"
+    }
+  },
+  {
+    name: "Realme 9 Pro+ 5G",
+    modelInfo: {
+      "Board": "mt6877",
+      "Board Platform": "mt6877",
+      "Brand": "realme",
+      "Cpu Manufacturer": "MediaTek",
+      "Cpu Model": "MT6877V/TTZA",
+      "Device": "RE54E4L1",
+      "Displayid": "SP1A.210812.016",
+      "Fingerprint": "realme/RMX3393/RE54E4L1:12/SP1A.210812.016/S.202207211620:user/release-keys",
+      "Hardware": "mt6877",
+      "Manufacturer": "realme",
+      "Model": "RMX3393",
+      "Product": "RMX3393"
+    },
+    gpuInfo: {
+      "Hardware": "mt6877",
+      "Renderer": "Mali-G68 MC4",
+      "Vendor": "ARM"
+    }
+  }
+];
+
+function renderFields(containerId, dataObj, prefix) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  Object.entries(dataObj).forEach(([label, val], idx) => {
+    const inputId = `${prefix}_${idx}`;
+    const row = document.createElement("div");
+    row.className = "field-row";
+    row.innerHTML = `
+      <span class="field-label">${label}:</span>
+      <input type="text" class="field-input" id="${inputId}" value="${val}" readonly>
+      <button class="btn-copy" onclick="copyVal('${inputId}', this)">Salin</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function applyPreset() {
+  const idx = document.getElementById("devicePreset").value;
+  const p = presets[idx];
+  renderFields("modelFields", p.modelInfo, "mdl");
+  renderFields("gpuFields", p.gpuInfo, "gpu");
+}
+
+function randomPreset() {
+  const select = document.getElementById("devicePreset");
+  let next = Math.floor(Math.random() * presets.length);
+  if (next === parseInt(select.value)) {
+    next = (next + 1) % presets.length;
+  }
+  select.value = next;
+  applyPreset();
+}
+
+function copyVal(inputId, btn) {
+  const el = document.getElementById(inputId);
+  navigator.clipboard.writeText(el.value);
+  const oldText = btn.innerText;
+  btn.innerText = "OK!";
+  btn.classList.add("copied");
+  setTimeout(() => {
+    btn.innerText = oldText;
+    btn.classList.remove("copied");
+  }, 900);
+}
+
+// Inisialisasi awal
+applyPreset();
+</script>
+
+</body>
+</html>
