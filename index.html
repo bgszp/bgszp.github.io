@@ -22,10 +22,10 @@
             border: 2px solid #3d3463; border-radius: 12px; outline: none; background-color: #1a1535; color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);
         }
         .btn-group { display: flex; flex-direction: column; gap: 12px; }
-.btn-primary { 
+        .btn-primary { 
             width: 100%; padding: 15px; background: linear-gradient(45deg, #8a2be2, #4a00e0); color: white; 
             border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
-}
+        }
         .btn-primary:disabled { background: #3d3463 !important; cursor: not-allowed; box-shadow: none; color: #aaa; }
         .history-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; width: 100%; max-height: 200px; overflow-y: auto; }
         .history-title { font-size: 13px; font-weight: bold; color: #aaa; margin-bottom: 10px; display: flex; justify-content: space-between; }
@@ -319,11 +319,26 @@
         </div>
     </div>
 
-    <div style="width: 100%; max-width: 900px; margin-bottom: 20px;">
+    <div style="width: 100%; max-width: 900px;">
         <div id="wadahGenUniq" class="wadah-iframe-server">
-            <!-- Memanggil file Generator_uniq.html (pastikan nama file sesuai G besar) -->
             <iframe data-src="Generator_uniq.html" src="" width="100%" height="450px" style="border: none; display: block; padding-top: 10px;"></iframe>
         </div>
+    </div>
+
+    <!-- === 10. TOMBOL KECIL & OVERLAY INFO MODEL === -->
+    <div style="width: 100%; max-width: 900px; display: flex; justify-content: flex-start; margin-top: 2px; margin-bottom: 20px;">
+        <div onclick="toggleInfoModel()" title="Buka Info Model" style="width: 42px; height: 42px; background: #1a1535; border: 2px solid #ff9900; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff9900; font-size: 18px; box-shadow: 0 4px 12px rgba(255, 153, 0, 0.25); user-select: none;">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+        </div>
+    </div>
+
+    <!-- WADAH FULL OVERLAY (Menutupi area dari Data Generator ke bawah) -->
+    <div id="wadahInfoModel" style="display: none; position: fixed; top: 82px; left: 50%; transform: translateX(-50%); width: calc(100% - 24px); max-width: 900px; bottom: 12px; background: #121324; border: 2px solid #ff9900; border-radius: 12px; z-index: 50; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.9); flex-direction: column;">
+        <div style="background: #1a1535; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3d3463;">
+            <span style="font-size: 13px; font-weight: bold; color: #ff9900;"><i class="fa-solid fa-circle-info" style="margin-right: 6px;"></i>INFO MODEL</span>
+            <button onclick="toggleInfoModel()" style="background: rgba(255, 74, 74, 0.15); border: 1px solid #ff4a4a; color: #ff4a4a; border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: bold; cursor: pointer;">✕ Tutup</button>
+        </div>
+        <iframe id="iframeInfoModel" data-src="info_model.html" src="" style="width: 100%; flex: 1; border: none; display: block;"></iframe>
     </div>
 
     <div class="toast" id="toastNotif">Berhasil! ✨</div>
@@ -351,6 +366,19 @@
                     const iframe = wadah.querySelector('iframe');
                     if (iframe) iframe.setAttribute('src', ''); 
                 }
+            }
+        }
+
+        function toggleInfoModel() {
+            const wadah = document.getElementById('wadahInfoModel');
+            const iframe = document.getElementById('iframeInfoModel');
+            if (wadah.style.display === "none" || wadah.style.display === "") {
+                if (iframe && !iframe.getAttribute('src')) {
+                    iframe.setAttribute('src', iframe.getAttribute('data-src'));
+                }
+                wadah.style.display = "flex";
+            } else {
+                wadah.style.display = "none";
             }
         }
 
@@ -385,6 +413,11 @@
                     }
                 }
             });
+
+            // Tutup juga overlay Info Model jika sedang terbuka
+            const infoWadah = document.getElementById('wadahInfoModel');
+            if (infoWadah) infoWadah.style.display = "none";
+
             window.showToast("Semua menu ditutup! 🧹");
         }
 
