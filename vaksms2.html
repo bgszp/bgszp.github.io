@@ -128,8 +128,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Bug "Reset Centang Saat Bersihkan" Diperbaiki.<br>
-            └> Sniper terkunci kuat saat layar direfresh.
+            └> Sinkronisasi Waktu 20 Menit saat Kirim Ulang.<br>
+            └> Menggunakan Proxy Pribadi Cloudflare (Anti Limit).
         </div>
     </div>
     
@@ -297,10 +297,6 @@
 
                     vak_cachedOffers.sort((a, b) => a.price - b.price);
                     vak_lastServiceId = serviceId;
-                    
-                    // FIXED: Hanya reset harga yang dicentang saat Layanan (misal Shopee -> WA) benar-benar diganti
-                    // dan memuat data baru dari server, BUKAN saat di-refresh.
-                    vak_hargaTercentang = []; 
 
                 } catch (e) {
                     document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block; word-wrap:break-word;">🚨 ERROR: ${e.message}</span>`;
@@ -309,7 +305,7 @@
                     return;
                 }
             }
-            // Tidak ada lagi vak_hargaTercentang = []; di luar blok IF ini.
+            vak_hargaTercentang = [];
             window.vak_terapkanFilterOperator();
         }
 
@@ -665,15 +661,23 @@
             vak_daftarOrderan.forEach((item, index) => {
                 item.otp_count = item.otp_count || 1; 
 
+                if (!item.waktu_dibuat_asli) item.waktu_dibuat_asli = item.waktu_dibuat;
+
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                if (item.status === "pending" && sec >= 300) { 
+                let secAsli = Math.floor((Date.now() - item.waktu_dibuat_asli) / 1000);
+
+                let isResend = item.otp_count > 1;
+                let limitDetik = isResend ? 1200 : 300;
+                let waktuBerjalan = isResend ? secAsli : sec;
+
+                if (item.status === "pending" && waktuBerjalan >= limitDetik) { 
                     item.status = "cancelled"; 
                     apiVakSmsV2_Silent('setStatus', { idNum: item.order_id, status: 'bad' });
                     window.vak_ambilSaldoLive(true); 
                 }
                 if (item.status === "cancelled") return; 
 
-                let d = new Date(item.waktu_dibuat);
+                let d = new Date(item.waktu_dibuat_asli);
                 let timeStr = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + " " + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
                 let labelWarning = item.is_recycled ? `<span style="color:#ff5555; font-size:9px; border:1px solid #ff5555; padding:2px 4px; border-radius:4px; margin-left:4px;">⚠️ Pernah Dipakai</span>` : "";
@@ -693,9 +697,8 @@
                 }
 
                 countAktif++; 
-                let secAsli = Math.floor((Date.now() - (item.waktu_dibuat_asli || item.waktu_dibuat)) / 1000);
                 
-                let sisa = Math.max(0, 300 - sec); 
+                let sisa = Math.max(0, limitDetik - waktuBerjalan); 
                 let cool = Math.max(0, 120 - sec); 
                 let sisaMax = Math.max(0, 1200 - secAsli); 
                 if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) { cool = 0; }
@@ -706,7 +709,7 @@
                 
                 let btnBlokirManual = (item.status === "pending" && item.otp_count === 1) ? `<button onclick="vak_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir & Batal"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
                 
-                let badgeMaxTime = `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal Vak"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>`;
+                let badgeMaxTime = !isResend ? `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal Vak"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>` : "";
 
                 let teksHargaAsli = item.harga ? vak_formatRupiah(item.harga * KURS_USD_IDR) : '-';
                 let badgeHargaAsli = `<div style="font-size:10px; font-weight:bold; color:var(--accent-cyan); background:#1d203f; padding:3px 7px; border-radius:5px; border:1px solid #3d3f7a;" title="Harga Asli">💰 ${teksHargaAsli}</div>`;
