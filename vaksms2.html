@@ -73,7 +73,7 @@
         <div class="dropdown-box-wrapper">
             <label class="form-label">🛒 Setup Layanan Utama</label>
             <div class="unified-order-box">
-                <select id="vak_dropdownLayanan" class="unified-select-op" onchange="vak_muatProdukLayanan()">
+                <select id="vak_dropdownLayanan" class="unified-select-op" onchange="vak_layananDiubahOlehUser()">
                     <option value="sh" selected>Shopee (Indonesia)</option>
                     <option value="wa">WhatsApp (Indonesia)</option>
                     <option value="tg">Telegram (Indonesia)</option>
@@ -128,8 +128,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Sinkronisasi Waktu 20 Menit saat Kirim Ulang.<br>
-            └> Menggunakan Proxy Pribadi Cloudflare (Anti Limit).
+            └> Bug "Reset Centang Saat Refresh/Bersihkan" Diperbaiki.<br>
+            └> Pilihan Sniper Aman Tersimpan.
         </div>
     </div>
     
@@ -164,7 +164,7 @@
         let vak_hargaProdukTerpilih = 0; 
         let vak_siklusCek = 0;
         let vak_modeCentang = false;
-        let vak_hargaTercentang = [];
+        let vak_hargaTercentang = []; // Array untuk menyimpan harga yang dicentang
 
         function vak_formatRupiah(angka) { return "Rp " + Math.ceil(angka).toLocaleString("id-ID"); }
 
@@ -236,7 +236,7 @@
 
         window.vak_refreshSemuaDataLive = async function() { 
             document.getElementById("vak_txtSaldoLive").innerText = "...";
-            await window.vak_muatProdukLayanan();
+            await window.vak_muatProdukLayanan(true); // Kirim flag "true" agar tidak mereset centang
             setTimeout(() => { window.vak_ambilSaldoLive(false); }, 1500);
         }
 
@@ -272,10 +272,16 @@
             window.vak_refreshSemuaDataLive(); vak_showToast("Dibersihkan!");
         }
 
-        window.vak_muatProdukLayanan = async function() {
+        // Fungsi khusus saat *user* secara sadar mengubah Dropdown Layanan (Shopee -> Telegram, dll)
+        window.vak_layananDiubahOlehUser = function() {
+            vak_hargaTercentang = []; // HANYA RESET CENTANG DI SINI
+            window.vak_muatProdukLayanan(false);
+        }
+
+        window.vak_muatProdukLayanan = async function(isRefresh = false) {
             let serviceId = document.getElementById("vak_dropdownLayanan").value;
             
-            if (serviceId !== vak_lastServiceId || !vak_cachedOffers || vak_cachedOffers.length === 0) {
+            if (serviceId !== vak_lastServiceId || !vak_cachedOffers || vak_cachedOffers.length === 0 || isRefresh) {
                 document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data...</span>`;
                 document.getElementById("vak_btnPesanAksi").disabled = true;
                 
@@ -305,7 +311,7 @@
                     return;
                 }
             }
-            vak_hargaTercentang = [];
+            
             window.vak_terapkanFilterOperator();
         }
 
@@ -328,8 +334,10 @@
                 });
 
                 if (vak_modeCentang) {
+                    // Validasi: Pertahankan harga yang dicentang asalkan harganya masih ada di daftar terbaru
                     let availablePrices = vak_daftarServerTersedia.map(s => s.price);
                     vak_hargaTercentang = vak_hargaTercentang.filter(p => availablePrices.includes(p));
+                    
                     if(vak_hargaTercentang.length === 0 && vak_daftarServerTersedia.length > 0) {
                         vak_hargaTercentang.push(vak_daftarServerTersedia[0].price);
                     }
