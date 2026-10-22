@@ -126,7 +126,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">⚡ IMEI (Luhn Algo)</span>
-                <span class="badge" id="imeiBadge">15 Digit (86119606)</span>
+                <span class="badge" id="imeiBadge">15 Digit (86 - OPPO)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="imeiOutput" placeholder="Klik tombol 👉" readonly>
@@ -138,7 +138,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">🌐 Alamat MAC (Wi-Fi)</span>
-                <span class="badge" id="macWifiBadge">12 Hex (OUI Pabrik)</span>
+                <span class="badge" id="macWifiBadge">12 Hex (OUI OPPO)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly>
@@ -150,7 +150,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">📡 Alamat MAC GSM</span>
-                <span class="badge" id="macGsmBadge">12 Hex (OUI Pabrik)</span>
+                <span class="badge" id="macGsmBadge">12 Hex (OUI OPPO)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="macGsmOutput" placeholder="Klik tombol 👉" readonly>
@@ -186,7 +186,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">🏷️ Serial Number (SN)</span>
-                <span class="badge">15 Alfanumerik</span>
+                <span class="badge" id="snBadge">12 Karakter (OPPO)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="snOutput" placeholder="Klik tombol 👉" readonly>
@@ -196,12 +196,15 @@
     </div>
 
     <script>
-        // Database Preset: TAC 8 Digit Resmi & OUI MAC Pabrikan (Semua digit ke-2 genap/Unicast)
+        // Database Preset Lengkap: TAC 8-Digit, OUI MAC Pabrikan (Unicast Genap), & Format SN Pabrikan
         const devicePresets = {
             oppo_a6: {
                 brandName: 'OPPO',
                 tac: '86119606',
                 oui: ['94d00d', 'bc2def', 'e8bba8', '704d7b', 'a43b00', '1c48ce'],
+                snInfo: '12 Karakter (OPPO)',
+                snPrefix: ['A21', 'P9B', 'K62', 'CPH'],
+                snLen: 12,
                 disp: 'PLS120_12.0.1.200(CN01)',
                 fp: 'OPPO/PLS120/OP5E1C:12/SP1A.210812.016/12.0.1.200:user/release-keys'
             },
@@ -209,6 +212,9 @@
                 brandName: 'OPPO',
                 tac: '86329806',
                 oui: ['bc2def', '94d00d', 'e8bba8', '704d7b', '2c598a'],
+                snInfo: '12 Karakter (OPPO)',
+                snPrefix: ['PHY', 'A23', 'K81', 'P4C'],
+                snLen: 12,
                 disp: 'PHY110_12.0.0.402(CN01)',
                 fp: 'OPPO/PHY110/OP5929L1:12/SP1A.210812.016/12.0.0.402:user/release-keys'
             },
@@ -216,6 +222,9 @@
                 brandName: 'OPPO',
                 tac: '86741206',
                 oui: ['e8bba8', '94d00d', 'bc2def', 'a43b00', '704d7b'],
+                snInfo: '12 Karakter (OPPO)',
+                snPrefix: ['PKB', 'A24', 'K92', 'P8D'],
+                snLen: 12,
                 disp: 'PKB110_12.0.0.201(CN01)',
                 fp: 'OPPO/PKB110/OP5D0BL1:12/SP1A.210812.016/12.0.0.201:user/release-keys'
             },
@@ -223,6 +232,9 @@
                 brandName: 'VIVO',
                 tac: '86365805',
                 oui: ['549209', 'c8b21e', '7802f8', 'd463c6', 'ac5a14'],
+                snInfo: '12 Karakter (VIVO)',
+                snPrefix: ['10A', 'V24', '88B', 'PD2'],
+                snLen: 12,
                 disp: 'SP1A.210812.003 release-keys',
                 fp: 'vivo/PD2425/PD2425:12/SP1A.210812.003/compiler11201512:user/release-keys'
             },
@@ -230,6 +242,9 @@
                 brandName: 'Xiaomi',
                 tac: '86483905',
                 oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9'],
+                snInfo: '12 Karakter (Xiaomi)',
+                snPrefix: ['482', '391', '520', '284'],
+                snLen: 12,
                 disp: 'SKQ1.211006.001',
                 fp: 'Redmi/champion/champion:12/SKQ1.211006.001/V13.0.12.0.SLKCNXM:user/release-keys'
             },
@@ -237,6 +252,9 @@
                 brandName: 'HONOR',
                 tac: '86095606',
                 oui: ['04f938', '48db50', '80b686', 'e02481', 'c81451'],
+                snInfo: '16 Karakter (HONOR)',
+                snPrefix: ['W3N02', 'C8J7N', 'HVU24', 'BVL01'],
+                snLen: 16,
                 disp: 'BVL-AN16 12.0.0.132(C00E130R2P1)',
                 fp: 'HONOR/BVL-AN16/HNBVL:12/HONORBVL-AN16/12.0.0.132C00:user/release-keys'
             },
@@ -244,6 +262,9 @@
                 brandName: 'Samsung',
                 tac: '35876214',
                 oui: ['e45e37', 'c0b883', '705a0f', 'd8c4e9', '54b802'],
+                snInfo: '11 Karakter (R58/RF8)',
+                snPrefix: ['R58R', 'RF8R', 'RR8T', 'R58T'],
+                snLen: 11,
                 disp: 'SP1A.210812.016.G991BXXS5CVH1',
                 fp: 'samsung/o1sxeea/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
             },
@@ -251,13 +272,18 @@
                 brandName: 'Samsung',
                 tac: '35407985',
                 oui: ['d8c4e9', '54b802', 'e45e37', 'c0b883', '244b03'],
+                snInfo: '11 Karakter (R58/RF8)',
+                snPrefix: ['R58W', 'RF8W', 'R3CW', 'RR8W'],
+                snLen: 11,
                 disp: 'SP1A.210812.016.S918BXXU1AWBD',
                 fp: 'samsung/dm3qxeea/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
             }
         };
 
-        let currentImeiPrefix = '86119606';
+        let currentImeiPrefix = devicePresets.oppo_a6.tac;
         let currentOuiList = devicePresets.oppo_a6.oui;
+        let currentSnPrefixList = devicePresets.oppo_a6.snPrefix;
+        let currentSnLen = devicePresets.oppo_a6.snLen;
 
         function updateDevicePreset() {
             const val = document.getElementById('deviceSelect').value;
@@ -267,11 +293,14 @@
             
             currentImeiPrefix = preset.tac;
             currentOuiList = preset.oui;
+            currentSnPrefixList = preset.snPrefix;
+            currentSnLen = preset.snLen;
 
             document.getElementById('tacHint').innerText = 'TAC: ' + preset.tac;
             document.getElementById('imeiBadge').innerText = '15 Digit (' + preset.tac.substring(0, 2) + ' - ' + preset.brandName + ')';
             document.getElementById('macWifiBadge').innerText = '12 Hex (OUI ' + preset.brandName + ')';
             document.getElementById('macGsmBadge').innerText = '12 Hex (OUI ' + preset.brandName + ')';
+            document.getElementById('snBadge').innerText = preset.snInfo;
         }
 
         // Inisialisasi awal
@@ -307,7 +336,7 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        // 1. Fungsi IMEI (Menggunakan 8 digit TAC pabrik + 6 digit acak + 1 Luhn Checksum)
+        // 1. Fungsi IMEI (8 Digit TAC Pabrikan + 6 Digit Acak + 1 Digit Luhn Checksum)
         function handleIMEI() {
             let imei = currentImeiPrefix;
             const remainingLen = 14 - imei.length;
@@ -330,22 +359,19 @@
             copyToClipboard('imeiOutput', 'btnImei', 'Gen IMEI');
         }
 
-        // 2 & 3. Fungsi MAC Address (Menggunakan 6 karakter OUI Pabrik + Digit ke-2 Pasti Genap/Unicast)
+        // 2 & 3. Fungsi MAC Address (6 Karakter OUI Pabrik + Digit ke-2 Pasti Genap/Unicast)
         function handleMAC(inputId, btnId, btnText) {
             const hexChars = '0123456789abcdef';
             const evenHex = '02468ace'; // Wajib genap untuk Unicast IEEE 802
 
-            // Ambil salah satu OUI 6-karakter dari merek HP yang sedang dipilih
             let rawOui = currentOuiList[Math.floor(Math.random() * currentOuiList.length)].toLowerCase();
 
-            // Pastikan karakter ke-2 mutlak genap (validasi pengaman)
             const char1 = rawOui.charAt(0);
             const char2 = evenHex.includes(rawOui.charAt(1)) 
                 ? rawOui.charAt(1) 
                 : evenHex.charAt(Math.floor(Math.random() * evenHex.length));
             const char3to6 = rawOui.substring(2, 6);
 
-            // Buat 6 karakter hex terakhir secara acak (NIC Specific)
             let nicTail = '';
             for (let i = 0; i < 6; i++) {
                 nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
@@ -378,13 +404,17 @@
             copyToClipboard('phoneOutput', 'btnPhone', 'Gen No HP');
         }
 
-        // 6. Fungsi Serial Number
+        // 6. Fungsi Serial Number (Mengikuti Panjang & Prefix Pabrikan, Tanpa Huruf I/O/Q)
         function handleSN() {
-            let sn = '';
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            for (let i = 0; i < 15; i++) {
-                sn += chars.charAt(Math.floor(Math.random() * chars.length));
+            const safeChars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
+            
+            let sn = currentSnPrefixList[Math.floor(Math.random() * currentSnPrefixList.length)];
+            const remaining = currentSnLen - sn.length;
+            
+            for (let i = 0; i < remaining; i++) {
+                sn += safeChars.charAt(Math.floor(Math.random() * safeChars.length));
             }
+            
             document.getElementById('snOutput').value = sn;
             copyToClipboard('snOutput', 'btnSn', 'Gen SN');
         }
