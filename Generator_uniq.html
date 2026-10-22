@@ -122,31 +122,7 @@
             <input type="hidden" id="fpOutput">
         </div>
 
-        <!-- 1. IMEI Generator -->
-        <div class="card">
-            <div class="header-row">
-                <span class="title">⚡ IMEI (Luhn Algo)</span>
-                <span class="badge" id="imeiBadge">15 Digit (86 - OPPO)</span>
-            </div>
-            <div class="action-row">
-                <input type="text" id="imeiOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnImei" onclick="handleIMEI()">Gen IMEI</button>
-            </div>
-        </div>
-
-        <!-- 2. MAC Wi-Fi Generator -->
-        <div class="card">
-            <div class="header-row">
-                <span class="title">🌐 Alamat MAC (Wi-Fi)</span>
-                <span class="badge" id="macWifiBadge">12 Hex (OUI OPPO)</span>
-            </div>
-            <div class="action-row">
-                <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnMac" onclick="handleMAC('macOutput', 'btnMac', 'Gen MAC WiFi')">Gen MAC WiFi</button>
-            </div>
-        </div>
-
-        <!-- 3. MAC GSM Generator -->
+        <!-- 1. MAC GSM Generator (Urutan ke-1 di VphoneOS) -->
         <div class="card">
             <div class="header-row">
                 <span class="title">📡 Alamat MAC GSM</span>
@@ -158,7 +134,19 @@
             </div>
         </div>
 
-        <!-- 4. MSIN Generator -->
+        <!-- 2. MAC Wi-Fi Generator (Urutan ke-2 di VphoneOS) -->
+        <div class="card">
+            <div class="header-row">
+                <span class="title">🌐 Alamat MAC (Wi-Fi)</span>
+                <span class="badge" id="macWifiBadge">12 Hex (OUI OPPO)</span>
+            </div>
+            <div class="action-row">
+                <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly>
+                <button id="btnMac" onclick="handleMAC('macOutput', 'btnMac', 'Gen MAC WiFi')">Gen MAC WiFi</button>
+            </div>
+        </div>
+
+        <!-- 3. MSIN Generator (Urutan ke-3 setelah MCC & MNC di VphoneOS) -->
         <div class="card">
             <div class="header-row">
                 <span class="title">💳 MSIN (ID Kartu SIM)</span>
@@ -170,19 +158,19 @@
             </div>
         </div>
 
-        <!-- 5. Nomor HP Telkomsel Generator (13 Karakter / 12 Digit Lokal) -->
+        <!-- 4. IMEI Generator (Urutan ke-4 di VphoneOS) -->
         <div class="card">
             <div class="header-row">
-                <span class="title">📱 Nomor HP (Telkomsel)</span>
-                <span class="badge">13 Digit (628xx)</span>
+                <span class="title">⚡ IMEI (Luhn Algo)</span>
+                <span class="badge" id="imeiBadge">15 Digit (86 - OPPO)</span>
             </div>
             <div class="action-row">
-                <input type="text" id="phoneOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnPhone" onclick="handlePhone()">Gen No HP</button>
+                <input type="text" id="imeiOutput" placeholder="Klik tombol 👉" readonly>
+                <button id="btnImei" onclick="handleIMEI()">Gen IMEI</button>
             </div>
         </div>
 
-        <!-- 6. SN Generator -->
+        <!-- 5. SN Generator / serialno (Urutan ke-5 setelah Operator di VphoneOS) -->
         <div class="card">
             <div class="header-row">
                 <span class="title">🏷️ Serial Number (SN)</span>
@@ -191,6 +179,18 @@
             <div class="action-row">
                 <input type="text" id="snOutput" placeholder="Klik tombol 👉" readonly>
                 <button id="btnSn" onclick="handleSN()">Gen SN</button>
+            </div>
+        </div>
+
+        <!-- 6. Nomor HP Telkomsel Generator (Urutan ke-6 paling bawah di VphoneOS) -->
+        <div class="card">
+            <div class="header-row">
+                <span class="title">📱 Nomor HP (Telkomsel)</span>
+                <span class="badge">13 Digit (628xx)</span>
+            </div>
+            <div class="action-row">
+                <input type="text" id="phoneOutput" placeholder="Klik tombol 👉" readonly>
+                <button id="btnPhone" onclick="handlePhone()">Gen No HP</button>
             </div>
         </div>
     </div>
