@@ -102,7 +102,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">🛡️ Preset Fingerprint (Base A12)</span>
-                <span class="badge" id="tacHint">IMEI: 86</span>
+                <span class="badge" id="tacHint">TAC: 86119606</span>
             </div>
             <div class="action-row">
                 <select id="deviceSelect" onchange="updateDevicePreset()">
@@ -126,7 +126,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">⚡ IMEI (Luhn Algo)</span>
-                <span class="badge" id="imeiBadge">15 Digit (86)</span>
+                <span class="badge" id="imeiBadge">15 Digit (86119606)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="imeiOutput" placeholder="Klik tombol 👉" readonly>
@@ -138,7 +138,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">🌐 Alamat MAC (Wi-Fi)</span>
-                <span class="badge">12 Hex Murni</span>
+                <span class="badge" id="macWifiBadge">12 Hex (OUI Pabrik)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly>
@@ -150,7 +150,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">📡 Alamat MAC GSM</span>
-                <span class="badge">12 Hex Murni</span>
+                <span class="badge" id="macGsmBadge">12 Hex (OUI Pabrik)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="macGsmOutput" placeholder="Klik tombol 👉" readonly>
@@ -196,60 +196,82 @@
     </div>
 
     <script>
-        // Database Preset Fingerprint & Display ID (Disesuaikan ke Android 12)
+        // Database Preset: TAC 8 Digit Resmi & OUI MAC Pabrikan (Semua digit ke-2 genap/Unicast)
         const devicePresets = {
             oppo_a6: {
-                tac: '86',
+                brandName: 'OPPO',
+                tac: '86119606',
+                oui: ['94d00d', 'bc2def', 'e8bba8', '704d7b', 'a43b00', '1c48ce'],
                 disp: 'PLS120_12.0.1.200(CN01)',
                 fp: 'OPPO/PLS120/OP5E1C:12/SP1A.210812.016/12.0.1.200:user/release-keys'
             },
             oppo_fx7u: {
-                tac: '86',
+                brandName: 'OPPO',
+                tac: '86329806',
+                oui: ['bc2def', '94d00d', 'e8bba8', '704d7b', '2c598a'],
                 disp: 'PHY110_12.0.0.402(CN01)',
                 fp: 'OPPO/PHY110/OP5929L1:12/SP1A.210812.016/12.0.0.402:user/release-keys'
             },
             oppo_fx8: {
-                tac: '86',
+                brandName: 'OPPO',
+                tac: '86741206',
+                oui: ['e8bba8', '94d00d', 'bc2def', 'a43b00', '704d7b'],
                 disp: 'PKB110_12.0.0.201(CN01)',
                 fp: 'OPPO/PKB110/OP5D0BL1:12/SP1A.210812.016/12.0.0.201:user/release-keys'
             },
             vivo_neo10: {
-                tac: '86',
+                brandName: 'VIVO',
+                tac: '86365805',
+                oui: ['549209', 'c8b21e', '7802f8', 'd463c6', 'ac5a14'],
                 disp: 'SP1A.210812.003 release-keys',
                 fp: 'vivo/PD2425/PD2425:12/SP1A.210812.003/compiler11201512:user/release-keys'
             },
             redmi_k80p: {
-                tac: '86',
+                brandName: 'Xiaomi',
+                tac: '86483905',
+                oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9'],
                 disp: 'SKQ1.211006.001',
                 fp: 'Redmi/champion/champion:12/SKQ1.211006.001/V13.0.12.0.SLKCNXM:user/release-keys'
             },
             honor_m6p: {
-                tac: '86',
+                brandName: 'HONOR',
+                tac: '86095606',
+                oui: ['04f938', '48db50', '80b686', 'e02481', 'c81451'],
                 disp: 'BVL-AN16 12.0.0.132(C00E130R2P1)',
                 fp: 'HONOR/BVL-AN16/HNBVL:12/HONORBVL-AN16/12.0.0.132C00:user/release-keys'
             },
             s21: {
-                tac: '35',
+                brandName: 'Samsung',
+                tac: '35876214',
+                oui: ['e45e37', 'c0b883', '705a0f', 'd8c4e9', '54b802'],
                 disp: 'SP1A.210812.016.G991BXXS5CVH1',
                 fp: 'samsung/o1sxeea/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
             },
             s23u: {
-                tac: '35',
+                brandName: 'Samsung',
+                tac: '35407985',
+                oui: ['d8c4e9', '54b802', 'e45e37', 'c0b883', '244b03'],
                 disp: 'SP1A.210812.016.S918BXXU1AWBD',
                 fp: 'samsung/dm3qxeea/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
             }
         };
 
-        let currentImeiPrefix = '86';
+        let currentImeiPrefix = '86119606';
+        let currentOuiList = devicePresets.oppo_a6.oui;
 
         function updateDevicePreset() {
             const val = document.getElementById('deviceSelect').value;
             const preset = devicePresets[val];
             document.getElementById('dispOutput').value = preset.disp;
             document.getElementById('fpOutput').value = preset.fp;
+            
             currentImeiPrefix = preset.tac;
-            document.getElementById('tacHint').innerText = 'IMEI: ' + preset.tac;
-            document.getElementById('imeiBadge').innerText = '15 Digit (' + preset.tac + ')';
+            currentOuiList = preset.oui;
+
+            document.getElementById('tacHint').innerText = 'TAC: ' + preset.tac;
+            document.getElementById('imeiBadge').innerText = '15 Digit (' + preset.tac.substring(0, 2) + ' - ' + preset.brandName + ')';
+            document.getElementById('macWifiBadge').innerText = '12 Hex (OUI ' + preset.brandName + ')';
+            document.getElementById('macGsmBadge').innerText = '12 Hex (OUI ' + preset.brandName + ')';
         }
 
         // Inisialisasi awal
@@ -285,15 +307,16 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        // 1. Fungsi IMEI (Otomatis mengikuti awalan 86 atau 35 sesuai HP yang dipilih)
+        // 1. Fungsi IMEI (Menggunakan 8 digit TAC pabrik + 6 digit acak + 1 Luhn Checksum)
         function handleIMEI() {
             let imei = currentImeiPrefix;
-            for (let i = 0; i < 12; i++) {
+            const remainingLen = 14 - imei.length;
+            for (let i = 0; i < remainingLen; i++) {
                 imei += Math.floor(Math.random() * 10);
             }
             let sum = 0;
             for (let i = 0; i < 14; i++) {
-                let digit = parseInt(imei.charAt(i));
+                let digit = parseInt(imei.charAt(i), 10);
                 if (i % 2 !== 0) {
                     digit *= 2;
                     if (digit > 9) digit -= 9;
@@ -307,13 +330,28 @@
             copyToClipboard('imeiOutput', 'btnImei', 'Gen IMEI');
         }
 
-        // 2 & 3. Fungsi MAC Address
+        // 2 & 3. Fungsi MAC Address (Menggunakan 6 karakter OUI Pabrik + Digit ke-2 Pasti Genap/Unicast)
         function handleMAC(inputId, btnId, btnText) {
-            let mac = '';
             const hexChars = '0123456789abcdef';
-            for (let i = 0; i < 12; i++) {
-                mac += hexChars.charAt(Math.floor(Math.random() * 16));
+            const evenHex = '02468ace'; // Wajib genap untuk Unicast IEEE 802
+
+            // Ambil salah satu OUI 6-karakter dari merek HP yang sedang dipilih
+            let rawOui = currentOuiList[Math.floor(Math.random() * currentOuiList.length)].toLowerCase();
+
+            // Pastikan karakter ke-2 mutlak genap (validasi pengaman)
+            const char1 = rawOui.charAt(0);
+            const char2 = evenHex.includes(rawOui.charAt(1)) 
+                ? rawOui.charAt(1) 
+                : evenHex.charAt(Math.floor(Math.random() * evenHex.length));
+            const char3to6 = rawOui.substring(2, 6);
+
+            // Buat 6 karakter hex terakhir secara acak (NIC Specific)
+            let nicTail = '';
+            for (let i = 0; i < 6; i++) {
+                nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
             }
+
+            const mac = char1 + char2 + char3to6 + nicTail;
             document.getElementById(inputId).value = mac;
             copyToClipboard(inputId, btnId, btnText);
         }
@@ -333,7 +371,6 @@
             const prefixes = ['62811', '62812', '62813', '62821', '62822', '62823', '62852', '62853'];
             let phone = prefixes[Math.floor(Math.random() * prefixes.length)];
             
-            // Tambahkan 8 digit angka acak (5 digit prefix + 8 digit = 13 digit total)
             for (let i = 0; i < 8; i++) {
                 phone += Math.floor(Math.random() * 10);
             }
