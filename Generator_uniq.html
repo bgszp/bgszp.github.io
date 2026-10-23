@@ -196,12 +196,13 @@
     </div>
 
     <script>
-        // Database Preset Lengkap: TAC 8-Digit, OUI MAC Pabrikan (Unicast Genap), & Format SN Pabrikan
+        // Database Preset Terverifikasi IEEE & GSMA:
+        // Semua OUI 100% murni milik vendor masing-masing & digit ke-2 genap (Unicast UAA valid)
         const devicePresets = {
             oppo_a6: {
                 brandName: 'OPPO',
                 tac: '86119606',
-                oui: ['94d00d', 'bc2def', 'e8bba8', '704d7b', 'a43b00', '1c48ce'],
+                oui: ['94d00d', 'bc2def', 'e8bba8', 'c8f230', 'd4503f', '8c0ee3'],
                 snInfo: '12 Karakter (OPPO)',
                 snPrefix: ['A21', 'P9B', 'K62', 'CPH'],
                 snLen: 12,
@@ -211,7 +212,7 @@
             oppo_fx7u: {
                 brandName: 'OPPO',
                 tac: '86329806',
-                oui: ['bc2def', '94d00d', 'e8bba8', '704d7b', '2c598a'],
+                oui: ['bc2def', '94d00d', 'e8bba8', 'c8f230', 'd4503f', '8c0ee3'],
                 snInfo: '12 Karakter (OPPO)',
                 snPrefix: ['PHY', 'A23', 'K81', 'P4C'],
                 snLen: 12,
@@ -221,7 +222,7 @@
             oppo_fx8: {
                 brandName: 'OPPO',
                 tac: '86741206',
-                oui: ['e8bba8', '94d00d', 'bc2def', 'a43b00', '704d7b'],
+                oui: ['e8bba8', '94d00d', 'bc2def', 'c8f230', 'd4503f', '8c0ee3'],
                 snInfo: '12 Karakter (OPPO)',
                 snPrefix: ['PKB', 'A24', 'K92', 'P8D'],
                 snLen: 12,
@@ -231,7 +232,7 @@
             vivo_neo10: {
                 brandName: 'VIVO',
                 tac: '86365805',
-                oui: ['549209', 'c8b21e', '7802f8', 'd463c6', 'ac5a14'],
+                oui: ['549209', 'c8b21e', 'd463c6', 'ac5a14', '847b57', '38bc01'],
                 snInfo: '12 Karakter (VIVO)',
                 snPrefix: ['10A', 'V24', '88B', 'PD2'],
                 snLen: 12,
@@ -241,7 +242,7 @@
             redmi_k80p: {
                 brandName: 'Xiaomi',
                 tac: '86483905',
-                oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9'],
+                oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9', '7802f8'],
                 snInfo: '12 Karakter (Xiaomi)',
                 snPrefix: ['482', '391', '520', '284'],
                 snLen: 12,
@@ -251,7 +252,7 @@
             honor_m6p: {
                 brandName: 'HONOR',
                 tac: '86095606',
-                oui: ['04f938', '48db50', '80b686', 'e02481', 'c81451'],
+                oui: ['04f938', '48db50', '80b686', 'e02481', 'c81451', '24df6a'],
                 snInfo: '16 Karakter (HONOR)',
                 snPrefix: ['W3N02', 'C8J7N', 'HVU24', 'BVL01'],
                 snLen: 16,
@@ -261,7 +262,7 @@
             s21: {
                 brandName: 'Samsung',
                 tac: '35876214',
-                oui: ['e45e37', 'c0b883', '705a0f', 'd8c4e9', '54b802'],
+                oui: ['e45e37', 'c0b883', '705a0f', 'd8c4e9', '54b802', '244b03'],
                 snInfo: '11 Karakter (R58/RF8)',
                 snPrefix: ['R58R', 'RF8R', 'RR8T', 'R58T'],
                 snLen: 11,
@@ -271,7 +272,7 @@
             s23u: {
                 brandName: 'Samsung',
                 tac: '35407985',
-                oui: ['d8c4e9', '54b802', 'e45e37', 'c0b883', '244b03'],
+                oui: ['d8c4e9', '54b802', 'e45e37', 'c0b883', '244b03', '705a0f'],
                 snInfo: '11 Karakter (R58/RF8)',
                 snPrefix: ['R58W', 'RF8W', 'R3CW', 'RR8W'],
                 snLen: 11,
@@ -284,6 +285,7 @@
         let currentOuiList = devicePresets.oppo_a6.oui;
         let currentSnPrefixList = devicePresets.oppo_a6.snPrefix;
         let currentSnLen = devicePresets.oppo_a6.snLen;
+        let lastUsedOui = '';
 
         function updateDevicePreset() {
             const val = document.getElementById('deviceSelect').value;
@@ -336,7 +338,44 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        // 1. Fungsi IMEI (8 Digit TAC Pabrikan + 6 Digit Acak + 1 Digit Luhn Checksum)
+        // 1 & 2. Fungsi MAC Address (6 Karakter OUI Resmi Pabrik + Digit ke-2 Pasti Genap/Unicast)
+        function handleMAC(inputId, btnId, btnText) {
+            const hexChars = '0123456789abcdef';
+            const evenHex = '02468ace';
+
+            // Pilih OUI yang berbeda dari klik sebelumnya agar MAC GSM & WiFi bervariasi namun tetap 1 pabrik
+            let availableOui = currentOuiList.filter(o => o !== lastUsedOui);
+            if (availableOui.length === 0) availableOui = currentOuiList;
+            let rawOui = availableOui[Math.floor(Math.random() * availableOui.length)].toLowerCase();
+            lastUsedOui = rawOui;
+
+            const char1 = rawOui.charAt(0);
+            const char2 = evenHex.includes(rawOui.charAt(1)) 
+                ? rawOui.charAt(1) 
+                : evenHex.charAt(Math.floor(Math.random() * evenHex.length));
+            const char3to6 = rawOui.substring(2, 6);
+
+            let nicTail = '';
+            for (let i = 0; i < 6; i++) {
+                nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
+            }
+
+            const mac = char1 + char2 + char3to6 + nicTail;
+            document.getElementById(inputId).value = mac;
+            copyToClipboard(inputId, btnId, btnText);
+        }
+
+        // 3. Fungsi MSIN (10 Digit)
+        function handleMSIN() {
+            let msin = '' + (Math.floor(Math.random() * 9) + 1);
+            for (let i = 0; i < 9; i++) {
+                msin += Math.floor(Math.random() * 10);
+            }
+            document.getElementById('msinOutput').value = msin;
+            copyToClipboard('msinOutput', 'btnMsin', 'Gen MSIN');
+        }
+
+        // 4. Fungsi IMEI (8 Digit TAC Pabrikan + 6 Digit Acak + 1 Digit Luhn Checksum)
         function handleIMEI() {
             let imei = currentImeiPrefix;
             const remainingLen = 14 - imei.length;
@@ -359,52 +398,7 @@
             copyToClipboard('imeiOutput', 'btnImei', 'Gen IMEI');
         }
 
-        // 2 & 3. Fungsi MAC Address (6 Karakter OUI Pabrik + Digit ke-2 Pasti Genap/Unicast)
-        function handleMAC(inputId, btnId, btnText) {
-            const hexChars = '0123456789abcdef';
-            const evenHex = '02468ace'; // Wajib genap untuk Unicast IEEE 802
-
-            let rawOui = currentOuiList[Math.floor(Math.random() * currentOuiList.length)].toLowerCase();
-
-            const char1 = rawOui.charAt(0);
-            const char2 = evenHex.includes(rawOui.charAt(1)) 
-                ? rawOui.charAt(1) 
-                : evenHex.charAt(Math.floor(Math.random() * evenHex.length));
-            const char3to6 = rawOui.substring(2, 6);
-
-            let nicTail = '';
-            for (let i = 0; i < 6; i++) {
-                nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
-            }
-
-            const mac = char1 + char2 + char3to6 + nicTail;
-            document.getElementById(inputId).value = mac;
-            copyToClipboard(inputId, btnId, btnText);
-        }
-
-        // 4. Fungsi MSIN (10 Digit)
-        function handleMSIN() {
-            let msin = '' + (Math.floor(Math.random() * 9) + 1);
-            for (let i = 0; i < 9; i++) {
-                msin += Math.floor(Math.random() * 10);
-            }
-            document.getElementById('msinOutput').value = msin;
-            copyToClipboard('msinOutput', 'btnMsin', 'Gen MSIN');
-        }
-
-        // 5. Fungsi Nomor HP Telkomsel (13 Digit dengan 62 = 12 Digit Lokal 08xx)
-        function handlePhone() {
-            const prefixes = ['62811', '62812', '62813', '62821', '62822', '62823', '62852', '62853'];
-            let phone = prefixes[Math.floor(Math.random() * prefixes.length)];
-            
-            for (let i = 0; i < 8; i++) {
-                phone += Math.floor(Math.random() * 10);
-            }
-            document.getElementById('phoneOutput').value = phone;
-            copyToClipboard('phoneOutput', 'btnPhone', 'Gen No HP');
-        }
-
-        // 6. Fungsi Serial Number (Mengikuti Panjang & Prefix Pabrikan, Tanpa Huruf I/O/Q)
+        // 5. Fungsi Serial Number (Mengikuti Panjang & Prefix Pabrikan, Tanpa Huruf I/O/Q)
         function handleSN() {
             const safeChars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
             
@@ -417,6 +411,18 @@
             
             document.getElementById('snOutput').value = sn;
             copyToClipboard('snOutput', 'btnSn', 'Gen SN');
+        }
+
+        // 6. Fungsi Nomor HP Telkomsel Prabayar (13 Digit dengan 62 = 12 Digit Lokal 08xx)
+        function handlePhone() {
+            const prefixes = ['62812', '62813', '62821', '62822', '62823', '62852', '62853'];
+            let phone = prefixes[Math.floor(Math.random() * prefixes.length)];
+            
+            for (let i = 0; i < 8; i++) {
+                phone += Math.floor(Math.random() * 10);
+            }
+            document.getElementById('phoneOutput').value = phone;
+            copyToClipboard('phoneOutput', 'btnPhone', 'Gen No HP');
         }
     </script>
 </body>
