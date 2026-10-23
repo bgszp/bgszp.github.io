@@ -196,6 +196,26 @@
     </div>
 
     <script>
+        // Fungsi pengaman agar nilai yang sudah pernah keluar tidak akan pernah muncul lagi
+function getUniqueValue(generatorFn, storageKey) {
+    let history = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    let newVal;
+    let attempts = 0;
+
+    do {
+        newVal = generatorFn();
+        attempts++;
+    } while (history.includes(newVal) && attempts < 100);
+
+    history.push(newVal);
+    // Simpan maksimal 10.000 riwayat terakhir agar memori browser tetap ringan
+    if (history.length > 10000) history.shift(); 
+    localStorage.setItem(storageKey, JSON.stringify(history));
+
+    return newVal;
+}
+
+       
         // Database Preset Terverifikasi IEEE & GSMA:
         // Semua OUI 100% murni milik vendor masing-masing & digit ke-2 genap (Unicast UAA valid)
         const devicePresets = {
