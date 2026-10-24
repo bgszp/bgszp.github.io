@@ -26,7 +26,7 @@
             padding: 5px 8px; 
             display: flex; 
             flex-direction: column; 
-            gap: 3px; 
+            gap: 4px; 
         }
         .header-row {
             display: flex;
@@ -47,10 +47,52 @@
             border-radius: 3px;
             border: 1px solid #21262d;
         }
+        .mode-switch {
+            display: flex;
+            gap: 4px;
+            background: #0d1117;
+            padding: 2px;
+            border-radius: 4px;
+            border: 1px solid #21262d;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 3px 6px;
+            font-size: 9.5px;
+            font-weight: 600;
+            background: transparent;
+            color: #8b949e;
+            border: none;
+            border-radius: 3px;
+            min-width: unset;
+        }
+        .mode-btn.active {
+            background: #1f6feb;
+            color: #ffffff;
+        }
         .action-row {
             display: flex;
             gap: 4px;
             width: 100%;
+        }
+        .extra-props-row {
+            display: none;
+            gap: 4px;
+            width: 100%;
+            padding-top: 2px;
+            border-top: 1px dashed #30363d;
+        }
+        .extra-props-row.show {
+            display: flex;
+        }
+        .btn-prop {
+            flex: 1;
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #79c0ff;
+            font-size: 9.5px;
+            padding: 3px 4px;
+            min-width: unset;
         }
         input, select { 
             flex: 1;
@@ -93,17 +135,29 @@
         }
         button.copied {
             background: #1f6feb !important; 
+            color: #fff !important;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 0. Preset Fingerprint & Display ID -->
+        <!-- 0. Preset Fingerprint & Display ID (2 Mode Pilihan) -->
         <div class="card">
             <div class="header-row">
                 <span class="title">🛡️ Preset Fingerprint (Base A12)</span>
                 <span class="badge" id="tacHint">TAC: 86119606</span>
             </div>
+
+            <!-- Tombol Switcher 2 Mode -->
+            <div class="mode-switch">
+                <button type="button" id="modeOrigBtn" class="mode-btn active" onclick="setRegionMode('orig')">
+                    📌 Versi Bawaan (Tetap)
+                </button>
+                <button type="button" id="modeGlobalBtn" class="mode-btn" onclick="setRegionMode('global')">
+                    🇮🇩 Versi Resmi ID / Global (Baru)
+                </button>
+            </div>
+
             <div class="action-row">
                 <select id="deviceSelect" onchange="updateDevicePreset()">
                     <option value="oppo_a6">OPPO A6 (PLS120)</option>
@@ -111,6 +165,7 @@
                     <option value="oppo_fx8">OPPO Find X8</option>
                     <option value="vivo_neo10">VIVO iQOO Neo10</option>
                     <option value="redmi_k80p">REDMI K80 Pro</option>
+                    <option value="xiaomi_12p">Xiaomi 12 Pro (Valid A12)</option>
                     <option value="honor_m6p">HONOR Magic6 PRO</option>
                     <option value="s21">Galaxy S21 (Valid A12)</option>
                     <option value="s23u">Galaxy S23 Ultra</option>
@@ -118,8 +173,19 @@
                 <button id="btnDisp" class="btn-secondary" onclick="copyPreset('dispOutput', 'btnDisp', 'Salin DispID')">Salin DispID</button>
                 <button id="btnFp" onclick="copyPreset('fpOutput', 'btnFp', 'Salin FP')">Salin FP</button>
             </div>
+
+            <!-- Baris Tambahan Khusus Mode Global/ID untuk Salin Model, Product, & Device -->
+            <div id="extraPropsRow" class="extra-props-row">
+                <button id="btnModel" class="btn-prop" onclick="copyPreset('modelOutput', 'btnModel', 'Model: ' + document.getElementById('modelOutput').value)">Salin Model</button>
+                <button id="btnProduct" class="btn-prop" onclick="copyPreset('productOutput', 'btnProduct', 'Prod: ' + document.getElementById('productOutput').value)">Salin Product</button>
+                <button id="btnDevice" class="btn-prop" onclick="copyPreset('deviceOutput', 'btnDevice', 'Dev: ' + document.getElementById('deviceOutput').value)">Salin Device</button>
+            </div>
+
             <input type="hidden" id="dispOutput">
             <input type="hidden" id="fpOutput">
+            <input type="hidden" id="modelOutput">
+            <input type="hidden" id="productOutput">
+            <input type="hidden" id="deviceOutput">
         </div>
 
         <!-- 1. MAC GSM Generator (Urutan ke-1 di VphoneOS) -->
@@ -196,28 +262,10 @@
     </div>
 
     <script>
-        // Fungsi pengaman agar nilai yang sudah pernah keluar tidak akan pernah muncul lagi
-function getUniqueValue(generatorFn, storageKey) {
-    let history = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    let newVal;
-    let attempts = 0;
+        // Mode aktif: 'orig' (Versi Sebelumnya/Tetap) atau 'global' (Versi Resmi Indonesia/Global)
+        let currentRegionMode = 'orig';
 
-    do {
-        newVal = generatorFn();
-        attempts++;
-    } while (history.includes(newVal) && attempts < 100);
-
-    history.push(newVal);
-    // Simpan maksimal 10.000 riwayat terakhir agar memori browser tetap ringan
-    if (history.length > 10000) history.shift(); 
-    localStorage.setItem(storageKey, JSON.stringify(history));
-
-    return newVal;
-}
-
-       
-        // Database Preset Terverifikasi IEEE & GSMA:
-        // Semua OUI 100% murni milik vendor masing-masing & digit ke-2 genap (Unicast UAA valid)
+        // Database Lengkap 2 Versi (orig & global) + Validasi IEEE/GSMA
         const devicePresets = {
             oppo_a6: {
                 brandName: 'OPPO',
@@ -226,8 +274,17 @@ function getUniqueValue(generatorFn, storageKey) {
                 snInfo: '12 Karakter (OPPO)',
                 snPrefix: ['A21', 'P9B', 'K62', 'CPH'],
                 snLen: 12,
-                disp: 'PLS120_12.0.1.200(CN01)',
-                fp: 'OPPO/PLS120/OP5E1C:12/SP1A.210812.016/12.0.1.200:user/release-keys'
+                orig: {
+                    disp: 'PLS120_12.0.1.200(CN01)',
+                    fp: 'OPPO/PLS120/OP5E1C:12/SP1A.210812.016/12.0.1.200:user/release-keys'
+                },
+                global: {
+                    model: 'CPH2333',
+                    product: 'CPH2333',
+                    device: 'OP52E1L1',
+                    disp: 'CPH2333_11_C.18',
+                    fp: 'OPPO/CPH2333/OP52E1L1:12/SP1A.210812.016/S.202211051620:user/release-keys'
+                }
             },
             oppo_fx7u: {
                 brandName: 'OPPO',
@@ -236,18 +293,36 @@ function getUniqueValue(generatorFn, storageKey) {
                 snInfo: '12 Karakter (OPPO)',
                 snPrefix: ['PHY', 'A23', 'K81', 'P4C'],
                 snLen: 12,
-                disp: 'PHY110_12.0.0.402(CN01)',
-                fp: 'OPPO/PHY110/OP5929L1:12/SP1A.210812.016/12.0.0.402:user/release-keys'
+                orig: {
+                    disp: 'PHY110_12.0.0.402(CN01)',
+                    fp: 'OPPO/PHY110/OP5929L1:12/SP1A.210812.016/12.0.0.402:user/release-keys'
+                },
+                global: {
+                    model: 'PHY110',
+                    product: 'PHY110',
+                    device: 'OP5929L1',
+                    disp: 'PHY110_12.0.0.402(EX01)',
+                    fp: 'OPPO/PHY110/OP5929L1:12/SP1A.210812.016/R.114086b_1:user/release-keys'
+                }
             },
             oppo_fx8: {
                 brandName: 'OPPO',
                 tac: '86741206',
                 oui: ['e8bba8', '94d00d', 'bc2def', 'c8f230', 'd4503f', '8c0ee3'],
                 snInfo: '12 Karakter (OPPO)',
-                snPrefix: ['PKB', 'A24', 'K92', 'P8D'],
+                snPrefix: ['PKB', 'CPH', 'A24', 'K92'],
                 snLen: 12,
-                disp: 'PKB110_12.0.0.201(CN01)',
-                fp: 'OPPO/PKB110/OP5D0BL1:12/SP1A.210812.016/12.0.0.201:user/release-keys'
+                orig: {
+                    disp: 'PKB110_12.0.0.201(CN01)',
+                    fp: 'OPPO/PKB110/OP5D0BL1:12/SP1A.210812.016/12.0.0.201:user/release-keys'
+                },
+                global: {
+                    model: 'CPH2651',
+                    product: 'CPH2651',
+                    device: 'OP5D0BL1',
+                    disp: 'CPH2651_12.0.0.201(EX01)',
+                    fp: 'OPPO/CPH2651/OP5D0BL1:12/SP1A.210812.016/S.1842a01_1:user/release-keys'
+                }
             },
             vivo_neo10: {
                 brandName: 'VIVO',
@@ -256,8 +331,17 @@ function getUniqueValue(generatorFn, storageKey) {
                 snInfo: '12 Karakter (VIVO)',
                 snPrefix: ['10A', 'V24', '88B', 'PD2'],
                 snLen: 12,
-                disp: 'SP1A.210812.003 release-keys',
-                fp: 'vivo/PD2425/PD2425:12/SP1A.210812.003/compiler11201512:user/release-keys'
+                orig: {
+                    disp: 'SP1A.210812.003 release-keys',
+                    fp: 'vivo/PD2425/PD2425:12/SP1A.210812.003/compiler11201512:user/release-keys'
+                },
+                global: {
+                    model: 'I2405',
+                    product: 'PD2425F_EX',
+                    device: 'PD2425',
+                    disp: 'SP1A.210812.016 release-keys',
+                    fp: 'vivo/PD2425F_EX/PD2425:12/SP1A.210812.016/compiler11201512:user/release-keys'
+                }
             },
             redmi_k80p: {
                 brandName: 'Xiaomi',
@@ -266,8 +350,36 @@ function getUniqueValue(generatorFn, storageKey) {
                 snInfo: '12 Karakter (Xiaomi)',
                 snPrefix: ['482', '391', '520', '284'],
                 snLen: 12,
-                disp: 'SKQ1.211006.001',
-                fp: 'Redmi/champion/champion:12/SKQ1.211006.001/V13.0.12.0.SLKCNXM:user/release-keys'
+                orig: {
+                    disp: 'SKQ1.211006.001',
+                    fp: 'Redmi/champion/champion:12/SKQ1.211006.001/V13.0.12.0.SLKCNXM:user/release-keys'
+                },
+                global: {
+                    model: '24122RKC7G',
+                    product: 'champion_id',
+                    device: 'champion',
+                    disp: 'SKQ1.211006.001 release-keys',
+                    fp: 'Redmi/champion_id/champion:12/SKQ1.211006.001/V13.0.4.0.SLKIDXM:user/release-keys'
+                }
+            },
+            xiaomi_12p: {
+                brandName: 'Xiaomi',
+                tac: '86622805',
+                oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9', '7802f8'],
+                snInfo: '12 Karakter (Xiaomi)',
+                snPrefix: ['362', '482', '391', '520'],
+                snLen: 12,
+                orig: {
+                    disp: 'SKQ1.211006.001 release-keys',
+                    fp: 'Xiaomi/zeus/zeus:12/SKQ1.211006.001/V13.0.12.0.SLBCNXM:user/release-keys'
+                },
+                global: {
+                    model: '2201122G',
+                    product: 'zeus_id',
+                    device: 'zeus',
+                    disp: 'SKQ1.211006.001 release-keys',
+                    fp: 'Xiaomi/zeus_id/zeus:12/SKQ1.211006.001/V13.0.4.0.SLBIDXM:user/release-keys'
+                }
             },
             honor_m6p: {
                 brandName: 'HONOR',
@@ -276,28 +388,55 @@ function getUniqueValue(generatorFn, storageKey) {
                 snInfo: '16 Karakter (HONOR)',
                 snPrefix: ['W3N02', 'C8J7N', 'HVU24', 'BVL01'],
                 snLen: 16,
-                disp: 'BVL-AN16 12.0.0.132(C00E130R2P1)',
-                fp: 'HONOR/BVL-AN16/HNBVL:12/HONORBVL-AN16/12.0.0.132C00:user/release-keys'
+                orig: {
+                    disp: 'BVL-AN16 12.0.0.132(C00E130R2P1)',
+                    fp: 'HONOR/BVL-AN16/HNBVL:12/HONORBVL-AN16/12.0.0.132C00:user/release-keys'
+                },
+                global: {
+                    model: 'BVL-N49',
+                    product: 'BVL-N49',
+                    device: 'HNBVL-Q',
+                    disp: 'BVL-N49 6.0.0.132(C636E3R2P1)',
+                    fp: 'HONOR/BVL-N49/HNBVL-Q:12/HONORBVL-N49/6.0.0.132C636:user/release-keys'
+                }
             },
             s21: {
                 brandName: 'Samsung',
                 tac: '35876214',
                 oui: ['e45e37', 'c0b883', '705a0f', 'd8c4e9', '54b802', '244b03'],
-                snInfo: '11 Karakter (R58/RF8)',
-                snPrefix: ['R58R', 'RF8R', 'RR8T', 'R58T'],
+                snInfo: '11 Karakter (R58/RR8)',
+                snPrefix: ['RR8R', 'R58R', 'RF8R', 'RR8T'],
                 snLen: 11,
-                disp: 'SP1A.210812.016.G991BXXS5CVH1',
-                fp: 'samsung/o1sxeea/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
+                orig: {
+                    disp: 'SP1A.210812.016.G991BXXS5CVH1',
+                    fp: 'samsung/o1sxeea/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
+                },
+                global: {
+                    model: 'SM-G991B',
+                    product: 'o1sxxx',
+                    device: 'o1s',
+                    disp: 'SP1A.210812.016.G991BXXS5CVH1',
+                    fp: 'samsung/o1sxxx/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
+                }
             },
             s23u: {
                 brandName: 'Samsung',
                 tac: '35407985',
                 oui: ['d8c4e9', '54b802', 'e45e37', 'c0b883', '244b03', '705a0f'],
-                snInfo: '11 Karakter (R58/RF8)',
-                snPrefix: ['R58W', 'RF8W', 'R3CW', 'RR8W'],
+                snInfo: '11 Karakter (R58/RR8)',
+                snPrefix: ['RR8W', 'R58W', 'RF8W', 'R3CW'],
                 snLen: 11,
-                disp: 'SP1A.210812.016.S918BXXU1AWBD',
-                fp: 'samsung/dm3qxeea/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
+                orig: {
+                    disp: 'SP1A.210812.016.S918BXXU1AWBD',
+                    fp: 'samsung/dm3qxeea/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
+                },
+                global: {
+                    model: 'SM-S918B',
+                    product: 'dm3qxxx',
+                    device: 'dm3q',
+                    disp: 'SP1A.210812.016.S918BXXU1AWBD',
+                    fp: 'samsung/dm3qxxx/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
+                }
             }
         };
 
@@ -307,11 +446,31 @@ function getUniqueValue(generatorFn, storageKey) {
         let currentSnLen = devicePresets.oppo_a6.snLen;
         let lastUsedOui = '';
 
+        function setRegionMode(mode) {
+            currentRegionMode = mode;
+            document.getElementById('modeOrigBtn').classList.toggle('active', mode === 'orig');
+            document.getElementById('modeGlobalBtn').classList.toggle('active', mode === 'global');
+            document.getElementById('extraPropsRow').classList.toggle('show', mode === 'global');
+            updateDevicePreset();
+        }
+
         function updateDevicePreset() {
             const val = document.getElementById('deviceSelect').value;
             const preset = devicePresets[val];
-            document.getElementById('dispOutput').value = preset.disp;
-            document.getElementById('fpOutput').value = preset.fp;
+            const activeProfile = preset[currentRegionMode];
+
+            document.getElementById('dispOutput').value = activeProfile.disp;
+            document.getElementById('fpOutput').value = activeProfile.fp;
+
+            if (currentRegionMode === 'global') {
+                document.getElementById('modelOutput').value = activeProfile.model;
+                document.getElementById('productOutput').value = activeProfile.product;
+                document.getElementById('deviceOutput').value = activeProfile.device;
+
+                document.getElementById('btnModel').innerText = 'Model: ' + activeProfile.model;
+                document.getElementById('btnProduct').innerText = 'Prod: ' + activeProfile.product;
+                document.getElementById('btnDevice').innerText = 'Dev: ' + activeProfile.device;
+            }
             
             currentImeiPrefix = preset.tac;
             currentOuiList = preset.oui;
@@ -358,61 +517,91 @@ function getUniqueValue(generatorFn, storageKey) {
             copyTextRaw(val, btnId, originalText);
         }
 
+        // Pengaman Anti-Duplikat (localStorage) agar parameter yang sudah keluar tidak muncul lagi
+        function getUniqueRandom(generatorFn, storageKey) {
+            let history = [];
+            try {
+                history = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            } catch (e) {
+                history = [];
+            }
+            let val;
+            let attempts = 0;
+            do {
+                val = generatorFn();
+                attempts++;
+            } while (history.includes(val) && attempts < 50);
+
+            history.push(val);
+            if (history.length > 5000) history.shift();
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(history));
+            } catch (e) {}
+            return val;
+        }
+
         // 1 & 2. Fungsi MAC Address (6 Karakter OUI Resmi Pabrik + Digit ke-2 Pasti Genap/Unicast)
         function handleMAC(inputId, btnId, btnText) {
-            const hexChars = '0123456789abcdef';
-            const evenHex = '02468ace';
+            const mac = getUniqueRandom(() => {
+                const hexChars = '0123456789abcdef';
+                const evenHex = '02468ace';
 
-            // Pilih OUI yang berbeda dari klik sebelumnya agar MAC GSM & WiFi bervariasi namun tetap 1 pabrik
-            let availableOui = currentOuiList.filter(o => o !== lastUsedOui);
-            if (availableOui.length === 0) availableOui = currentOuiList;
-            let rawOui = availableOui[Math.floor(Math.random() * availableOui.length)].toLowerCase();
-            lastUsedOui = rawOui;
+                let availableOui = currentOuiList.filter(o => o !== lastUsedOui);
+                if (availableOui.length === 0) availableOui = currentOuiList;
+                let rawOui = availableOui[Math.floor(Math.random() * availableOui.length)].toLowerCase();
+                lastUsedOui = rawOui;
 
-            const char1 = rawOui.charAt(0);
-            const char2 = evenHex.includes(rawOui.charAt(1)) 
-                ? rawOui.charAt(1) 
-                : evenHex.charAt(Math.floor(Math.random() * evenHex.length));
-            const char3to6 = rawOui.substring(2, 6);
+                const char1 = rawOui.charAt(0);
+                const char2 = evenHex.includes(rawOui.charAt(1)) 
+                    ? rawOui.charAt(1) 
+                    : evenHex.charAt(Math.floor(Math.random() * evenHex.length));
+                const char3to6 = rawOui.substring(2, 6);
 
-            let nicTail = '';
-            for (let i = 0; i < 6; i++) {
-                nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
-            }
+                let nicTail = '';
+                for (let i = 0; i < 6; i++) {
+                    nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
+                }
+                return char1 + char2 + char3to6 + nicTail;
+            }, 'uniq_mac_history');
 
-            const mac = char1 + char2 + char3to6 + nicTail;
             document.getElementById(inputId).value = mac;
             copyToClipboard(inputId, btnId, btnText);
         }
 
         // 3. Fungsi MSIN (10 Digit)
         function handleMSIN() {
-            let msin = '' + (Math.floor(Math.random() * 9) + 1);
-            for (let i = 0; i < 9; i++) {
-                msin += Math.floor(Math.random() * 10);
-            }
+            const msin = getUniqueRandom(() => {
+                let res = '' + (Math.floor(Math.random() * 9) + 1);
+                for (let i = 0; i < 9; i++) {
+                    res += Math.floor(Math.random() * 10);
+                }
+                return res;
+            }, 'uniq_msin_history');
+
             document.getElementById('msinOutput').value = msin;
             copyToClipboard('msinOutput', 'btnMsin', 'Gen MSIN');
         }
 
         // 4. Fungsi IMEI (8 Digit TAC Pabrikan + 6 Digit Acak + 1 Digit Luhn Checksum)
         function handleIMEI() {
-            let imei = currentImeiPrefix;
-            const remainingLen = 14 - imei.length;
-            for (let i = 0; i < remainingLen; i++) {
-                imei += Math.floor(Math.random() * 10);
-            }
-            let sum = 0;
-            for (let i = 0; i < 14; i++) {
-                let digit = parseInt(imei.charAt(i), 10);
-                if (i % 2 !== 0) {
-                    digit *= 2;
-                    if (digit > 9) digit -= 9;
+            const imei = getUniqueRandom(() => {
+                let res = currentImeiPrefix;
+                const remainingLen = 14 - res.length;
+                for (let i = 0; i < remainingLen; i++) {
+                    res += Math.floor(Math.random() * 10);
                 }
-                sum += digit;
-            }
-            let checkDigit = (10 - (sum % 10)) % 10;
-            imei += checkDigit;
+                let sum = 0;
+                for (let i = 0; i < 14; i++) {
+                    let digit = parseInt(res.charAt(i), 10);
+                    if (i % 2 !== 0) {
+                        digit *= 2;
+                        if (digit > 9) digit -= 9;
+                    }
+                    sum += digit;
+                }
+                let checkDigit = (10 - (sum % 10)) % 10;
+                return res + checkDigit;
+            }, 'uniq_imei_history');
             
             document.getElementById('imeiOutput').value = imei;
             copyToClipboard('imeiOutput', 'btnImei', 'Gen IMEI');
@@ -420,14 +609,15 @@ function getUniqueValue(generatorFn, storageKey) {
 
         // 5. Fungsi Serial Number (Mengikuti Panjang & Prefix Pabrikan, Tanpa Huruf I/O/Q)
         function handleSN() {
-            const safeChars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
-            
-            let sn = currentSnPrefixList[Math.floor(Math.random() * currentSnPrefixList.length)];
-            const remaining = currentSnLen - sn.length;
-            
-            for (let i = 0; i < remaining; i++) {
-                sn += safeChars.charAt(Math.floor(Math.random() * safeChars.length));
-            }
+            const sn = getUniqueRandom(() => {
+                const safeChars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
+                let res = currentSnPrefixList[Math.floor(Math.random() * currentSnPrefixList.length)];
+                const remaining = currentSnLen - res.length;
+                for (let i = 0; i < remaining; i++) {
+                    res += safeChars.charAt(Math.floor(Math.random() * safeChars.length));
+                }
+                return res;
+            }, 'uniq_sn_history');
             
             document.getElementById('snOutput').value = sn;
             copyToClipboard('snOutput', 'btnSn', 'Gen SN');
@@ -435,12 +625,15 @@ function getUniqueValue(generatorFn, storageKey) {
 
         // 6. Fungsi Nomor HP Telkomsel Prabayar (13 Digit dengan 62 = 12 Digit Lokal 08xx)
         function handlePhone() {
-            const prefixes = ['62812', '62813', '62821', '62822', '62823', '62852', '62853'];
-            let phone = prefixes[Math.floor(Math.random() * prefixes.length)];
-            
-            for (let i = 0; i < 8; i++) {
-                phone += Math.floor(Math.random() * 10);
-            }
+            const phone = getUniqueRandom(() => {
+                const prefixes = ['62812', '62813', '62821', '62822', '62823', '62852', '62853'];
+                let res = prefixes[Math.floor(Math.random() * prefixes.length)];
+                for (let i = 0; i < 8; i++) {
+                    res += Math.floor(Math.random() * 10);
+                }
+                return res;
+            }, 'uniq_phone_history');
+
             document.getElementById('phoneOutput').value = phone;
             copyToClipboard('phoneOutput', 'btnPhone', 'Gen No HP');
         }
