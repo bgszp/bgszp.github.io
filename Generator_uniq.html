@@ -47,6 +47,10 @@
             border-radius: 3px;
             border: 1px solid #21262d;
         }
+        .badge.online {
+            color: #3fb950;
+            border-color: #238636;
+        }
         .mode-switch {
             display: flex;
             gap: 4px;
@@ -108,6 +112,12 @@
             font-weight: bold;
             outline: none; 
         }
+        input.db-input {
+            font-size: 9.5px;
+            text-align: left;
+            color: #8b949e;
+            font-weight: normal;
+        }
         select {
             font-family: inherit;
             text-align: left;
@@ -130,6 +140,10 @@
             background: #30363d;
             min-width: 70px;
         }
+        button.btn-danger {
+            background: #da3633;
+            width: 100%;
+        }
         button:active { 
             transform: scale(0.97); 
         }
@@ -148,7 +162,6 @@
                 <span class="badge" id="tacHint">TAC: 86119606</span>
             </div>
 
-            <!-- Tombol Switcher 2 Mode -->
             <div class="mode-switch">
                 <button type="button" id="modeOrigBtn" class="mode-btn active" onclick="setRegionMode('orig')">
                     📌 Versi Bawaan (Tetap)
@@ -174,7 +187,6 @@
                 <button id="btnFp" onclick="copyPreset('fpOutput', 'btnFp', 'Salin FP')">Salin FP</button>
             </div>
 
-            <!-- Baris Tambahan Khusus Mode Global/ID untuk Salin Model, Product, & Device -->
             <div id="extraPropsRow" class="extra-props-row">
                 <button id="btnModel" class="btn-prop" onclick="copyPreset('modelOutput', 'btnModel', 'Model: ' + document.getElementById('modelOutput').value)">Salin Model</button>
                 <button id="btnProduct" class="btn-prop" onclick="copyPreset('productOutput', 'btnProduct', 'Prod: ' + document.getElementById('productOutput').value)">Salin Product</button>
@@ -188,7 +200,7 @@
             <input type="hidden" id="deviceOutput">
         </div>
 
-        <!-- 1. MAC GSM Generator (Urutan ke-1 di VphoneOS) -->
+        <!-- 1. MAC GSM Generator -->
         <div class="card">
             <div class="header-row">
                 <span class="title">📡 Alamat MAC GSM</span>
@@ -200,7 +212,7 @@
             </div>
         </div>
 
-        <!-- 2. MAC Wi-Fi Generator (Urutan ke-2 di VphoneOS) -->
+        <!-- 2. MAC Wi-Fi Generator -->
         <div class="card">
             <div class="header-row">
                 <span class="title">🌐 Alamat MAC (Wi-Fi)</span>
@@ -212,7 +224,7 @@
             </div>
         </div>
 
-        <!-- 3. MSIN Generator (Urutan ke-3 setelah MCC & MNC di VphoneOS) -->
+        <!-- 3. MSIN Generator -->
         <div class="card">
             <div class="header-row">
                 <span class="title">💳 MSIN (ID Kartu SIM)</span>
@@ -224,7 +236,7 @@
             </div>
         </div>
 
-        <!-- 4. IMEI Generator (Urutan ke-4 di VphoneOS) -->
+        <!-- 4. IMEI Generator -->
         <div class="card">
             <div class="header-row">
                 <span class="title">⚡ IMEI (Luhn Algo)</span>
@@ -236,7 +248,7 @@
             </div>
         </div>
 
-        <!-- 5. SN Generator / serialno (Urutan ke-5 setelah Operator di VphoneOS) -->
+        <!-- 5. SN Generator / serialno -->
         <div class="card">
             <div class="header-row">
                 <span class="title">🏷️ Serial Number (SN)</span>
@@ -248,7 +260,7 @@
             </div>
         </div>
 
-        <!-- 6. Nomor HP Telkomsel Generator (Urutan ke-6 paling bawah di VphoneOS) -->
+        <!-- 6. Nomor HP Telkomsel Generator -->
         <div class="card">
             <div class="header-row">
                 <span class="title">📱 Nomor HP (Telkomsel)</span>
@@ -259,13 +271,29 @@
                 <button id="btnPhone" onclick="handlePhone()">Gen No HP</button>
             </div>
         </div>
+
+        <!-- 7. Pengaturan Database Anti-Duplikat (Firebase & LocalStorage) -->
+        <div class="card">
+            <div class="header-row">
+                <span class="title">☁️ Database Anti-Duplikat (Firebase)</span>
+                <span class="badge" id="dbStatusBadge">Lokal: 0 Data</span>
+            </div>
+            <div class="action-row">
+                <input type="text" id="firebaseUrlInput" class="db-input" placeholder="Tempel URL Firebase Realtime DB (https://...-rtdb...app/)" onchange="saveFirebaseUrl()">
+                <button id="btnSync" class="btn-secondary" onclick="syncFromFirebase()">Sync DB</button>
+            </div>
+            <div class="action-row">
+                <button id="btnClearDb" class="btn-danger" onclick="clearAllHistory()">🗑️ Hapus Riwayat Parameter di Database</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Mode aktif: 'orig' (Versi Sebelumnya/Tetap) atau 'global' (Versi Resmi Indonesia/Global)
         let currentRegionMode = 'orig';
 
-        // Database Lengkap 2 Versi (orig & global) + Validasi IEEE/GSMA
+        // Anda juga bisa langsung mengisi URL Firebase di dalam tanda kutip di bawah ini:
+        const DEFAULT_FIREBASE_URL = 'https://generator-uniq-default-rtdb.asia-southeast1.firebasedatabase.app/'; 
+
         const devicePresets = {
             oppo_a6: {
                 brandName: 'OPPO',
@@ -446,6 +474,157 @@
         let currentSnLen = devicePresets.oppo_a6.snLen;
         let lastUsedOui = '';
 
+        // Penyimpanan memori semua riwayat parameter yang sudah terpakai
+        let usedHistory = new Set();
+
+        function getCleanFirebaseUrl() {
+            let url = document.getElementById('firebaseUrlInput').value.trim();
+            if (!url) return '';
+            if (!url.endsWith('/')) url += '/';
+            return url;
+        }
+
+        function saveFirebaseUrl() {
+            const url = getCleanFirebaseUrl();
+            try {
+                localStorage.setItem('uniq_firebase_url', url);
+            } catch (e) {}
+            if (url) syncFromFirebase();
+        }
+
+        function updateDbBadge(isCloud = false) {
+            const badge = document.getElementById('dbStatusBadge');
+            const total = usedHistory.size;
+            if (getCleanFirebaseUrl() && isCloud) {
+                badge.innerText = '☁️ Cloud: ' + total + ' Data';
+                badge.classList.add('online');
+            } else {
+                badge.innerText = '💾 Lokal: ' + total + ' Data';
+                badge.classList.remove('online');
+            }
+        }
+
+        function loadLocalHistory() {
+            try {
+                const savedUrl = localStorage.getItem('uniq_firebase_url') || DEFAULT_FIREBASE_URL;
+                if (savedUrl) document.getElementById('firebaseUrlInput').value = savedUrl;
+
+                const raw = JSON.parse(localStorage.getItem('uniq_master_history') || '[]');
+                raw.forEach(item => usedHistory.add(item));
+            } catch (e) {}
+            updateDbBadge(false);
+        }
+
+        function saveLocalHistory() {
+            try {
+                const arr = Array.from(usedHistory);
+                localStorage.setItem('uniq_master_history', JSON.stringify(arr));
+            } catch (e) {}
+        }
+
+        // Tarik semua data yang pernah dibuat dari Firebase Realtime Database
+        async function syncFromFirebase() {
+            const baseUrl = getCleanFirebaseUrl();
+            if (!baseUrl) {
+                updateDbBadge(false);
+                return;
+            }
+            const btn = document.getElementById('btnSync');
+            const origText = btn.innerText;
+            btn.innerText = '⏳...';
+
+            try {
+                const res = await fetch(baseUrl + 'used_params.json');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && typeof data === 'object') {
+                        Object.values(data).forEach(categoryObj => {
+                            if (categoryObj && typeof categoryObj === 'object') {
+                                Object.keys(categoryObj).forEach(val => usedHistory.add(val));
+                            }
+                        });
+                        saveLocalHistory();
+                    }
+                    updateDbBadge(true);
+                    btn.innerText = '✅ Sync!';
+                } else {
+                    btn.innerText = '⚠️ Gagal';
+                }
+            } catch (err) {
+                btn.innerText = '⚠️ Offline';
+            }
+            setTimeout(() => { btn.innerText = origText; }, 1000);
+        }
+
+        // Kirim parameter yang baru saja dibuat ke Firebase agar tersimpan permanen
+        function pushToFirebase(category, value) {
+            const baseUrl = getCleanFirebaseUrl();
+            if (!baseUrl) {
+                updateDbBadge(false);
+                return;
+            }
+            fetch(baseUrl + 'used_params/' + category + '/' + encodeURIComponent(value) + '.json', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Date.now())
+            }).then(() => {
+                updateDbBadge(true);
+            }).catch(() => {
+                updateDbBadge(false);
+            });
+        }
+
+        // Hapus seluruh riwayat di Firebase & LocalStorage
+        async function clearAllHistory() {
+            const btn = document.getElementById('btnClearDb');
+            const origText = btn.innerText;
+            btn.innerText = '⏳ Menghapus Database...';
+
+            usedHistory.clear();
+            try {
+                localStorage.removeItem('uniq_master_history');
+            } catch (e) {}
+
+            const baseUrl = getCleanFirebaseUrl();
+            if (baseUrl) {
+                try {
+                    await fetch(baseUrl + 'used_params.json', { method: 'DELETE' });
+                    updateDbBadge(true);
+                } catch (e) {
+                    updateDbBadge(false);
+                }
+            } else {
+                updateDbBadge(false);
+            }
+
+            // Kosongkan tampilan kotak input
+            ['macGsmOutput', 'macOutput', 'msinOutput', 'imeiOutput', 'snOutput', 'phoneOutput'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+
+            btn.innerText = '✅ Riwayat Database Bersih!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerText = origText;
+                btn.classList.remove('copied');
+            }, 1200);
+        }
+
+        // Generator Anti-Duplikat Terpusat
+        function getUniqueRandom(generatorFn, category) {
+            let val;
+            let attempts = 0;
+            do {
+                val = generatorFn();
+                attempts++;
+            } while (usedHistory.has(val) && attempts < 200);
+
+            usedHistory.add(val);
+            saveLocalHistory();
+            pushToFirebase(category, val);
+            return val;
+        }
+
         function setRegionMode(mode) {
             currentRegionMode = mode;
             document.getElementById('modeOrigBtn').classList.toggle('active', mode === 'orig');
@@ -484,9 +663,6 @@
             document.getElementById('snBadge').innerText = preset.snInfo;
         }
 
-        // Inisialisasi awal
-        updateDevicePreset();
-
         function copyTextRaw(text, btnId, originalText) {
             const btnEl = document.getElementById(btnId);
             if (navigator.clipboard && window.isSecureContext) {
@@ -517,30 +693,7 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        // Pengaman Anti-Duplikat (localStorage) agar parameter yang sudah keluar tidak muncul lagi
-        function getUniqueRandom(generatorFn, storageKey) {
-            let history = [];
-            try {
-                history = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            } catch (e) {
-                history = [];
-            }
-            let val;
-            let attempts = 0;
-            do {
-                val = generatorFn();
-                attempts++;
-            } while (history.includes(val) && attempts < 50);
-
-            history.push(val);
-            if (history.length > 5000) history.shift();
-            try {
-                localStorage.setItem(storageKey, JSON.stringify(history));
-            } catch (e) {}
-            return val;
-        }
-
-        // 1 & 2. Fungsi MAC Address (6 Karakter OUI Resmi Pabrik + Digit ke-2 Pasti Genap/Unicast)
+        // 1 & 2. Fungsi MAC Address
         function handleMAC(inputId, btnId, btnText) {
             const mac = getUniqueRandom(() => {
                 const hexChars = '0123456789abcdef';
@@ -562,7 +715,7 @@
                     nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
                 }
                 return char1 + char2 + char3to6 + nicTail;
-            }, 'uniq_mac_history');
+            }, 'mac');
 
             document.getElementById(inputId).value = mac;
             copyToClipboard(inputId, btnId, btnText);
@@ -576,7 +729,7 @@
                     res += Math.floor(Math.random() * 10);
                 }
                 return res;
-            }, 'uniq_msin_history');
+            }, 'msin');
 
             document.getElementById('msinOutput').value = msin;
             copyToClipboard('msinOutput', 'btnMsin', 'Gen MSIN');
@@ -601,13 +754,13 @@
                 }
                 let checkDigit = (10 - (sum % 10)) % 10;
                 return res + checkDigit;
-            }, 'uniq_imei_history');
+            }, 'imei');
             
             document.getElementById('imeiOutput').value = imei;
             copyToClipboard('imeiOutput', 'btnImei', 'Gen IMEI');
         }
 
-        // 5. Fungsi Serial Number (Mengikuti Panjang & Prefix Pabrikan, Tanpa Huruf I/O/Q)
+        // 5. Fungsi Serial Number
         function handleSN() {
             const sn = getUniqueRandom(() => {
                 const safeChars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
@@ -617,13 +770,13 @@
                     res += safeChars.charAt(Math.floor(Math.random() * safeChars.length));
                 }
                 return res;
-            }, 'uniq_sn_history');
+            }, 'sn');
             
             document.getElementById('snOutput').value = sn;
             copyToClipboard('snOutput', 'btnSn', 'Gen SN');
         }
 
-        // 6. Fungsi Nomor HP Telkomsel Prabayar (13 Digit dengan 62 = 12 Digit Lokal 08xx)
+        // 6. Fungsi Nomor HP Telkomsel Prabayar
         function handlePhone() {
             const phone = getUniqueRandom(() => {
                 const prefixes = ['62812', '62813', '62821', '62822', '62823', '62852', '62853'];
@@ -632,11 +785,16 @@
                     res += Math.floor(Math.random() * 10);
                 }
                 return res;
-            }, 'uniq_phone_history');
+            }, 'phone');
 
             document.getElementById('phoneOutput').value = phone;
             copyToClipboard('phoneOutput', 'btnPhone', 'Gen No HP');
         }
+
+        // Jalankan inisialisasi saat halaman dibuka
+        updateDevicePreset();
+        loadLocalHistory();
+        syncFromFirebase();
     </script>
 </body>
 </html>
