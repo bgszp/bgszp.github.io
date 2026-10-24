@@ -208,7 +208,7 @@
             </div>
             <div class="action-row">
                 <input type="text" id="macGsmOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnMacGsm" onclick="handleMAC('macGsmOutput', 'btnMacGsm', 'Gen MAC GSM')">Gen MAC GSM</button>
+                <button id="btnMacGsm" onclick="handleMAC('macGsmOutput', 'btnMacGsm', 'Gen MAC GSM', 'mac_gsm')">Gen MAC GSM</button>
             </div>
         </div>
 
@@ -220,7 +220,7 @@
             </div>
             <div class="action-row">
                 <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnMac" onclick="handleMAC('macOutput', 'btnMac', 'Gen MAC WiFi')">Gen MAC WiFi</button>
+                <button id="btnMac" onclick="handleMAC('macOutput', 'btnMac', 'Gen MAC WiFi', 'mac_wifi')">Gen MAC WiFi</button>
             </div>
         </div>
 
@@ -275,7 +275,7 @@
         <!-- 7. Pengaturan Database Anti-Duplikat (Firebase & LocalStorage) -->
         <div class="card">
             <div class="header-row">
-                <span class="title">☁️ Database Anti-Duplikat (Firebase)</span>
+                <span class="title">☁️ Database Anti-Duplikat (Per Tipe HP)</span>
                 <span class="badge" id="dbStatusBadge">Lokal: 0 Data</span>
             </div>
             <div class="action-row">
@@ -291,11 +291,12 @@
     <script>
         let currentRegionMode = 'orig';
 
-        // Anda juga bisa langsung mengisi URL Firebase di dalam tanda kutip di bawah ini:
-        const DEFAULT_FIREBASE_URL = 'https://generator-uniq-default-rtdb.asia-southeast1.firebasedatabase.app/'; 
+        // Anda bisa langsung menempelkan URL Firebase di dalam tanda kutip ini jika tidak ingin mengetik di kolom input:
+        const DEFAULT_FIREBASE_URL = ''; 
 
         const devicePresets = {
             oppo_a6: {
+                label: 'OPPO A6 (PLS120)',
                 brandName: 'OPPO',
                 tac: '86119606',
                 oui: ['94d00d', 'bc2def', 'e8bba8', 'c8f230', 'd4503f', '8c0ee3'],
@@ -315,6 +316,7 @@
                 }
             },
             oppo_fx7u: {
+                label: 'OPPO Find X7 Ultra',
                 brandName: 'OPPO',
                 tac: '86329806',
                 oui: ['bc2def', '94d00d', 'e8bba8', 'c8f230', 'd4503f', '8c0ee3'],
@@ -334,6 +336,7 @@
                 }
             },
             oppo_fx8: {
+                label: 'OPPO Find X8',
                 brandName: 'OPPO',
                 tac: '86741206',
                 oui: ['e8bba8', '94d00d', 'bc2def', 'c8f230', 'd4503f', '8c0ee3'],
@@ -353,6 +356,7 @@
                 }
             },
             vivo_neo10: {
+                label: 'VIVO iQOO Neo10',
                 brandName: 'VIVO',
                 tac: '86365805',
                 oui: ['549209', 'c8b21e', 'd463c6', 'ac5a14', '847b57', '38bc01'],
@@ -372,6 +376,7 @@
                 }
             },
             redmi_k80p: {
+                label: 'REDMI K80 Pro',
                 brandName: 'Xiaomi',
                 tac: '86483905',
                 oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9', '7802f8'],
@@ -391,6 +396,7 @@
                 }
             },
             xiaomi_12p: {
+                label: 'Xiaomi 12 Pro (Valid A12)',
                 brandName: 'Xiaomi',
                 tac: '86622805',
                 oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9', '7802f8'],
@@ -410,6 +416,7 @@
                 }
             },
             honor_m6p: {
+                label: 'HONOR Magic6 PRO',
                 brandName: 'HONOR',
                 tac: '86095606',
                 oui: ['04f938', '48db50', '80b686', 'e02481', 'c81451', '24df6a'],
@@ -429,6 +436,7 @@
                 }
             },
             s21: {
+                label: 'Galaxy S21 (Valid A12)',
                 brandName: 'Samsung',
                 tac: '35876214',
                 oui: ['e45e37', 'c0b883', '705a0f', 'd8c4e9', '54b802', '244b03'],
@@ -448,6 +456,7 @@
                 }
             },
             s23u: {
+                label: 'Galaxy S23 Ultra',
                 brandName: 'Samsung',
                 tac: '35407985',
                 oui: ['d8c4e9', '54b802', 'e45e37', 'c0b883', '244b03', '705a0f'],
@@ -468,13 +477,14 @@
             }
         };
 
+        let currentDeviceKey = 'oppo_a6';
         let currentImeiPrefix = devicePresets.oppo_a6.tac;
         let currentOuiList = devicePresets.oppo_a6.oui;
         let currentSnPrefixList = devicePresets.oppo_a6.snPrefix;
         let currentSnLen = devicePresets.oppo_a6.snLen;
         let lastUsedOui = '';
 
-        // Penyimpanan memori semua riwayat parameter yang sudah terpakai
+        // Set global untuk mengecek seluruh parameter yang sudah pernah keluar
         let usedHistory = new Set();
 
         function getCleanFirebaseUrl() {
@@ -522,7 +532,7 @@
             } catch (e) {}
         }
 
-        // Tarik semua data yang pernah dibuat dari Firebase Realtime Database
+        // Tarik semua data dari struktur: used_params / {deviceKey} / {paramCategory} / {paramValue}
         async function syncFromFirebase() {
             const baseUrl = getCleanFirebaseUrl();
             if (!baseUrl) {
@@ -538,9 +548,13 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data && typeof data === 'object') {
-                        Object.values(data).forEach(categoryObj => {
-                            if (categoryObj && typeof categoryObj === 'object') {
-                                Object.keys(categoryObj).forEach(val => usedHistory.add(val));
+                        Object.values(data).forEach(deviceNode => {
+                            if (deviceNode && typeof deviceNode === 'object') {
+                                Object.values(deviceNode).forEach(categoryNode => {
+                                    if (categoryNode && typeof categoryNode === 'object') {
+                                        Object.keys(categoryNode).forEach(val => usedHistory.add(val));
+                                    }
+                                });
                             }
                         });
                         saveLocalHistory();
@@ -556,17 +570,27 @@
             setTimeout(() => { btn.innerText = origText; }, 1000);
         }
 
-        // Kirim parameter yang baru saja dibuat ke Firebase agar tersimpan permanen
+        // Simpan ke Firebase dengan dikelompokkan berdasarkan Kategori Ponsel + Detail Waktu & Mode
         function pushToFirebase(category, value) {
             const baseUrl = getCleanFirebaseUrl();
             if (!baseUrl) {
                 updateDbBadge(false);
                 return;
             }
-            fetch(baseUrl + 'used_params/' + category + '/' + encodeURIComponent(value) + '.json', {
+            const preset = devicePresets[currentDeviceKey];
+            const payload = {
+                model_label: preset.label,
+                brand: preset.brandName,
+                mode: currentRegionMode === 'global' ? 'Resmi ID/Global' : 'Bawaan VphoneOS',
+                waktu: new Date().toLocaleString('id-ID')
+            };
+
+            const targetPath = 'used_params/' + currentDeviceKey + '/' + category + '/' + encodeURIComponent(value) + '.json';
+
+            fetch(baseUrl + targetPath, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(Date.now())
+                body: JSON.stringify(payload)
             }).then(() => {
                 updateDbBadge(true);
             }).catch(() => {
@@ -597,7 +621,6 @@
                 updateDbBadge(false);
             }
 
-            // Kosongkan tampilan kotak input
             ['macGsmOutput', 'macOutput', 'msinOutput', 'imeiOutput', 'snOutput', 'phoneOutput'].forEach(id => {
                 document.getElementById(id).value = '';
             });
@@ -635,6 +658,7 @@
 
         function updateDevicePreset() {
             const val = document.getElementById('deviceSelect').value;
+            currentDeviceKey = val;
             const preset = devicePresets[val];
             const activeProfile = preset[currentRegionMode];
 
@@ -693,8 +717,8 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        // 1 & 2. Fungsi MAC Address
-        function handleMAC(inputId, btnId, btnText) {
+        // 1 & 2. Fungsi MAC Address (Dipisah kategorinya di DB menjadi mac_gsm dan mac_wifi)
+        function handleMAC(inputId, btnId, btnText, dbCategory) {
             const mac = getUniqueRandom(() => {
                 const hexChars = '0123456789abcdef';
                 const evenHex = '02468ace';
@@ -715,7 +739,7 @@
                     nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
                 }
                 return char1 + char2 + char3to6 + nicTail;
-            }, 'mac');
+            }, dbCategory);
 
             document.getElementById(inputId).value = mac;
             copyToClipboard(inputId, btnId, btnText);
@@ -791,7 +815,7 @@
             copyToClipboard('phoneOutput', 'btnPhone', 'Gen No HP');
         }
 
-        // Jalankan inisialisasi saat halaman dibuka
+        // Inisialisasi saat halaman dibuka
         updateDevicePreset();
         loadLocalHistory();
         syncFromFirebase();
