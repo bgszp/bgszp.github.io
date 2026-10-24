@@ -188,18 +188,18 @@
                     <option value="s21">Galaxy S21 (Valid A12)</option>
                     <option value="s23u">Galaxy S23 Ultra</option>
                 </select>
-                <button id="btnDisp" class="btn-secondary" onclick="copyPreset('dispOutput', 'btnDisp', 'Salin DispID')">Salin DispID</button>
-                <button id="btnFp" onclick="copyPreset('fpOutput', 'btnFp', 'Salin FP')">Salin FP</button>
+                <button type="button" id="btnDisp" class="btn-secondary" onclick="copyPreset('dispOutput', 'btnDisp', 'Salin DispID')">Salin DispID</button>
+                <button type="button" id="btnFp" onclick="copyPreset('fpOutput', 'btnFp', 'Salin FP')">Salin FP</button>
             </div>
 
             <div id="extraPropsRow" class="extra-props-row">
-                <button id="btnModel" class="btn-prop" onclick="copyPreset('modelOutput', 'btnModel', 'Model: ' + document.getElementById('modelOutput').value)">Salin Model</button>
-                <button id="btnProduct" class="btn-prop" onclick="copyPreset('productOutput', 'btnProduct', 'Prod: ' + document.getElementById('productOutput').value)">Salin Product</button>
-                <button id="btnDevice" class="btn-prop" onclick="copyPreset('deviceOutput', 'btnDevice', 'Dev: ' + document.getElementById('deviceOutput').value)">Salin Device</button>
+                <button type="button" id="btnModel" class="btn-prop" onclick="copyPreset('modelOutput', 'btnModel', 'Model: ' + document.getElementById('modelOutput').value)">Salin Model</button>
+                <button type="button" id="btnProduct" class="btn-prop" onclick="copyPreset('productOutput', 'btnProduct', 'Prod: ' + document.getElementById('productOutput').value)">Salin Product</button>
+                <button type="button" id="btnDevice" class="btn-prop" onclick="copyPreset('deviceOutput', 'btnDevice', 'Dev: ' + document.getElementById('deviceOutput').value)">Salin Device</button>
             </div>
 
             <div class="action-row">
-                <button id="btnGenAll" class="btn-accent" onclick="generateFullProfileSet()">⚡ Generate 1 Paket Lengkap & Simpan Detail ke DB</button>
+                <button type="button" id="btnGenAll" class="btn-accent" onclick="generateFullProfileSet()">⚡ Generate 1 Paket Lengkap & Simpan Detail ke DB</button>
             </div>
 
             <input type="hidden" id="dispOutput">
@@ -217,7 +217,7 @@
             </div>
             <div class="action-row">
                 <input type="text" id="macGsmOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnMacGsm" onclick="handleMAC('macGsmOutput', 'btnMacGsm', 'Gen MAC GSM')">Gen MAC GSM</button>
+                <button type="button" id="btnMacGsm" onclick="handleMAC('macGsmOutput', 'btnMacGsm', 'Gen MAC GSM', 'mac_gsm')">Gen MAC GSM</button>
             </div>
         </div>
 
@@ -229,7 +229,7 @@
             </div>
             <div class="action-row">
                 <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnMac" onclick="handleMAC('macOutput', 'btnMac', 'Gen MAC WiFi')">Gen MAC WiFi</button>
+                <button type="button" id="btnMac" onclick="handleMAC('macOutput', 'btnMac', 'Gen MAC WiFi', 'mac_wifi')">Gen MAC WiFi</button>
             </div>
         </div>
 
@@ -241,7 +241,7 @@
             </div>
             <div class="action-row">
                 <input type="text" id="msinOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnMsin" onclick="handleMSIN()">Gen MSIN</button>
+                <button type="button" id="btnMsin" onclick="handleMSIN()">Gen MSIN</button>
             </div>
         </div>
 
@@ -253,7 +253,7 @@
             </div>
             <div class="action-row">
                 <input type="text" id="imeiOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnImei" onclick="handleIMEI()">Gen IMEI</button>
+                <button type="button" id="btnImei" onclick="handleIMEI()">Gen IMEI</button>
             </div>
         </div>
 
@@ -265,7 +265,7 @@
             </div>
             <div class="action-row">
                 <input type="text" id="snOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnSn" onclick="handleSN()">Gen SN</button>
+                <button type="button" id="btnSn" onclick="handleSN()">Gen SN</button>
             </div>
         </div>
 
@@ -277,7 +277,7 @@
             </div>
             <div class="action-row">
                 <input type="text" id="phoneOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnPhone" onclick="handlePhone()">Gen No HP</button>
+                <button type="button" id="btnPhone" onclick="handlePhone()">Gen No HP</button>
             </div>
         </div>
 
@@ -285,23 +285,21 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">☁️ Database Profil & Anti-Duplikat</span>
-                <span class="badge" id="dbStatusBadge">Lokal: 0 Data</span>
+                <span class="badge" id="dbStatusBadge">Lokal: 0 Unik</span>
             </div>
             <div class="action-row">
                 <input type="text" id="firebaseUrlInput" class="db-input" placeholder="Tempel URL Firebase Realtime DB" onchange="saveFirebaseUrl()">
-                <button id="btnSync" class="btn-secondary" onclick="syncFromFirebase()">Sync DB</button>
+                <button type="button" id="btnSync" class="btn-secondary" onclick="syncFromFirebase()">Sync DB</button>
             </div>
             <div class="action-row">
-                <button id="btnClearDb" class="btn-danger" onclick="clearAllHistory()">🗑️ Hapus Riwayat Parameter di Database</button>
+                <button type="button" id="btnClearDb" class="btn-danger" onclick="clearAllHistory()">🗑️ Hapus Riwayat Parameter di Database</button>
             </div>
         </div>
     </div>
 
     <script>
         let currentRegionMode = 'orig';
-
-        // URL Firebase Anda sudah dipasang otomatis sebagai default
-        const DEFAULT_FIREBASE_URL = 'https://generator-uniq-default-rtdb.asia-southeast1.firebasedatabase.app/'; 
+        const DEFAULT_FIREBASE_URL = 'https://generator-uniq-default-rtdb.asia-southeast1.firebasedatabase.app/';
 
         const devicePresets = {
             oppo_a6: {
@@ -484,14 +482,26 @@
         let currentSnLen = devicePresets.oppo_a6.snLen;
         let lastUsedOui = '';
         let currentSessionId = '';
+        let filledFieldsInSession = new Set();
 
-        // Set global untuk mengecek seluruh parameter yang sudah pernah keluar
         let usedHistory = new Set();
 
         function createNewSessionId() {
             const now = new Date();
             const pad = n => String(n).padStart(2, '0');
             currentSessionId = 'Paket_' + pad(now.getDate()) + '-' + pad(now.getMonth() + 1) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
+            filledFieldsInSession.clear();
+        }
+
+        function checkSessionCycle(fieldKey) {
+            // Jika ke-6 kolom sudah lengkap pada paket sebelumnya, otomatis buat Paket baru saat tombol diklik lagi
+            if (filledFieldsInSession.size >= 6) {
+                createNewSessionId();
+                ['macGsmOutput', 'macOutput', 'msinOutput', 'imeiOutput', 'snOutput', 'phoneOutput'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+            }
+            filledFieldsInSession.add(fieldKey);
         }
 
         function getCleanFirebaseUrl() {
@@ -539,7 +549,6 @@
             } catch (e) {}
         }
 
-        // Tarik semua nilai parameter dari struktur profil_lengkap di Firebase agar tidak pernah duplikat
         async function syncFromFirebase() {
             const baseUrl = getCleanFirebaseUrl();
             if (!baseUrl) {
@@ -559,7 +568,7 @@
                             if (deviceFolder && typeof deviceFolder === 'object') {
                                 Object.values(deviceFolder).forEach(sessionPkg => {
                                     if (sessionPkg && typeof sessionPkg === 'object') {
-                                        ['06_MAC_GSM', '07_MAC_WiFi', '08_MSIN', '09_IMEI', '10_Serial_Number', '11_Nomor_HP'].forEach(k => {
+                                        ['06_MAC_GSM', '07_MAC_WiFi', '09_MSIN', '10_IMEI', '12_Serial_Number', '13_Nomor_HP'].forEach(k => {
                                             if (sessionPkg[k] && sessionPkg[k] !== '-') {
                                                 usedHistory.add(sessionPkg[k]);
                                             }
@@ -581,7 +590,6 @@
             setTimeout(() => { btn.innerText = origText; }, 1000);
         }
 
-        // Simpan 1 Paket Detail Lengkap dari seluruh parameter yang sedang tampil di layar ke Firebase
         function saveCurrentFullPackageToFirebase() {
             const baseUrl = getCleanFirebaseUrl();
             if (!baseUrl) {
@@ -593,7 +601,6 @@
             const preset = devicePresets[currentDeviceKey];
             const activeProfile = preset[currentRegionMode];
 
-            // Disusun dengan nomor urut 01 s/d 13 agar di Firebase tampil berurutan rapi dalam 1 tampilan terbuka
             const fullPackageData = {
                 "01_Nama_Perangkat": preset.label + " (" + preset.brandName + ")",
                 "02_Mode_Region": currentRegionMode === 'global' ? "Resmi ID / Global" : "Bawaan VphoneOS",
@@ -604,10 +611,11 @@
                 "07_MAC_WiFi": document.getElementById('macOutput').value || "-",
                 "08_MCC_MNC_Operator": "510 / 10 (Telkomsel)",
                 "09_MSIN": document.getElementById('msinOutput').value || "-",
-                "10_IMEI_TAC_" + preset.tac: document.getElementById('imeiOutput').value || "-",
-                "11_Serial_Number": document.getElementById('snOutput').value || "-",
-                "12_Nomor_HP": document.getElementById('phoneOutput').value || "-",
-                "13_Waktu_Simpan": new Date().toLocaleString('id-ID')
+                "10_IMEI": document.getElementById('imeiOutput').value || "-",
+                "11_TAC_Pabrikan": preset.tac,
+                "12_Serial_Number": document.getElementById('snOutput').value || "-",
+                "13_Nomor_HP": document.getElementById('phoneOutput').value || "-",
+                "14_Waktu_Simpan": new Date().toLocaleString('id-ID')
             };
 
             const targetPath = 'profil_perangkat/' + currentDeviceKey + '/' + currentSessionId + '.json';
@@ -623,7 +631,6 @@
             });
         }
 
-        // Hapus seluruh riwayat di Firebase (baik node lama used_params maupun node baru profil_perangkat) & LocalStorage
         async function clearAllHistory() {
             const btn = document.getElementById('btnClearDb');
             const origText = btn.innerText;
@@ -662,7 +669,6 @@
             }, 1200);
         }
 
-        // Generator Anti-Duplikat Terpusat
         function getUniqueRandom(generatorFn) {
             let val;
             let attempts = 0;
@@ -682,17 +688,19 @@
             document.getElementById('modeGlobalBtn').classList.toggle('active', mode === 'global');
             document.getElementById('extraPropsRow').classList.toggle('show', mode === 'global');
             updateDevicePreset(false);
-            // Jika sudah ada parameter yang terisi, ikut perbarui info mode di paket Firebase saat ini
             if (document.getElementById('imeiOutput').value) {
                 saveCurrentFullPackageToFirebase();
             }
         }
 
-        function updateDevicePreset(isNewDeviceChange = false) {
+        function updateDevicePreset(isNewDeviceChange) {
             const val = document.getElementById('deviceSelect').value;
             currentDeviceKey = val;
             if (isNewDeviceChange) {
                 createNewSessionId();
+                ['macGsmOutput', 'macOutput', 'msinOutput', 'imeiOutput', 'snOutput', 'phoneOutput'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
             }
             const preset = devicePresets[val];
             const activeProfile = preset[currentRegionMode];
@@ -752,7 +760,6 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        // Fungsi internal pembuat masing-masing nilai
         function generateMacString() {
             const hexChars = '0123456789abcdef';
             const evenHex = '02468ace';
@@ -820,7 +827,6 @@
             return res;
         }
 
-        // Tombol 1 Klik: Generate Seluruh 6 Parameter Sekaligus & Simpan 1 Paket Utuh ke Firebase
         function generateFullProfileSet() {
             createNewSessionId();
             document.getElementById('macGsmOutput').value = getUniqueRandom(generateMacString);
@@ -830,6 +836,7 @@
             document.getElementById('snOutput').value = getUniqueRandom(generateSnString);
             document.getElementById('phoneOutput').value = getUniqueRandom(generatePhoneString);
 
+            ['mac_gsm', 'mac_wifi', 'msin', 'imei', 'sn', 'phone'].forEach(k => filledFieldsInSession.add(k));
             saveCurrentFullPackageToFirebase();
 
             const btn = document.getElementById('btnGenAll');
@@ -842,47 +849,46 @@
             }, 1100);
         }
 
-        // 1 & 2. Fungsi MAC Address Individual
-        function handleMAC(inputId, btnId, btnText) {
+        function handleMAC(inputId, btnId, btnText, fieldKey) {
+            checkSessionCycle(fieldKey);
             const mac = getUniqueRandom(generateMacString);
             document.getElementById(inputId).value = mac;
             copyToClipboard(inputId, btnId, btnText);
             saveCurrentFullPackageToFirebase();
         }
 
-        // 3. Fungsi MSIN Individual
         function handleMSIN() {
+            checkSessionCycle('msin');
             const msin = getUniqueRandom(generateMsinString);
             document.getElementById('msinOutput').value = msin;
             copyToClipboard('msinOutput', 'btnMsin', 'Gen MSIN');
             saveCurrentFullPackageToFirebase();
         }
 
-        // 4. Fungsi IMEI Individual
         function handleIMEI() {
+            checkSessionCycle('imei');
             const imei = getUniqueRandom(generateImeiString);
             document.getElementById('imeiOutput').value = imei;
             copyToClipboard('imeiOutput', 'btnImei', 'Gen IMEI');
             saveCurrentFullPackageToFirebase();
         }
 
-        // 5. Fungsi Serial Number Individual
         function handleSN() {
+            checkSessionCycle('sn');
             const sn = getUniqueRandom(generateSnString);
             document.getElementById('snOutput').value = sn;
             copyToClipboard('snOutput', 'btnSn', 'Gen SN');
             saveCurrentFullPackageToFirebase();
         }
 
-        // 6. Fungsi Nomor HP Individual
         function handlePhone() {
+            checkSessionCycle('phone');
             const phone = getUniqueRandom(generatePhoneString);
             document.getElementById('phoneOutput').value = phone;
             copyToClipboard('phoneOutput', 'btnPhone', 'Gen No HP');
             saveCurrentFullPackageToFirebase();
         }
 
-        // Inisialisasi saat halaman dibuka
         createNewSessionId();
         updateDevicePreset(false);
         loadLocalHistory();
