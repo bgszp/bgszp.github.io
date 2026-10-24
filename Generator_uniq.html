@@ -140,6 +140,11 @@
             background: #30363d;
             min-width: 70px;
         }
+        button.btn-accent {
+            background: #8957e5;
+            width: 100%;
+            padding: 5px 8px;
+        }
         button.btn-danger {
             background: #da3633;
             width: 100%;
@@ -172,7 +177,7 @@
             </div>
 
             <div class="action-row">
-                <select id="deviceSelect" onchange="updateDevicePreset()">
+                <select id="deviceSelect" onchange="updateDevicePreset(true)">
                     <option value="oppo_a6">OPPO A6 (PLS120)</option>
                     <option value="oppo_fx7u">OPPO Find X7 Ultra</option>
                     <option value="oppo_fx8">OPPO Find X8</option>
@@ -193,6 +198,10 @@
                 <button id="btnDevice" class="btn-prop" onclick="copyPreset('deviceOutput', 'btnDevice', 'Dev: ' + document.getElementById('deviceOutput').value)">Salin Device</button>
             </div>
 
+            <div class="action-row">
+                <button id="btnGenAll" class="btn-accent" onclick="generateFullProfileSet()">⚡ Generate 1 Paket Lengkap & Simpan Detail ke DB</button>
+            </div>
+
             <input type="hidden" id="dispOutput">
             <input type="hidden" id="fpOutput">
             <input type="hidden" id="modelOutput">
@@ -208,7 +217,7 @@
             </div>
             <div class="action-row">
                 <input type="text" id="macGsmOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnMacGsm" onclick="handleMAC('macGsmOutput', 'btnMacGsm', 'Gen MAC GSM', 'mac_gsm')">Gen MAC GSM</button>
+                <button id="btnMacGsm" onclick="handleMAC('macGsmOutput', 'btnMacGsm', 'Gen MAC GSM')">Gen MAC GSM</button>
             </div>
         </div>
 
@@ -220,7 +229,7 @@
             </div>
             <div class="action-row">
                 <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly>
-                <button id="btnMac" onclick="handleMAC('macOutput', 'btnMac', 'Gen MAC WiFi', 'mac_wifi')">Gen MAC WiFi</button>
+                <button id="btnMac" onclick="handleMAC('macOutput', 'btnMac', 'Gen MAC WiFi')">Gen MAC WiFi</button>
             </div>
         </div>
 
@@ -275,11 +284,11 @@
         <!-- 7. Pengaturan Database Anti-Duplikat (Firebase & LocalStorage) -->
         <div class="card">
             <div class="header-row">
-                <span class="title">☁️ Database Anti-Duplikat (Per Tipe HP)</span>
+                <span class="title">☁️ Database Profil & Anti-Duplikat</span>
                 <span class="badge" id="dbStatusBadge">Lokal: 0 Data</span>
             </div>
             <div class="action-row">
-                <input type="text" id="firebaseUrlInput" class="db-input" placeholder="Tempel URL Firebase Realtime DB (https://...-rtdb...app/)" onchange="saveFirebaseUrl()">
+                <input type="text" id="firebaseUrlInput" class="db-input" placeholder="Tempel URL Firebase Realtime DB" onchange="saveFirebaseUrl()">
                 <button id="btnSync" class="btn-secondary" onclick="syncFromFirebase()">Sync DB</button>
             </div>
             <div class="action-row">
@@ -291,8 +300,8 @@
     <script>
         let currentRegionMode = 'orig';
 
-        // Anda bisa langsung menempelkan URL Firebase di dalam tanda kutip ini jika tidak ingin mengetik di kolom input:
-        const DEFAULT_FIREBASE_URL = ''; 
+        // URL Firebase Anda sudah dipasang otomatis sebagai default
+        const DEFAULT_FIREBASE_URL = 'https://generator-uniq-default-rtdb.asia-southeast1.firebasedatabase.app/'; 
 
         const devicePresets = {
             oppo_a6: {
@@ -304,13 +313,12 @@
                 snPrefix: ['A21', 'P9B', 'K62', 'CPH'],
                 snLen: 12,
                 orig: {
+                    model: 'PLS120', product: 'PLS120', device: 'OP5E1C',
                     disp: 'PLS120_12.0.1.200(CN01)',
                     fp: 'OPPO/PLS120/OP5E1C:12/SP1A.210812.016/12.0.1.200:user/release-keys'
                 },
                 global: {
-                    model: 'CPH2333',
-                    product: 'CPH2333',
-                    device: 'OP52E1L1',
+                    model: 'CPH2333', product: 'CPH2333', device: 'OP52E1L1',
                     disp: 'CPH2333_11_C.18',
                     fp: 'OPPO/CPH2333/OP52E1L1:12/SP1A.210812.016/S.202211051620:user/release-keys'
                 }
@@ -324,13 +332,12 @@
                 snPrefix: ['PHY', 'A23', 'K81', 'P4C'],
                 snLen: 12,
                 orig: {
+                    model: 'PHY110', product: 'PHY110', device: 'OP5929L1',
                     disp: 'PHY110_12.0.0.402(CN01)',
                     fp: 'OPPO/PHY110/OP5929L1:12/SP1A.210812.016/12.0.0.402:user/release-keys'
                 },
                 global: {
-                    model: 'PHY110',
-                    product: 'PHY110',
-                    device: 'OP5929L1',
+                    model: 'PHY110', product: 'PHY110', device: 'OP5929L1',
                     disp: 'PHY110_12.0.0.402(EX01)',
                     fp: 'OPPO/PHY110/OP5929L1:12/SP1A.210812.016/R.114086b_1:user/release-keys'
                 }
@@ -344,13 +351,12 @@
                 snPrefix: ['PKB', 'CPH', 'A24', 'K92'],
                 snLen: 12,
                 orig: {
+                    model: 'PKB110', product: 'PKB110', device: 'OP5D0BL1',
                     disp: 'PKB110_12.0.0.201(CN01)',
                     fp: 'OPPO/PKB110/OP5D0BL1:12/SP1A.210812.016/12.0.0.201:user/release-keys'
                 },
                 global: {
-                    model: 'CPH2651',
-                    product: 'CPH2651',
-                    device: 'OP5D0BL1',
+                    model: 'CPH2651', product: 'CPH2651', device: 'OP5D0BL1',
                     disp: 'CPH2651_12.0.0.201(EX01)',
                     fp: 'OPPO/CPH2651/OP5D0BL1:12/SP1A.210812.016/S.1842a01_1:user/release-keys'
                 }
@@ -364,13 +370,12 @@
                 snPrefix: ['10A', 'V24', '88B', 'PD2'],
                 snLen: 12,
                 orig: {
+                    model: 'V2425A', product: 'PD2425', device: 'PD2425',
                     disp: 'SP1A.210812.003 release-keys',
                     fp: 'vivo/PD2425/PD2425:12/SP1A.210812.003/compiler11201512:user/release-keys'
                 },
                 global: {
-                    model: 'I2405',
-                    product: 'PD2425F_EX',
-                    device: 'PD2425',
+                    model: 'I2405', product: 'PD2425F_EX', device: 'PD2425',
                     disp: 'SP1A.210812.016 release-keys',
                     fp: 'vivo/PD2425F_EX/PD2425:12/SP1A.210812.016/compiler11201512:user/release-keys'
                 }
@@ -384,13 +389,12 @@
                 snPrefix: ['482', '391', '520', '284'],
                 snLen: 12,
                 orig: {
+                    model: '24122RKC7C', product: 'champion', device: 'champion',
                     disp: 'SKQ1.211006.001',
                     fp: 'Redmi/champion/champion:12/SKQ1.211006.001/V13.0.12.0.SLKCNXM:user/release-keys'
                 },
                 global: {
-                    model: '24122RKC7G',
-                    product: 'champion_id',
-                    device: 'champion',
+                    model: '24122RKC7G', product: 'champion_id', device: 'champion',
                     disp: 'SKQ1.211006.001 release-keys',
                     fp: 'Redmi/champion_id/champion:12/SKQ1.211006.001/V13.0.4.0.SLKIDXM:user/release-keys'
                 }
@@ -404,13 +408,12 @@
                 snPrefix: ['362', '482', '391', '520'],
                 snLen: 12,
                 orig: {
+                    model: '2201122C', product: 'zeus', device: 'zeus',
                     disp: 'SKQ1.211006.001 release-keys',
                     fp: 'Xiaomi/zeus/zeus:12/SKQ1.211006.001/V13.0.12.0.SLBCNXM:user/release-keys'
                 },
                 global: {
-                    model: '2201122G',
-                    product: 'zeus_id',
-                    device: 'zeus',
+                    model: '2201122G', product: 'zeus_id', device: 'zeus',
                     disp: 'SKQ1.211006.001 release-keys',
                     fp: 'Xiaomi/zeus_id/zeus:12/SKQ1.211006.001/V13.0.4.0.SLBIDXM:user/release-keys'
                 }
@@ -424,13 +427,12 @@
                 snPrefix: ['W3N02', 'C8J7N', 'HVU24', 'BVL01'],
                 snLen: 16,
                 orig: {
+                    model: 'BVL-AN16', product: 'BVL-AN16', device: 'HNBVL',
                     disp: 'BVL-AN16 12.0.0.132(C00E130R2P1)',
                     fp: 'HONOR/BVL-AN16/HNBVL:12/HONORBVL-AN16/12.0.0.132C00:user/release-keys'
                 },
                 global: {
-                    model: 'BVL-N49',
-                    product: 'BVL-N49',
-                    device: 'HNBVL-Q',
+                    model: 'BVL-N49', product: 'BVL-N49', device: 'HNBVL-Q',
                     disp: 'BVL-N49 6.0.0.132(C636E3R2P1)',
                     fp: 'HONOR/BVL-N49/HNBVL-Q:12/HONORBVL-N49/6.0.0.132C636:user/release-keys'
                 }
@@ -444,13 +446,12 @@
                 snPrefix: ['RR8R', 'R58R', 'RF8R', 'RR8T'],
                 snLen: 11,
                 orig: {
+                    model: 'SM-G991B', product: 'o1sxeea', device: 'o1s',
                     disp: 'SP1A.210812.016.G991BXXS5CVH1',
                     fp: 'samsung/o1sxeea/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
                 },
                 global: {
-                    model: 'SM-G991B',
-                    product: 'o1sxxx',
-                    device: 'o1s',
+                    model: 'SM-G991B', product: 'o1sxxx', device: 'o1s',
                     disp: 'SP1A.210812.016.G991BXXS5CVH1',
                     fp: 'samsung/o1sxxx/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
                 }
@@ -464,13 +465,12 @@
                 snPrefix: ['RR8W', 'R58W', 'RF8W', 'R3CW'],
                 snLen: 11,
                 orig: {
+                    model: 'SM-S918B', product: 'dm3qxeea', device: 'dm3q',
                     disp: 'SP1A.210812.016.S918BXXU1AWBD',
                     fp: 'samsung/dm3qxeea/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
                 },
                 global: {
-                    model: 'SM-S918B',
-                    product: 'dm3qxxx',
-                    device: 'dm3q',
+                    model: 'SM-S918B', product: 'dm3qxxx', device: 'dm3q',
                     disp: 'SP1A.210812.016.S918BXXU1AWBD',
                     fp: 'samsung/dm3qxxx/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
                 }
@@ -483,9 +483,16 @@
         let currentSnPrefixList = devicePresets.oppo_a6.snPrefix;
         let currentSnLen = devicePresets.oppo_a6.snLen;
         let lastUsedOui = '';
+        let currentSessionId = '';
 
         // Set global untuk mengecek seluruh parameter yang sudah pernah keluar
         let usedHistory = new Set();
+
+        function createNewSessionId() {
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            currentSessionId = 'Paket_' + pad(now.getDate()) + '-' + pad(now.getMonth() + 1) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
+        }
 
         function getCleanFirebaseUrl() {
             let url = document.getElementById('firebaseUrlInput').value.trim();
@@ -506,10 +513,10 @@
             const badge = document.getElementById('dbStatusBadge');
             const total = usedHistory.size;
             if (getCleanFirebaseUrl() && isCloud) {
-                badge.innerText = '☁️ Cloud: ' + total + ' Data';
+                badge.innerText = '☁️ Cloud: ' + total + ' Unik';
                 badge.classList.add('online');
             } else {
-                badge.innerText = '💾 Lokal: ' + total + ' Data';
+                badge.innerText = '💾 Lokal: ' + total + ' Unik';
                 badge.classList.remove('online');
             }
         }
@@ -532,7 +539,7 @@
             } catch (e) {}
         }
 
-        // Tarik semua data dari struktur: used_params / {deviceKey} / {paramCategory} / {paramValue}
+        // Tarik semua nilai parameter dari struktur profil_lengkap di Firebase agar tidak pernah duplikat
         async function syncFromFirebase() {
             const baseUrl = getCleanFirebaseUrl();
             if (!baseUrl) {
@@ -544,15 +551,19 @@
             btn.innerText = '⏳...';
 
             try {
-                const res = await fetch(baseUrl + 'used_params.json');
+                const res = await fetch(baseUrl + 'profil_perangkat.json');
                 if (res.ok) {
                     const data = await res.json();
                     if (data && typeof data === 'object') {
-                        Object.values(data).forEach(deviceNode => {
-                            if (deviceNode && typeof deviceNode === 'object') {
-                                Object.values(deviceNode).forEach(categoryNode => {
-                                    if (categoryNode && typeof categoryNode === 'object') {
-                                        Object.keys(categoryNode).forEach(val => usedHistory.add(val));
+                        Object.values(data).forEach(deviceFolder => {
+                            if (deviceFolder && typeof deviceFolder === 'object') {
+                                Object.values(deviceFolder).forEach(sessionPkg => {
+                                    if (sessionPkg && typeof sessionPkg === 'object') {
+                                        ['06_MAC_GSM', '07_MAC_WiFi', '08_MSIN', '09_IMEI', '10_Serial_Number', '11_Nomor_HP'].forEach(k => {
+                                            if (sessionPkg[k] && sessionPkg[k] !== '-') {
+                                                usedHistory.add(sessionPkg[k]);
+                                            }
+                                        });
                                     }
                                 });
                             }
@@ -570,27 +581,41 @@
             setTimeout(() => { btn.innerText = origText; }, 1000);
         }
 
-        // Simpan ke Firebase dengan dikelompokkan berdasarkan Kategori Ponsel + Detail Waktu & Mode
-        function pushToFirebase(category, value) {
+        // Simpan 1 Paket Detail Lengkap dari seluruh parameter yang sedang tampil di layar ke Firebase
+        function saveCurrentFullPackageToFirebase() {
             const baseUrl = getCleanFirebaseUrl();
             if (!baseUrl) {
                 updateDbBadge(false);
                 return;
             }
+            if (!currentSessionId) createNewSessionId();
+
             const preset = devicePresets[currentDeviceKey];
-            const payload = {
-                model_label: preset.label,
-                brand: preset.brandName,
-                mode: currentRegionMode === 'global' ? 'Resmi ID/Global' : 'Bawaan VphoneOS',
-                waktu: new Date().toLocaleString('id-ID')
+            const activeProfile = preset[currentRegionMode];
+
+            // Disusun dengan nomor urut 01 s/d 13 agar di Firebase tampil berurutan rapi dalam 1 tampilan terbuka
+            const fullPackageData = {
+                "01_Nama_Perangkat": preset.label + " (" + preset.brandName + ")",
+                "02_Mode_Region": currentRegionMode === 'global' ? "Resmi ID / Global" : "Bawaan VphoneOS",
+                "03_Model_Code": activeProfile.model + " | Product: " + activeProfile.product + " | Device: " + activeProfile.device,
+                "04_Display_ID": activeProfile.disp,
+                "05_Fingerprint": activeProfile.fp,
+                "06_MAC_GSM": document.getElementById('macGsmOutput').value || "-",
+                "07_MAC_WiFi": document.getElementById('macOutput').value || "-",
+                "08_MCC_MNC_Operator": "510 / 10 (Telkomsel)",
+                "09_MSIN": document.getElementById('msinOutput').value || "-",
+                "10_IMEI_TAC_" + preset.tac: document.getElementById('imeiOutput').value || "-",
+                "11_Serial_Number": document.getElementById('snOutput').value || "-",
+                "12_Nomor_HP": document.getElementById('phoneOutput').value || "-",
+                "13_Waktu_Simpan": new Date().toLocaleString('id-ID')
             };
 
-            const targetPath = 'used_params/' + currentDeviceKey + '/' + category + '/' + encodeURIComponent(value) + '.json';
+            const targetPath = 'profil_perangkat/' + currentDeviceKey + '/' + currentSessionId + '.json';
 
             fetch(baseUrl + targetPath, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(fullPackageData)
             }).then(() => {
                 updateDbBadge(true);
             }).catch(() => {
@@ -598,7 +623,7 @@
             });
         }
 
-        // Hapus seluruh riwayat di Firebase & LocalStorage
+        // Hapus seluruh riwayat di Firebase (baik node lama used_params maupun node baru profil_perangkat) & LocalStorage
         async function clearAllHistory() {
             const btn = document.getElementById('btnClearDb');
             const origText = btn.innerText;
@@ -612,7 +637,10 @@
             const baseUrl = getCleanFirebaseUrl();
             if (baseUrl) {
                 try {
-                    await fetch(baseUrl + 'used_params.json', { method: 'DELETE' });
+                    await Promise.all([
+                        fetch(baseUrl + 'profil_perangkat.json', { method: 'DELETE' }),
+                        fetch(baseUrl + 'used_params.json', { method: 'DELETE' })
+                    ]);
                     updateDbBadge(true);
                 } catch (e) {
                     updateDbBadge(false);
@@ -624,6 +652,7 @@
             ['macGsmOutput', 'macOutput', 'msinOutput', 'imeiOutput', 'snOutput', 'phoneOutput'].forEach(id => {
                 document.getElementById(id).value = '';
             });
+            createNewSessionId();
 
             btn.innerText = '✅ Riwayat Database Bersih!';
             btn.classList.add('copied');
@@ -634,7 +663,7 @@
         }
 
         // Generator Anti-Duplikat Terpusat
-        function getUniqueRandom(generatorFn, category) {
+        function getUniqueRandom(generatorFn) {
             let val;
             let attempts = 0;
             do {
@@ -644,7 +673,6 @@
 
             usedHistory.add(val);
             saveLocalHistory();
-            pushToFirebase(category, val);
             return val;
         }
 
@@ -653,12 +681,19 @@
             document.getElementById('modeOrigBtn').classList.toggle('active', mode === 'orig');
             document.getElementById('modeGlobalBtn').classList.toggle('active', mode === 'global');
             document.getElementById('extraPropsRow').classList.toggle('show', mode === 'global');
-            updateDevicePreset();
+            updateDevicePreset(false);
+            // Jika sudah ada parameter yang terisi, ikut perbarui info mode di paket Firebase saat ini
+            if (document.getElementById('imeiOutput').value) {
+                saveCurrentFullPackageToFirebase();
+            }
         }
 
-        function updateDevicePreset() {
+        function updateDevicePreset(isNewDeviceChange = false) {
             const val = document.getElementById('deviceSelect').value;
             currentDeviceKey = val;
+            if (isNewDeviceChange) {
+                createNewSessionId();
+            }
             const preset = devicePresets[val];
             const activeProfile = preset[currentRegionMode];
 
@@ -717,106 +752,139 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        // 1 & 2. Fungsi MAC Address (Dipisah kategorinya di DB menjadi mac_gsm dan mac_wifi)
-        function handleMAC(inputId, btnId, btnText, dbCategory) {
-            const mac = getUniqueRandom(() => {
-                const hexChars = '0123456789abcdef';
-                const evenHex = '02468ace';
+        // Fungsi internal pembuat masing-masing nilai
+        function generateMacString() {
+            const hexChars = '0123456789abcdef';
+            const evenHex = '02468ace';
+            let availableOui = currentOuiList.filter(o => o !== lastUsedOui);
+            if (availableOui.length === 0) availableOui = currentOuiList;
+            let rawOui = availableOui[Math.floor(Math.random() * availableOui.length)].toLowerCase();
+            lastUsedOui = rawOui;
 
-                let availableOui = currentOuiList.filter(o => o !== lastUsedOui);
-                if (availableOui.length === 0) availableOui = currentOuiList;
-                let rawOui = availableOui[Math.floor(Math.random() * availableOui.length)].toLowerCase();
-                lastUsedOui = rawOui;
+            const char1 = rawOui.charAt(0);
+            const char2 = evenHex.includes(rawOui.charAt(1)) 
+                ? rawOui.charAt(1) 
+                : evenHex.charAt(Math.floor(Math.random() * evenHex.length));
+            const char3to6 = rawOui.substring(2, 6);
 
-                const char1 = rawOui.charAt(0);
-                const char2 = evenHex.includes(rawOui.charAt(1)) 
-                    ? rawOui.charAt(1) 
-                    : evenHex.charAt(Math.floor(Math.random() * evenHex.length));
-                const char3to6 = rawOui.substring(2, 6);
+            let nicTail = '';
+            for (let i = 0; i < 6; i++) {
+                nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
+            }
+            return char1 + char2 + char3to6 + nicTail;
+        }
 
-                let nicTail = '';
-                for (let i = 0; i < 6; i++) {
-                    nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
+        function generateMsinString() {
+            let res = '' + (Math.floor(Math.random() * 9) + 1);
+            for (let i = 0; i < 9; i++) {
+                res += Math.floor(Math.random() * 10);
+            }
+            return res;
+        }
+
+        function generateImeiString() {
+            let res = currentImeiPrefix;
+            const remainingLen = 14 - res.length;
+            for (let i = 0; i < remainingLen; i++) {
+                res += Math.floor(Math.random() * 10);
+            }
+            let sum = 0;
+            for (let i = 0; i < 14; i++) {
+                let digit = parseInt(res.charAt(i), 10);
+                if (i % 2 !== 0) {
+                    digit *= 2;
+                    if (digit > 9) digit -= 9;
                 }
-                return char1 + char2 + char3to6 + nicTail;
-            }, dbCategory);
+                sum += digit;
+            }
+            let checkDigit = (10 - (sum % 10)) % 10;
+            return res + checkDigit;
+        }
 
+        function generateSnString() {
+            const safeChars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
+            let res = currentSnPrefixList[Math.floor(Math.random() * currentSnPrefixList.length)];
+            const remaining = currentSnLen - res.length;
+            for (let i = 0; i < remaining; i++) {
+                res += safeChars.charAt(Math.floor(Math.random() * safeChars.length));
+            }
+            return res;
+        }
+
+        function generatePhoneString() {
+            const prefixes = ['62812', '62813', '62821', '62822', '62823', '62852', '62853'];
+            let res = prefixes[Math.floor(Math.random() * prefixes.length)];
+            for (let i = 0; i < 8; i++) {
+                res += Math.floor(Math.random() * 10);
+            }
+            return res;
+        }
+
+        // Tombol 1 Klik: Generate Seluruh 6 Parameter Sekaligus & Simpan 1 Paket Utuh ke Firebase
+        function generateFullProfileSet() {
+            createNewSessionId();
+            document.getElementById('macGsmOutput').value = getUniqueRandom(generateMacString);
+            document.getElementById('macOutput').value = getUniqueRandom(generateMacString);
+            document.getElementById('msinOutput').value = getUniqueRandom(generateMsinString);
+            document.getElementById('imeiOutput').value = getUniqueRandom(generateImeiString);
+            document.getElementById('snOutput').value = getUniqueRandom(generateSnString);
+            document.getElementById('phoneOutput').value = getUniqueRandom(generatePhoneString);
+
+            saveCurrentFullPackageToFirebase();
+
+            const btn = document.getElementById('btnGenAll');
+            const orig = btn.innerText;
+            btn.innerText = '✅ 1 Paket Lengkap Dibuat & Tersimpan di DB!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerText = orig;
+                btn.classList.remove('copied');
+            }, 1100);
+        }
+
+        // 1 & 2. Fungsi MAC Address Individual
+        function handleMAC(inputId, btnId, btnText) {
+            const mac = getUniqueRandom(generateMacString);
             document.getElementById(inputId).value = mac;
             copyToClipboard(inputId, btnId, btnText);
+            saveCurrentFullPackageToFirebase();
         }
 
-        // 3. Fungsi MSIN (10 Digit)
+        // 3. Fungsi MSIN Individual
         function handleMSIN() {
-            const msin = getUniqueRandom(() => {
-                let res = '' + (Math.floor(Math.random() * 9) + 1);
-                for (let i = 0; i < 9; i++) {
-                    res += Math.floor(Math.random() * 10);
-                }
-                return res;
-            }, 'msin');
-
+            const msin = getUniqueRandom(generateMsinString);
             document.getElementById('msinOutput').value = msin;
             copyToClipboard('msinOutput', 'btnMsin', 'Gen MSIN');
+            saveCurrentFullPackageToFirebase();
         }
 
-        // 4. Fungsi IMEI (8 Digit TAC Pabrikan + 6 Digit Acak + 1 Digit Luhn Checksum)
+        // 4. Fungsi IMEI Individual
         function handleIMEI() {
-            const imei = getUniqueRandom(() => {
-                let res = currentImeiPrefix;
-                const remainingLen = 14 - res.length;
-                for (let i = 0; i < remainingLen; i++) {
-                    res += Math.floor(Math.random() * 10);
-                }
-                let sum = 0;
-                for (let i = 0; i < 14; i++) {
-                    let digit = parseInt(res.charAt(i), 10);
-                    if (i % 2 !== 0) {
-                        digit *= 2;
-                        if (digit > 9) digit -= 9;
-                    }
-                    sum += digit;
-                }
-                let checkDigit = (10 - (sum % 10)) % 10;
-                return res + checkDigit;
-            }, 'imei');
-            
+            const imei = getUniqueRandom(generateImeiString);
             document.getElementById('imeiOutput').value = imei;
             copyToClipboard('imeiOutput', 'btnImei', 'Gen IMEI');
+            saveCurrentFullPackageToFirebase();
         }
 
-        // 5. Fungsi Serial Number
+        // 5. Fungsi Serial Number Individual
         function handleSN() {
-            const sn = getUniqueRandom(() => {
-                const safeChars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
-                let res = currentSnPrefixList[Math.floor(Math.random() * currentSnPrefixList.length)];
-                const remaining = currentSnLen - res.length;
-                for (let i = 0; i < remaining; i++) {
-                    res += safeChars.charAt(Math.floor(Math.random() * safeChars.length));
-                }
-                return res;
-            }, 'sn');
-            
+            const sn = getUniqueRandom(generateSnString);
             document.getElementById('snOutput').value = sn;
             copyToClipboard('snOutput', 'btnSn', 'Gen SN');
+            saveCurrentFullPackageToFirebase();
         }
 
-        // 6. Fungsi Nomor HP Telkomsel Prabayar
+        // 6. Fungsi Nomor HP Individual
         function handlePhone() {
-            const phone = getUniqueRandom(() => {
-                const prefixes = ['62812', '62813', '62821', '62822', '62823', '62852', '62853'];
-                let res = prefixes[Math.floor(Math.random() * prefixes.length)];
-                for (let i = 0; i < 8; i++) {
-                    res += Math.floor(Math.random() * 10);
-                }
-                return res;
-            }, 'phone');
-
+            const phone = getUniqueRandom(generatePhoneString);
             document.getElementById('phoneOutput').value = phone;
             copyToClipboard('phoneOutput', 'btnPhone', 'Gen No HP');
+            saveCurrentFullPackageToFirebase();
         }
 
         // Inisialisasi saat halaman dibuka
-        updateDevicePreset();
+        createNewSessionId();
+        updateDevicePreset(false);
         loadLocalHistory();
         syncFromFirebase();
     </script>
