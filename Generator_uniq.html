@@ -164,7 +164,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">🛡️ Preset Fingerprint (Base A12)</span>
-                <span class="badge" id="tacHint">TAC: 86119606</span>
+                <span class="badge" id="tacHint">TAC: 35398129</span>
             </div>
 
             <div class="mode-switch">
@@ -178,14 +178,14 @@
 
             <div class="action-row">
                 <select id="deviceSelect" onchange="updateDevicePreset(true)">
+                    <option value="s21" selected>Galaxy S21 (Valid A12 - SEIN)</option>
+                    <option value="xiaomi_12p">Xiaomi 12 Pro (Valid A12)</option>
                     <option value="oppo_a6">OPPO A6 (PLS120)</option>
                     <option value="oppo_fx7u">OPPO Find X7 Ultra</option>
                     <option value="oppo_fx8">OPPO Find X8</option>
                     <option value="vivo_neo10">VIVO iQOO Neo10</option>
                     <option value="redmi_k80p">REDMI K80 Pro</option>
-                    <option value="xiaomi_12p">Xiaomi 12 Pro (Valid A12)</option>
                     <option value="honor_m6p">HONOR Magic6 PRO</option>
-                    <option value="s21">Galaxy S21 (Valid A12)</option>
                     <option value="s23u">Galaxy S23 Ultra</option>
                 </select>
                 <button type="button" id="btnDisp" class="btn-secondary" onclick="copyPreset('dispOutput', 'btnDisp', 'Salin DispID')">Salin DispID</button>
@@ -213,7 +213,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">📡 Alamat MAC GSM</span>
-                <span class="badge" id="macGsmBadge">12 Hex (OUI OPPO)</span>
+                <span class="badge" id="macGsmBadge">12 Hex (OUI Samsung)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="macGsmOutput" placeholder="Klik tombol 👉" readonly>
@@ -225,7 +225,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">🌐 Alamat MAC (Wi-Fi)</span>
-                <span class="badge" id="macWifiBadge">12 Hex (OUI OPPO)</span>
+                <span class="badge" id="macWifiBadge">12 Hex (OUI Samsung)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly>
@@ -237,7 +237,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">💳 MSIN (ID Kartu SIM)</span>
-                <span class="badge">10 Digit Angka</span>
+                <span class="badge">10 Digit (HLR 01-59)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="msinOutput" placeholder="Klik tombol 👉" readonly>
@@ -249,7 +249,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">⚡ IMEI (Luhn Algo)</span>
-                <span class="badge" id="imeiBadge">15 Digit (86 - OPPO)</span>
+                <span class="badge" id="imeiBadge">15 Digit (35 - Samsung)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="imeiOutput" placeholder="Klik tombol 👉" readonly>
@@ -261,7 +261,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">🏷️ Serial Number (SN)</span>
-                <span class="badge" id="snBadge">12 Karakter (OPPO)</span>
+                <span class="badge" id="snBadge">11 Karakter (RR8 SEIN)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="snOutput" placeholder="Klik tombol 👉" readonly>
@@ -302,6 +302,67 @@
         const DEFAULT_FIREBASE_URL = 'https://generator-uniq-default-rtdb.asia-southeast1.firebasedatabase.app/';
 
         const devicePresets = {
+            s21: {
+                label: 'Galaxy S21 (Valid A12)',
+                brandName: 'Samsung',
+                tac: '35398129',
+                tacList: ['35398129', '35629348', '35847991', '35421882', '35650112'],
+                oui: ['244b03', 'c0bdd1', 'e458e7', '28395e', '508569', 'a87d12'],
+                snInfo: '11 Karakter (RR8 SEIN)',
+                isSamsungSein: true,
+                snYears: ['R', 'T'], // R = 2021, T = 2022
+                snLen: 11,
+                orig: {
+                    model: 'SM-G991B', product: 'o1sxxx', device: 'o1s',
+                    disp: 'SP1A.210812.016.G991BXXS5CVH1',
+                    fp: 'samsung/o1sxxx/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
+                },
+                global: {
+                    model: 'SM-G991B', product: 'o1sxxx', device: 'o1s',
+                    disp: 'SP1A.210812.016.G991BXXS5CVH1',
+                    fp: 'samsung/o1sxxx/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
+                }
+            },
+            s23u: {
+                label: 'Galaxy S23 Ultra',
+                brandName: 'Samsung',
+                tac: '35407985',
+                tacList: ['35407985', '35681214', '35910428'],
+                oui: ['244b03', 'c0bdd1', 'e458e7', '28395e', '508569', 'a87d12'],
+                snInfo: '11 Karakter (RR8 SEIN)',
+                isSamsungSein: true,
+                snYears: ['W'], // W = 2023
+                snLen: 11,
+                orig: {
+                    model: 'SM-S918B', product: 'dm3qxxx', device: 'dm3q',
+                    disp: 'SP1A.210812.016.S918BXXU1AWBD',
+                    fp: 'samsung/dm3qxxx/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
+                },
+                global: {
+                    model: 'SM-S918B', product: 'dm3qxxx', device: 'dm3q',
+                    disp: 'SP1A.210812.016.S918BXXU1AWBD',
+                    fp: 'samsung/dm3qxxx/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
+                }
+            },
+            xiaomi_12p: {
+                label: 'Xiaomi 12 Pro (Valid A12)',
+                brandName: 'Xiaomi',
+                tac: '86622805',
+                oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9', '7802f8'],
+                snInfo: '12 Karakter (Xiaomi)',
+                snPrefix: ['362', '482', '391', '520'],
+                snLen: 12,
+                orig: {
+                    model: '2201122C', product: 'zeus', device: 'zeus',
+                    disp: 'SKQ1.211006.001 release-keys',
+                    fp: 'Xiaomi/zeus/zeus:12/SKQ1.211006.001/V13.0.12.0.SLBCNXM:user/release-keys'
+                },
+                global: {
+                    model: '2201122G', product: 'zeus_id', device: 'zeus',
+                    disp: 'SKQ1.211006.001 release-keys',
+                    fp: 'Xiaomi/zeus_id/zeus:12/SKQ1.211006.001/V13.0.4.0.SLBIDXM:user/release-keys'
+                }
+            },
             oppo_a6: {
                 label: 'OPPO A6 (PLS120)',
                 brandName: 'OPPO',
@@ -397,25 +458,6 @@
                     fp: 'Redmi/champion_id/champion:12/SKQ1.211006.001/V13.0.4.0.SLKIDXM:user/release-keys'
                 }
             },
-            xiaomi_12p: {
-                label: 'Xiaomi 12 Pro (Valid A12)',
-                brandName: 'Xiaomi',
-                tac: '86622805',
-                oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9', '7802f8'],
-                snInfo: '12 Karakter (Xiaomi)',
-                snPrefix: ['362', '482', '391', '520'],
-                snLen: 12,
-                orig: {
-                    model: '2201122C', product: 'zeus', device: 'zeus',
-                    disp: 'SKQ1.211006.001 release-keys',
-                    fp: 'Xiaomi/zeus/zeus:12/SKQ1.211006.001/V13.0.12.0.SLBCNXM:user/release-keys'
-                },
-                global: {
-                    model: '2201122G', product: 'zeus_id', device: 'zeus',
-                    disp: 'SKQ1.211006.001 release-keys',
-                    fp: 'Xiaomi/zeus_id/zeus:12/SKQ1.211006.001/V13.0.4.0.SLBIDXM:user/release-keys'
-                }
-            },
             honor_m6p: {
                 label: 'HONOR Magic6 PRO',
                 brandName: 'HONOR',
@@ -434,52 +476,14 @@
                     disp: 'BVL-N49 6.0.0.132(C636E3R2P1)',
                     fp: 'HONOR/BVL-N49/HNBVL-Q:12/HONORBVL-N49/6.0.0.132C636:user/release-keys'
                 }
-            },
-            s21: {
-                label: 'Galaxy S21 (Valid A12)',
-                brandName: 'Samsung',
-                tac: '35876214',
-                oui: ['e45e37', 'c0b883', '705a0f', 'd8c4e9', '54b802', '244b03'],
-                snInfo: '11 Karakter (R58/RR8)',
-                snPrefix: ['RR8R', 'R58R', 'RF8R', 'RR8T'],
-                snLen: 11,
-                orig: {
-                    model: 'SM-G991B', product: 'o1sxeea', device: 'o1s',
-                    disp: 'SP1A.210812.016.G991BXXS5CVH1',
-                    fp: 'samsung/o1sxeea/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
-                },
-                global: {
-                    model: 'SM-G991B', product: 'o1sxxx', device: 'o1s',
-                    disp: 'SP1A.210812.016.G991BXXS5CVH1',
-                    fp: 'samsung/o1sxxx/o1s:12/SP1A.210812.016/G991BXXS5CVH1:user/release-keys'
-                }
-            },
-            s23u: {
-                label: 'Galaxy S23 Ultra',
-                brandName: 'Samsung',
-                tac: '35407985',
-                oui: ['d8c4e9', '54b802', 'e45e37', 'c0b883', '244b03', '705a0f'],
-                snInfo: '11 Karakter (R58/RR8)',
-                snPrefix: ['RR8W', 'R58W', 'RF8W', 'R3CW'],
-                snLen: 11,
-                orig: {
-                    model: 'SM-S918B', product: 'dm3qxeea', device: 'dm3q',
-                    disp: 'SP1A.210812.016.S918BXXU1AWBD',
-                    fp: 'samsung/dm3qxeea/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
-                },
-                global: {
-                    model: 'SM-S918B', product: 'dm3qxxx', device: 'dm3q',
-                    disp: 'SP1A.210812.016.S918BXXU1AWBD',
-                    fp: 'samsung/dm3qxxx/dm3q:12/SP1A.210812.016/S918BXXU1AWBD:user/release-keys'
-                }
             }
         };
 
-        let currentDeviceKey = 'oppo_a6';
-        let currentImeiPrefix = devicePresets.oppo_a6.tac;
-        let currentOuiList = devicePresets.oppo_a6.oui;
-        let currentSnPrefixList = devicePresets.oppo_a6.snPrefix;
-        let currentSnLen = devicePresets.oppo_a6.snLen;
+        let currentDeviceKey = 's21';
+        let currentImeiPrefix = devicePresets.s21.tac;
+        let currentOuiList = devicePresets.s21.oui;
+        let currentSnPrefixList = [];
+        let currentSnLen = devicePresets.s21.snLen;
         let lastUsedOui = '';
         let currentSessionId = '';
         let filledFieldsInSession = new Set();
@@ -494,7 +498,6 @@
         }
 
         function checkSessionCycle(fieldKey) {
-            // Jika ke-6 kolom sudah lengkap pada paket sebelumnya, otomatis buat Paket baru saat tombol diklik lagi
             if (filledFieldsInSession.size >= 6) {
                 createNewSessionId();
                 ['macGsmOutput', 'macOutput', 'msinOutput', 'imeiOutput', 'snOutput', 'phoneOutput'].forEach(id => {
@@ -600,6 +603,11 @@
 
             const preset = devicePresets[currentDeviceKey];
             const activeProfile = preset[currentRegionMode];
+            const currentImeiVal = document.getElementById('imeiOutput').value;
+            // Pastikan 11_TAC_Pabrikan selalu 100% sinkron dengan 8 digit awal 10_IMEI yang terpilih
+            const syncedTac = (currentImeiVal && currentImeiVal.length >= 8) 
+                ? currentImeiVal.substring(0, 8) 
+                : currentImeiPrefix;
 
             const fullPackageData = {
                 "01_Nama_Perangkat": preset.label + " (" + preset.brandName + ")",
@@ -611,8 +619,8 @@
                 "07_MAC_WiFi": document.getElementById('macOutput').value || "-",
                 "08_MCC_MNC_Operator": "510 / 10 (Telkomsel)",
                 "09_MSIN": document.getElementById('msinOutput').value || "-",
-                "10_IMEI": document.getElementById('imeiOutput').value || "-",
-                "11_TAC_Pabrikan": preset.tac,
+                "10_IMEI": currentImeiVal || "-",
+                "11_TAC_Pabrikan": syncedTac,
                 "12_Serial_Number": document.getElementById('snOutput').value || "-",
                 "13_Nomor_HP": document.getElementById('phoneOutput').value || "-",
                 "14_Waktu_Simpan": new Date().toLocaleString('id-ID')
@@ -720,11 +728,11 @@
             
             currentImeiPrefix = preset.tac;
             currentOuiList = preset.oui;
-            currentSnPrefixList = preset.snPrefix;
+            currentSnPrefixList = preset.snPrefix || [];
             currentSnLen = preset.snLen;
 
-            document.getElementById('tacHint').innerText = 'TAC: ' + preset.tac;
-            document.getElementById('imeiBadge').innerText = '15 Digit (' + preset.tac.substring(0, 2) + ' - ' + preset.brandName + ')';
+            document.getElementById('tacHint').innerText = 'TAC: ' + currentImeiPrefix;
+            document.getElementById('imeiBadge').innerText = '15 Digit (' + currentImeiPrefix.substring(0, 2) + ' - ' + preset.brandName + ')';
             document.getElementById('macWifiBadge').innerText = '12 Hex (OUI ' + preset.brandName + ')';
             document.getElementById('macGsmBadge').innerText = '12 Hex (OUI ' + preset.brandName + ')';
             document.getElementById('snBadge').innerText = preset.snInfo;
@@ -760,7 +768,8 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        function generateMacString() {
+        // 4. Generator MAC Address: Mendukung OUI Resmi & Pasangan Wi-Fi/BT (10 Hex awal sama, 2 Hex akhir beda)
+        function generateFreshMacString() {
             const hexChars = '0123456789abcdef';
             const evenHex = '02468ace';
             let availableOui = currentOuiList.filter(o => o !== lastUsedOui);
@@ -781,15 +790,37 @@
             return char1 + char2 + char3to6 + nicTail;
         }
 
+        function generatePairedMacString(baseMac12) {
+            const hexChars = '0123456789abcdef';
+            const prefix10 = baseMac12.substring(0, 10);
+            const origLast2 = baseMac12.substring(10, 12);
+            let newLast2 = '';
+            do {
+                newLast2 = hexChars.charAt(Math.floor(Math.random() * 16)) + hexChars.charAt(Math.floor(Math.random() * 16));
+            } while (newLast2 === origLast2);
+            return prefix10 + newLast2;
+        }
+
+        // 5. Generator MSIN Standar HLR Indonesia (2 digit awal 01 s/d 59 + 8 digit acak = 10 digit)
         function generateMsinString() {
-            let res = '' + (Math.floor(Math.random() * 9) + 1);
-            for (let i = 0; i < 9; i++) {
+            const hlrNum = Math.floor(Math.random() * 59) + 1; // 1 s/d 59
+            let res = String(hlrNum).padStart(2, '0');
+            for (let i = 0; i < 8; i++) {
                 res += Math.floor(Math.random() * 10);
             }
             return res;
         }
 
+        // 2. Generator IMEI (Pilih acak dari daftar TAC resmi SM-G991B/DS jika tersedia + 6 digit acak + 1 Luhn Checksum)
         function generateImeiString() {
+            const preset = devicePresets[currentDeviceKey];
+            if (preset.tacList && preset.tacList.length > 0) {
+                currentImeiPrefix = preset.tacList[Math.floor(Math.random() * preset.tacList.length)];
+                document.getElementById('tacHint').innerText = 'TAC: ' + currentImeiPrefix;
+            } else {
+                currentImeiPrefix = preset.tac;
+            }
+
             let res = currentImeiPrefix;
             const remainingLen = 14 - res.length;
             for (let i = 0; i < remainingLen; i++) {
@@ -808,7 +839,27 @@
             return res + checkDigit;
         }
 
+        // 3. Generator Serial Number (Khusus Samsung Indonesia: RR8 + Tahun R/T + Bulan 1-C + 5 Angka + 1 Konsonan)
         function generateSnString() {
+            const preset = devicePresets[currentDeviceKey];
+            if (preset.isSamsungSein) {
+                const factoryCode = 'RR8'; // Pabrik Samsung Cikarang, Indonesia
+                const years = preset.snYears || ['R', 'T'];
+                const yearChar = years[Math.floor(Math.random() * years.length)];
+                const months = ['1','2','3','4','5','6','7','8','9','A','B','C'];
+                const monthChar = months[Math.floor(Math.random() * months.length)];
+                
+                let fiveDigits = '';
+                for (let i = 0; i < 5; i++) {
+                    fiveDigits += Math.floor(Math.random() * 10);
+                }
+
+                const consonants = ['B','C','D','F','G','H','J','K','L','M','N','P','R','S','T','V','W','X','Y','Z'];
+                const endChar = consonants[Math.floor(Math.random() * consonants.length)];
+
+                return factoryCode + yearChar + monthChar + fiveDigits + endChar;
+            }
+
             const safeChars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
             let res = currentSnPrefixList[Math.floor(Math.random() * currentSnPrefixList.length)];
             const remaining = currentSnLen - res.length;
@@ -829,8 +880,11 @@
 
         function generateFullProfileSet() {
             createNewSessionId();
-            document.getElementById('macGsmOutput').value = getUniqueRandom(generateMacString);
-            document.getElementById('macOutput').value = getUniqueRandom(generateMacString);
+            const wifiMac = getUniqueRandom(generateFreshMacString);
+            const gsmBtMac = getUniqueRandom(() => generatePairedMacString(wifiMac));
+
+            document.getElementById('macOutput').value = wifiMac;
+            document.getElementById('macGsmOutput').value = gsmBtMac;
             document.getElementById('msinOutput').value = getUniqueRandom(generateMsinString);
             document.getElementById('imeiOutput').value = getUniqueRandom(generateImeiString);
             document.getElementById('snOutput').value = getUniqueRandom(generateSnString);
@@ -851,7 +905,17 @@
 
         function handleMAC(inputId, btnId, btnText, fieldKey) {
             checkSessionCycle(fieldKey);
-            const mac = getUniqueRandom(generateMacString);
+            const otherId = inputId === 'macOutput' ? 'macGsmOutput' : 'macOutput';
+            const otherVal = document.getElementById(otherId).value;
+
+            let mac;
+            // Jika pasangan MAC (WiFi/GSM) sudah ada di sesi ini, samakan OUI + 4 hex tengah dan bedakan 2 hex terakhirnya
+            if (otherVal && otherVal.length === 12 && currentOuiList.includes(otherVal.substring(0, 6))) {
+                mac = getUniqueRandom(() => generatePairedMacString(otherVal));
+            } else {
+                mac = getUniqueRandom(generateFreshMacString);
+            }
+
             document.getElementById(inputId).value = mac;
             copyToClipboard(inputId, btnId, btnText);
             saveCurrentFullPackageToFirebase();
