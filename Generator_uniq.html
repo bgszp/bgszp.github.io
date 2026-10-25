@@ -111,12 +111,23 @@
             font-family: monospace; 
             font-weight: bold;
             outline: none; 
+            transition: all 0.2s;
+        }
+        input[readonly] {
+            cursor: pointer;
+            user-select: all;
+        }
+        input.input-copied {
+            border-color: #3fb950 !important;
+            background: #122117 !important;
+            color: #3fb950 !important;
         }
         input.db-input {
             font-size: 9.5px;
             text-align: left;
             color: #8b949e;
             font-weight: normal;
+            cursor: text;
         }
         select {
             font-family: inherit;
@@ -216,7 +227,7 @@
                 <span class="badge" id="macGsmBadge">12 Hex (OUI Samsung)</span>
             </div>
             <div class="action-row">
-                <input type="text" id="macGsmOutput" placeholder="Klik tombol 👉" readonly>
+                <input type="text" id="macGsmOutput" placeholder="Klik tombol 👉" readonly onclick="copyFromInput('macGsmOutput', 'btnMacGsm', 'Gen MAC GSM')">
                 <button type="button" id="btnMacGsm" onclick="handleMAC('macGsmOutput', 'btnMacGsm', 'Gen MAC GSM', 'mac_gsm')">Gen MAC GSM</button>
             </div>
         </div>
@@ -228,7 +239,7 @@
                 <span class="badge" id="macWifiBadge">12 Hex (OUI Samsung)</span>
             </div>
             <div class="action-row">
-                <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly>
+                <input type="text" id="macOutput" placeholder="Klik tombol 👉" readonly onclick="copyFromInput('macOutput', 'btnMac', 'Gen MAC WiFi')">
                 <button type="button" id="btnMac" onclick="handleMAC('macOutput', 'btnMac', 'Gen MAC WiFi', 'mac_wifi')">Gen MAC WiFi</button>
             </div>
         </div>
@@ -240,7 +251,7 @@
                 <span class="badge">10 Digit (HLR 01-59)</span>
             </div>
             <div class="action-row">
-                <input type="text" id="msinOutput" placeholder="Klik tombol 👉" readonly>
+                <input type="text" id="msinOutput" placeholder="Klik tombol 👉" readonly onclick="copyFromInput('msinOutput', 'btnMsin', 'Gen MSIN')">
                 <button type="button" id="btnMsin" onclick="handleMSIN()">Gen MSIN</button>
             </div>
         </div>
@@ -252,7 +263,7 @@
                 <span class="badge" id="imeiBadge">15 Digit (35 - Samsung)</span>
             </div>
             <div class="action-row">
-                <input type="text" id="imeiOutput" placeholder="Klik tombol 👉" readonly>
+                <input type="text" id="imeiOutput" placeholder="Klik tombol 👉" readonly onclick="copyFromInput('imeiOutput', 'btnImei', 'Gen IMEI')">
                 <button type="button" id="btnImei" onclick="handleIMEI()">Gen IMEI</button>
             </div>
         </div>
@@ -264,7 +275,7 @@
                 <span class="badge" id="snBadge">11 Karakter (RR8 SEIN)</span>
             </div>
             <div class="action-row">
-                <input type="text" id="snOutput" placeholder="Klik tombol 👉" readonly>
+                <input type="text" id="snOutput" placeholder="Klik tombol 👉" readonly onclick="copyFromInput('snOutput', 'btnSn', 'Gen SN')">
                 <button type="button" id="btnSn" onclick="handleSN()">Gen SN</button>
             </div>
         </div>
@@ -276,7 +287,7 @@
                 <span class="badge">13 Digit (628xx)</span>
             </div>
             <div class="action-row">
-                <input type="text" id="phoneOutput" placeholder="Klik tombol 👉" readonly>
+                <input type="text" id="phoneOutput" placeholder="Klik tombol 👉" readonly onclick="copyFromInput('phoneOutput', 'btnPhone', 'Gen No HP')">
                 <button type="button" id="btnPhone" onclick="handlePhone()">Gen No HP</button>
             </div>
         </div>
@@ -604,7 +615,6 @@
             const preset = devicePresets[currentDeviceKey];
             const activeProfile = preset[currentRegionMode];
             const currentImeiVal = document.getElementById('imeiOutput').value;
-            // Pastikan 11_TAC_Pabrikan selalu 100% sinkron dengan 8 digit awal 10_IMEI yang terpilih
             const syncedTac = (currentImeiVal && currentImeiVal.length >= 8) 
                 ? currentImeiVal.substring(0, 8) 
                 : currentImeiPrefix;
@@ -750,12 +760,14 @@
                 document.execCommand('copy');
                 document.body.removeChild(tempInput);
             }
-            btnEl.innerText = '✅ Tersalin!';
-            btnEl.classList.add('copied');
-            setTimeout(() => {
-                btnEl.innerText = originalText;
-                btnEl.classList.remove('copied');
-            }, 900);
+            if (btnEl) {
+                btnEl.innerText = '✅ Tersalin!';
+                btnEl.classList.add('copied');
+                setTimeout(() => {
+                    btnEl.innerText = originalText;
+                    btnEl.classList.remove('copied');
+                }, 900);
+            }
         }
 
         function copyPreset(hiddenId, btnId, originalText) {
@@ -768,7 +780,19 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        // 4. Generator MAC Address: Mendukung OUI Resmi & Pasangan Wi-Fi/BT (10 Hex awal sama, 2 Hex akhir beda)
+        // Fungsi Baru: Menyalin langsung saat kolom input hasil diklik tanpa mengubah datanya
+        function copyFromInput(inputId, btnId, originalBtnText) {
+            const inputEl = document.getElementById(inputId);
+            const val = inputEl.value.trim();
+            if (!val) return; // Abaikan jika kolom masih kosong
+
+            copyTextRaw(val, btnId, originalBtnText);
+            inputEl.classList.add('input-copied');
+            setTimeout(() => {
+                inputEl.classList.remove('input-copied');
+            }, 900);
+        }
+
         function generateFreshMacString() {
             const hexChars = '0123456789abcdef';
             const evenHex = '02468ace';
@@ -796,14 +820,13 @@
             const origLast2 = baseMac12.substring(10, 12);
             let newLast2 = '';
             do {
-                newLast2 = hexChars.charAt(Math.floor(Math.random() * 16)) + hexChars.charAt(Math.floor(Math.random() * 16));
+                newLast2 = hexChars.charAt(Math.floor(Math.random() * 16)) + hexChars.charAt(Math.random() * 16);
             } while (newLast2 === origLast2);
             return prefix10 + newLast2;
         }
 
-        // 5. Generator MSIN Standar HLR Indonesia (2 digit awal 01 s/d 59 + 8 digit acak = 10 digit)
         function generateMsinString() {
-            const hlrNum = Math.floor(Math.random() * 59) + 1; // 1 s/d 59
+            const hlrNum = Math.floor(Math.random() * 59) + 1;
             let res = String(hlrNum).padStart(2, '0');
             for (let i = 0; i < 8; i++) {
                 res += Math.floor(Math.random() * 10);
@@ -811,7 +834,6 @@
             return res;
         }
 
-        // 2. Generator IMEI (Pilih acak dari daftar TAC resmi SM-G991B/DS jika tersedia + 6 digit acak + 1 Luhn Checksum)
         function generateImeiString() {
             const preset = devicePresets[currentDeviceKey];
             if (preset.tacList && preset.tacList.length > 0) {
@@ -839,11 +861,10 @@
             return res + checkDigit;
         }
 
-        // 3. Generator Serial Number (Khusus Samsung Indonesia: RR8 + Tahun R/T + Bulan 1-C + 5 Angka + 1 Konsonan)
         function generateSnString() {
             const preset = devicePresets[currentDeviceKey];
             if (preset.isSamsungSein) {
-                const factoryCode = 'RR8'; // Pabrik Samsung Cikarang, Indonesia
+                const factoryCode = 'RR8';
                 const years = preset.snYears || ['R', 'T'];
                 const yearChar = years[Math.floor(Math.random() * years.length)];
                 const months = ['1','2','3','4','5','6','7','8','9','A','B','C'];
@@ -909,7 +930,6 @@
             const otherVal = document.getElementById(otherId).value;
 
             let mac;
-            // Jika pasangan MAC (WiFi/GSM) sudah ada di sesi ini, samakan OUI + 4 hex tengah dan bedakan 2 hex terakhirnya
             if (otherVal && otherVal.length === 12 && currentOuiList.includes(otherVal.substring(0, 6))) {
                 mac = getUniqueRandom(() => generatePairedMacString(otherVal));
             } else {
