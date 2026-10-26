@@ -110,7 +110,18 @@
     <!-- === 1. MENU SERVERS (GRID BARIS) === -->
     <div class="wrapper-menu-server" style="position: relative; margin-top: 24px; margin-bottom: 18px; display: flex; width: 100%; gap: 6px;">
         
-        <!-- TAMPILAN IP & PING JARINGAN -->
+        <!-- TOMBOL SIMPAN STATUS IP (KIRI ATAS - SEBELAH KIRI IP) -->
+        <div id="kontrol-ip-jaringan" style="position: absolute; left: 0; top: -22px; display: flex; align-items: center; gap: 5px; z-index: 5; user-select: none;">
+            <button id="btn-ip-baik" onclick="tandaiIP('baik')" title="Simpan IP Baik (Centang)" style="background: rgba(0, 255, 204, 0.1); border: 1px solid #00ffcc; color: #00ffcc; border-radius: 4px; padding: 1px 6px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 18px;">
+                <i class="fa-solid fa-check"></i>
+            </button>
+            <button id="btn-ip-buruk" onclick="tandaiIP('buruk')" title="Simpan IP Buruk (Silang)" style="background: rgba(255, 74, 74, 0.1); border: 1px solid #ff4a4a; color: #ff4a4a; border-radius: 4px; padding: 1px 6px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 18px;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span id="badge-status-ip" style="font-size: 9px; font-family: monospace; font-weight: bold; letter-spacing: 0.3px;"></span>
+        </div>
+
+        <!-- TAMPILAN IP & PING JARINGAN (KANAN ATAS) -->
         <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Cloudflare / Ipify)" style="position: absolute; right: 0; top: -22px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
             <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
         </div>
@@ -459,6 +470,8 @@
         setInterval(cekAlarmCopas, 5000);
 
         let currentIP = "Memuat IP...";
+        let lastPing = 0;
+        let lastLabelTarget = "CF";
         let modePingTarget = "shopee"; 
 
         window.gantiTargetPing = function() {
@@ -468,43 +481,104 @@
             if(window.showToast) window.showToast("Target Ping diubah ke: " + namaTarget);
         }
 
+        // Fungsi untuk menandai IP ke Firebase (Centang / Silang)
+        window.tandaiIP = function(statusBaru) {
+            if (!currentIP || currentIP === "Memuat IP..." || currentIP === "Terputus") {
+                if(window.showToast) window.showToast("IP belum termuat!");
+                return;
+            }
+            const ipKey = currentIP.replace(/\./g, '_');
+            const dataIP = (window.DATA_IP_FIREBASE && window.DATA_IP_FIREBASE[ipKey]) ? window.DATA_IP_FIREBASE[ipKey] : null;
+            
+            // Jika tombol yang sama diklik ulang, hapus tanda dari Firebase
+            if (dataIP && dataIP.status === statusBaru) {
+                if (window.simpanStatusIPFirebase) window.simpanStatusIPFirebase(currentIP, null);
+            } else {
+                if (window.simpanStatusIPFirebase) window.simpanStatusIPFirebase(currentIP, statusBaru);
+            }
+        };
+
+        // Fungsi untuk memperbarui warna IP dan tombol berdasarkan data Firebase
+        window.renderStatusIP = function() {
+            const ipText = document.getElementById('teks-ip-jaringan');
+            const btnBaik = document.getElementById('btn-ip-baik');
+            const btnBuruk = document.getElementById('btn-ip-buruk');
+            const badgeStatus = document.getElementById('badge-status-ip');
+            if (!ipText) return;
+
+            if (currentIP === "Terputus") {
+                ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #ff4a4a;"></i> <span style="color: #ff4a4a;">Terputus</span>`;
+                return;
+            }
+
+            let warnaPing = "#00ffcc"; 
+            if (lastPing > 150) warnaPing = "#f0ad4e"; 
+            if (lastPing > 300) warnaPing = "#ff4a4a"; 
+
+            // Cek apakah IP pernah digunakan di Firebase
+            const ipKey = currentIP.replace(/\./g, '_');
+            const infoIP = (window.DATA_IP_FIREBASE && window.DATA_IP_FIREBASE[ipKey]) ? window.DATA_IP_FIREBASE[ipKey] : null;
+
+            let warnaTeksIP = "#00ffcc"; // Warna default: Biru Muda (Belum pernah dipakai)
+            
+            if (btnBaik && btnBuruk && badgeStatus) {
+                // Reset gaya tombol default
+                btnBaik.style.background = "rgba(0, 255, 204, 0.1)";
+                btnBaik.style.color = "#00ffcc";
+                btnBuruk.style.background = "rgba(255, 74, 74, 0.1)";
+                btnBuruk.style.color = "#ff4a4a";
+                badgeStatus.innerText = "";
+
+                if (infoIP) {
+                    if (infoIP.status === 'baik') {
+                        warnaTeksIP = "#ff9900"; // Warna Oranye jika pernah digunakan (Baik)
+                        btnBaik.style.background = "#00ffcc";
+                        btnBaik.style.color = "#0f0c1b";
+                        badgeStatus.innerText = "TERPAKAI ✓";
+                        badgeStatus.style.color = "#ff9900";
+                    } else if (infoIP.status === 'buruk') {
+                        warnaTeksIP = "#ff4a4a"; // Warna Merah jika pernah digunakan (Buruk)
+                        btnBuruk.style.background = "#ff4a4a";
+                        btnBuruk.style.color = "#ffffff";
+                        badgeStatus.innerText = "TERPAKAI ✕";
+                        badgeStatus.style.color = "#ff4a4a";
+                    }
+                }
+            }
+
+            ipText.innerHTML = `
+                <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: ${warnaTeksIP};"></i> 
+                <span style="color: ${warnaTeksIP};">${currentIP}</span> 
+                <span style="color: #6e678a; margin: 0 4px;">|</span> 
+                <span style="color: ${warnaPing};">${lastPing}ms</span>
+                <span style="font-size: 9px; color: #8e85b3; margin-left: 3px;">(${lastLabelTarget})</span>
+            `;
+        };
+
         async function updateIPAddress() {
             const ipText = document.getElementById('teks-ip-jaringan');
             if (!ipText) return;
             try {
-                if (currentIP === "Memuat IP..." || currentIP === "Terputus") {
-                    const resIP = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
-                    const dataIP = await resIP.json();
-                    currentIP = dataIP.ip;
-                }
-                let ping = 0;
-                let labelTarget = "";
+                const resIP = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
+                const dataIP = await resIP.json();
+                currentIP = dataIP.ip;
+
                 if (modePingTarget === "ipify") {
                     const startWaktu = performance.now();
                     await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
-                    ping = Math.round(performance.now() - startWaktu);
-                    labelTarget = "Ipify";
+                    lastPing = Math.round(performance.now() - startWaktu);
+                    lastLabelTarget = "Ipify";
                 } else {
                     const startWaktu = performance.now();
-                    // Menggunakan server Cloudflare (Sangat ringan, cepat, dan anti-blokir)
                     await fetch('https://cp.cloudflare.com/generate_204?t=' + Date.now(), { mode: 'no-cors' });
-                    ping = Math.round(performance.now() - startWaktu);
-                    labelTarget = "CF";
+                    lastPing = Math.round(performance.now() - startWaktu);
+                    lastLabelTarget = "CF";
                 }
-                let warnaPing = "#00ffcc"; 
-                if (ping > 150) warnaPing = "#f0ad4e"; 
-                if (ping > 300) warnaPing = "#ff4a4a"; 
-
-                ipText.innerHTML = `
-                    <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #00ffcc;"></i> 
-                    <span style="color: #00ffcc;">${currentIP}</span> 
-                    <span style="color: #6e678a; margin: 0 4px;">|</span> 
-                    <span style="color: ${warnaPing};">${ping}ms</span>
-                    <span style="font-size: 9px; color: #8e85b3; margin-left: 3px;">(${labelTarget})</span>
-                `;
+                
+                window.renderStatusIP();
             } catch (error) {
                 currentIP = "Terputus";
-                ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #ff4a4a;"></i> <span style="color: #ff4a4a;">Terputus</span>`;
+                window.renderStatusIP();
             }
         }
 
@@ -536,8 +610,8 @@
 
         window.addEventListener('online', updateIPAddress);
         window.addEventListener('offline', () => {
-            const ipText = document.getElementById('teks-ip-jaringan');
-            if (ipText) ipText.innerHTML = `<i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: #ff4a4a;"></i> <span style="color: #ff4a4a;">Terputus</span>`;
+            currentIP = "Terputus";
+            window.renderStatusIP();
         });
         setInterval(updateIPAddress, 10000);
 
@@ -622,7 +696,6 @@
                         const linkIsi = parts[0].trim();
                         const keteranganIsi = parts.slice(1).join("|").trim();
                         
-                        // Menampilkan kotak yang lebih kecil (padding & font diperkecil)
                         displayWrapper.innerHTML = `<div style="width: 100%;"><div style="background: rgba(255, 153, 0, 0.15); color: #ff9900; border: 1px dashed rgba(255, 153, 0, 0.5); padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: bold; width: 100%; text-align: center; letter-spacing: 0.5px;" title="${linkIsi} (Klik untuk menyalin)"><i class="fa-solid fa-user-tag" style="margin-right:6px;"></i>${keteranganIsi}</div></div>`;
                         displayWrapper.innerHTML += `<i class="fa-regular fa-copy copy-hint-icon"></i>`; 
                         
