@@ -441,7 +441,8 @@
                 brandName: 'VIVO',
                 tac: '86365805',
                 tacList: ['86365805', '86931506'],
-                oui: ['d01769', 'f04347', '2082c0', 'b83765', '9ce063', '60f43a'],
+                // OUI Resmi Vivo Mobile Communication Co., Ltd.
+                oui: ['08fa79', '0c6046', '10bc97', 'b40fb3', 'cc812a', 'd4ecab'],
                 snInfo: '12 Karakter (VIVO)',
                 snPrefix: ['10A', '88B', 'V24', '62C'],
                 snLen: 12,
@@ -481,7 +482,8 @@
                 brandName: 'HONOR',
                 tac: '86095606',
                 tacList: ['86095606', '86274106'],
-                oui: ['a057e3', '3059b7', '40b89a', 'b05508', 'ec8914', '7465f1'],
+                // OUI Resmi Honor Device Co., Ltd.
+                oui: ['90ffd6', '98bedc', '9c0567', 'a06974', 'c0280b', '0cb789'],
                 snInfo: '16 Karakter (HONOR)',
                 isHonorSn: true,
                 snPrefix: ['W3N02', 'C8J7N', 'HVU02', 'BVL01'],
@@ -789,7 +791,6 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        // Klik pada kotak input untuk menyalin hasil tanpa mengacak ulang
         function copyFromInput(inputId, btnId, originalBtnText) {
             const inputEl = document.getElementById(inputId);
             const val = inputEl.value.trim();
@@ -802,7 +803,6 @@
             }, 900);
         }
 
-        // 1 & 2. Generator MAC Address (OUI Resmi IEEE + Pasangan Chip WiFi/BT 10 Hex Awal Sama)
         function generateFreshMacString() {
             const hexChars = '0123456789abcdef';
             const evenHex = '02468ace';
@@ -835,7 +835,6 @@
             return prefix10 + newLast2;
         }
 
-        // 3. Generator MSIN Standar HLR Telkomsel (01 s/d 59 + 8 digit = 10 digit)
         function generateMsinString() {
             const hlrNum = Math.floor(Math.random() * 59) + 1;
             let res = String(hlrNum).padStart(2, '0');
@@ -845,7 +844,6 @@
             return res;
         }
 
-        // 4. Generator IMEI (Multi-TAC Resmi per Model + 6 Digit Acak + 1 Luhn Checksum)
         function generateImeiString() {
             const preset = devicePresets[currentDeviceKey];
             if (preset.tacList && preset.tacList.length > 0) {
@@ -873,13 +871,11 @@
             return res + checkDigit;
         }
 
-        // 5. Generator Serial Number Presisi Sesuai Standar Manufaktur Masing-Masing Merek
         function generateSnString() {
             const preset = devicePresets[currentDeviceKey];
             const months = ['1','2','3','4','5','6','7','8','9','A','B','C'];
             const consonants = ['B','C','D','F','G','H','J','K','L','M','N','P','R','S','T','V','W','X','Y','Z'];
 
-            // A. Standar Samsung Cikarang Indonesia (11 Karakter: RR8 + Tahun + Bulan + 5 Angka + 1 Konsonan)
             if (preset.isSamsungSein) {
                 const factoryCode = 'RR8';
                 const years = preset.snYears || ['R', 'T'];
@@ -894,7 +890,6 @@
                 return factoryCode + yearChar + monthChar + fiveDigits + endChar;
             }
 
-            // B. Standar HONOR (16 Karakter: 5 Char Pabrik + Tahun '24' + Bulan 1-C + Tanggal 01-28 + 6 Digit Urut)
             if (preset.isHonorSn) {
                 const prefix5 = currentSnPrefixList[Math.floor(Math.random() * currentSnPrefixList.length)];
                 const year2 = '24';
@@ -907,7 +902,6 @@
                 return prefix5 + year2 + monthChar + dayNum + sixDigits;
             }
 
-            // C. Standar OPPO, VIVO, & Xiaomi (12 Karakter: 3 Char Batch Pabrik + 9 Karakter Angka/Konsonan Tanpa Vokal & Q)
             const strictSafeChars = '0123456789BCDFGHJKLMNPRSTVWXYZ';
             let res = currentSnPrefixList[Math.floor(Math.random() * currentSnPrefixList.length)];
             const remaining = currentSnLen - res.length;
@@ -917,11 +911,9 @@
             return res;
         }
 
-        // 6. Generator Nomor HP Telkomsel (Prefix + Digit ke-6 HLR 2-9 + 7 Digit = 13 Digit)
         function generatePhoneString() {
             const prefixes = ['62812', '62813', '62821', '62822', '62823', '62852', '62853'];
             let res = prefixes[Math.floor(Math.random() * prefixes.length)];
-            // Digit pertama setelah prefix wajib 2 s/d 9 (sesuai alokasi HLR Telkomsel)
             res += (Math.floor(Math.random() * 8) + 2);
             for (let i = 0; i < 7; i++) {
                 res += Math.floor(Math.random() * 10);
