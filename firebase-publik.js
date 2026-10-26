@@ -301,3 +301,39 @@ window.simpanAlamatTerpakai = function(indeks) {
 window.resetAlamatFirebase = function() {
     remove(ref(db, 'alamat_terpakai'));
 };
+
+
+
+// === 6. LOGIKA PENYIMPANAN STATUS IP GLOBAL ===
+window.DATA_IP_FIREBASE = {};
+
+const ipRef = ref(db, 'riwayat_ip');
+onValue(ipRef, (snapshot) => {
+    window.DATA_IP_FIREBASE = snapshot.val() || {};
+    if (typeof window.renderStatusIP === "function") {
+        window.renderStatusIP();
+    }
+});
+
+window.simpanStatusIPFirebase = function(ip, status) {
+    if (!ip || ip === "Memuat IP..." || ip === "Terputus") return;
+    const ipKey = ip.replace(/\./g, '_'); // Ubah titik jadi underscore untuk aturan Firebase
+    const targetRef = ref(db, 'riwayat_ip/' + ipKey);
+    
+    if (status === null) {
+        remove(targetRef).then(() => {
+            if(window.showToast) window.showToast("Status IP Direset! 🔄");
+        });
+    } else {
+        set(targetRef, {
+            ip: ip,
+            status: status, // 'baik' atau 'buruk'
+            waktu: Date.now()
+        }).then(() => {
+            if(window.showToast) {
+                const pesan = status === 'baik' ? "IP Disimpan: BAIK (✓)" : "IP Disimpan: BURUK (✕)";
+                window.showToast(pesan);
+            }
+        });
+    }
+};
