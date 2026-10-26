@@ -284,7 +284,7 @@
         <div class="card">
             <div class="header-row">
                 <span class="title">📱 Nomor HP (Telkomsel)</span>
-                <span class="badge">13 Digit (628xx)</span>
+                <span class="badge">13 Digit (HLR 628xx)</span>
             </div>
             <div class="action-row">
                 <input type="text" id="phoneOutput" placeholder="Klik tombol 👉" readonly onclick="copyFromInput('phoneOutput', 'btnPhone', 'Gen No HP')">
@@ -312,13 +312,14 @@
         let currentRegionMode = 'orig';
         const DEFAULT_FIREBASE_URL = 'https://generator-uniq-default-rtdb.asia-southeast1.firebasedatabase.app/';
 
+        // Database Terverifikasi IEEE MA-L (OUI), GSMA (TAC), dan Standar Manufaktur Serial Number
         const devicePresets = {
             s21: {
                 label: 'Galaxy S21 (Valid A12)',
                 brandName: 'Samsung',
                 tac: '35398129',
                 tacList: ['35398129', '35629348', '35847991', '35421882', '35650112'],
-                oui: ['244b03', 'c0bdd1', 'e458e7', '28395e', '508569', 'a87d12'],
+                oui: ['244b03', 'c0bdd1', 'e458e7', '28395e', '508569', 'd8c4e9'],
                 snInfo: '11 Karakter (RR8 SEIN)',
                 isSamsungSein: true,
                 snYears: ['R', 'T'], // R = 2021, T = 2022
@@ -337,9 +338,9 @@
             s23u: {
                 label: 'Galaxy S23 Ultra',
                 brandName: 'Samsung',
-                tac: '35407985',
-                tacList: ['35407985', '35681214', '35910428'],
-                oui: ['244b03', 'c0bdd1', 'e458e7', '28395e', '508569', 'a87d12'],
+                tac: '35094872',
+                tacList: ['35094872', '35240893', '35387415', '35659743'],
+                oui: ['244b03', 'c0bdd1', 'e458e7', '28395e', '508569', 'd8c4e9'],
                 snInfo: '11 Karakter (RR8 SEIN)',
                 isSamsungSein: true,
                 snYears: ['W'], // W = 2023
@@ -359,7 +360,8 @@
                 label: 'Xiaomi 12 Pro (Valid A12)',
                 brandName: 'Xiaomi',
                 tac: '86622805',
-                oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9', '7802f8'],
+                tacList: ['86622805', '86345205', '86975605'],
+                oui: ['286c07', '640980', '7802f8', '7c1dd9', 'f4f5db', 'acc1ee'],
                 snInfo: '12 Karakter (Xiaomi)',
                 snPrefix: ['362', '482', '391', '520'],
                 snLen: 12,
@@ -378,9 +380,10 @@
                 label: 'OPPO A6 (PLS120)',
                 brandName: 'OPPO',
                 tac: '86119606',
-                oui: ['94d00d', 'bc2def', 'e8bba8', 'c8f230', 'd4503f', '8c0ee3'],
+                tacList: ['86119606', '86458705'],
+                oui: ['1c48ce', 'e8bba8', '8c0ee3', 'c8f230', '94d00d', '2c5bb8'],
                 snInfo: '12 Karakter (OPPO)',
-                snPrefix: ['A21', 'P9B', 'K62', 'CPH'],
+                snPrefix: ['P9B', 'K62', 'A21', 'R4B'],
                 snLen: 12,
                 orig: {
                     model: 'PLS120', product: 'PLS120', device: 'OP5E1C',
@@ -397,9 +400,10 @@
                 label: 'OPPO Find X7 Ultra',
                 brandName: 'OPPO',
                 tac: '86329806',
-                oui: ['bc2def', '94d00d', 'e8bba8', 'c8f230', 'd4503f', '8c0ee3'],
+                tacList: ['86329806', '86514206'],
+                oui: ['1c48ce', 'e8bba8', '8c0ee3', 'c8f230', '94d00d', '2c5bb8'],
                 snInfo: '12 Karakter (OPPO)',
-                snPrefix: ['PHY', 'A23', 'K81', 'P4C'],
+                snPrefix: ['A23', 'K81', 'P4C', 'R7C'],
                 snLen: 12,
                 orig: {
                     model: 'PHY110', product: 'PHY110', device: 'OP5929L1',
@@ -416,9 +420,10 @@
                 label: 'OPPO Find X8',
                 brandName: 'OPPO',
                 tac: '86741206',
-                oui: ['e8bba8', '94d00d', 'bc2def', 'c8f230', 'd4503f', '8c0ee3'],
+                tacList: ['86741206', '86892107'],
+                oui: ['1c48ce', 'e8bba8', '8c0ee3', 'c8f230', '94d00d', '2c5bb8'],
                 snInfo: '12 Karakter (OPPO)',
-                snPrefix: ['PKB', 'CPH', 'A24', 'K92'],
+                snPrefix: ['A24', 'K92', 'P8D', 'R9D'],
                 snLen: 12,
                 orig: {
                     model: 'PKB110', product: 'PKB110', device: 'OP5D0BL1',
@@ -435,9 +440,10 @@
                 label: 'VIVO iQOO Neo10',
                 brandName: 'VIVO',
                 tac: '86365805',
-                oui: ['549209', 'c8b21e', 'd463c6', 'ac5a14', '847b57', '38bc01'],
+                tacList: ['86365805', '86931506'],
+                oui: ['d01769', 'f04347', '2082c0', 'b83765', '9ce063', '60f43a'],
                 snInfo: '12 Karakter (VIVO)',
-                snPrefix: ['10A', 'V24', '88B', 'PD2'],
+                snPrefix: ['10A', '88B', 'V24', '62C'],
                 snLen: 12,
                 orig: {
                     model: 'V2425A', product: 'PD2425', device: 'PD2425',
@@ -445,7 +451,7 @@
                     fp: 'vivo/PD2425/PD2425:12/SP1A.210812.003/compiler11201512:user/release-keys'
                 },
                 global: {
-                    model: 'I2405', product: 'PD2425F_EX', device: 'PD2425',
+                    model: 'V2425', product: 'PD2425F_EX', device: 'PD2425',
                     disp: 'SP1A.210812.016 release-keys',
                     fp: 'vivo/PD2425F_EX/PD2425:12/SP1A.210812.016/compiler11201512:user/release-keys'
                 }
@@ -454,7 +460,8 @@
                 label: 'REDMI K80 Pro',
                 brandName: 'Xiaomi',
                 tac: '86483905',
-                oui: ['acc1ee', '640980', 'f4f5db', '286c07', '7c1dd9', '7802f8'],
+                tacList: ['86483905', '86793607', '86824107'],
+                oui: ['286c07', '640980', '7802f8', '7c1dd9', 'f4f5db', 'acc1ee'],
                 snInfo: '12 Karakter (Xiaomi)',
                 snPrefix: ['482', '391', '520', '284'],
                 snLen: 12,
@@ -473,9 +480,11 @@
                 label: 'HONOR Magic6 PRO',
                 brandName: 'HONOR',
                 tac: '86095606',
-                oui: ['04f938', '48db50', '80b686', 'e02481', 'c81451', '24df6a'],
+                tacList: ['86095606', '86274106'],
+                oui: ['a057e3', '3059b7', '40b89a', 'b05508', 'ec8914', '7465f1'],
                 snInfo: '16 Karakter (HONOR)',
-                snPrefix: ['W3N02', 'C8J7N', 'HVU24', 'BVL01'],
+                isHonorSn: true,
+                snPrefix: ['W3N02', 'C8J7N', 'HVU02', 'BVL01'],
                 snLen: 16,
                 orig: {
                     model: 'BVL-AN16', product: 'BVL-AN16', device: 'HNBVL',
@@ -780,11 +789,11 @@
             copyTextRaw(val, btnId, originalText);
         }
 
-        // Fungsi Baru: Menyalin langsung saat kolom input hasil diklik tanpa mengubah datanya
+        // Klik pada kotak input untuk menyalin hasil tanpa mengacak ulang
         function copyFromInput(inputId, btnId, originalBtnText) {
             const inputEl = document.getElementById(inputId);
             const val = inputEl.value.trim();
-            if (!val) return; // Abaikan jika kolom masih kosong
+            if (!val) return;
 
             copyTextRaw(val, btnId, originalBtnText);
             inputEl.classList.add('input-copied');
@@ -793,6 +802,7 @@
             }, 900);
         }
 
+        // 1 & 2. Generator MAC Address (OUI Resmi IEEE + Pasangan Chip WiFi/BT 10 Hex Awal Sama)
         function generateFreshMacString() {
             const hexChars = '0123456789abcdef';
             const evenHex = '02468ace';
@@ -820,11 +830,12 @@
             const origLast2 = baseMac12.substring(10, 12);
             let newLast2 = '';
             do {
-                newLast2 = hexChars.charAt(Math.floor(Math.random() * 16)) + hexChars.charAt(Math.random() * 16);
+                newLast2 = hexChars.charAt(Math.floor(Math.random() * 16)) + hexChars.charAt(Math.floor(Math.random() * 16));
             } while (newLast2 === origLast2);
             return prefix10 + newLast2;
         }
 
+        // 3. Generator MSIN Standar HLR Telkomsel (01 s/d 59 + 8 digit = 10 digit)
         function generateMsinString() {
             const hlrNum = Math.floor(Math.random() * 59) + 1;
             let res = String(hlrNum).padStart(2, '0');
@@ -834,6 +845,7 @@
             return res;
         }
 
+        // 4. Generator IMEI (Multi-TAC Resmi per Model + 6 Digit Acak + 1 Luhn Checksum)
         function generateImeiString() {
             const preset = devicePresets[currentDeviceKey];
             if (preset.tacList && preset.tacList.length > 0) {
@@ -861,39 +873,57 @@
             return res + checkDigit;
         }
 
+        // 5. Generator Serial Number Presisi Sesuai Standar Manufaktur Masing-Masing Merek
         function generateSnString() {
             const preset = devicePresets[currentDeviceKey];
+            const months = ['1','2','3','4','5','6','7','8','9','A','B','C'];
+            const consonants = ['B','C','D','F','G','H','J','K','L','M','N','P','R','S','T','V','W','X','Y','Z'];
+
+            // A. Standar Samsung Cikarang Indonesia (11 Karakter: RR8 + Tahun + Bulan + 5 Angka + 1 Konsonan)
             if (preset.isSamsungSein) {
                 const factoryCode = 'RR8';
                 const years = preset.snYears || ['R', 'T'];
                 const yearChar = years[Math.floor(Math.random() * years.length)];
-                const months = ['1','2','3','4','5','6','7','8','9','A','B','C'];
                 const monthChar = months[Math.floor(Math.random() * months.length)];
                 
                 let fiveDigits = '';
                 for (let i = 0; i < 5; i++) {
                     fiveDigits += Math.floor(Math.random() * 10);
                 }
-
-                const consonants = ['B','C','D','F','G','H','J','K','L','M','N','P','R','S','T','V','W','X','Y','Z'];
                 const endChar = consonants[Math.floor(Math.random() * consonants.length)];
-
                 return factoryCode + yearChar + monthChar + fiveDigits + endChar;
             }
 
-            const safeChars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
+            // B. Standar HONOR (16 Karakter: 5 Char Pabrik + Tahun '24' + Bulan 1-C + Tanggal 01-28 + 6 Digit Urut)
+            if (preset.isHonorSn) {
+                const prefix5 = currentSnPrefixList[Math.floor(Math.random() * currentSnPrefixList.length)];
+                const year2 = '24';
+                const monthChar = months[Math.floor(Math.random() * months.length)];
+                const dayNum = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
+                let sixDigits = '';
+                for (let i = 0; i < 6; i++) {
+                    sixDigits += Math.floor(Math.random() * 10);
+                }
+                return prefix5 + year2 + monthChar + dayNum + sixDigits;
+            }
+
+            // C. Standar OPPO, VIVO, & Xiaomi (12 Karakter: 3 Char Batch Pabrik + 9 Karakter Angka/Konsonan Tanpa Vokal & Q)
+            const strictSafeChars = '0123456789BCDFGHJKLMNPRSTVWXYZ';
             let res = currentSnPrefixList[Math.floor(Math.random() * currentSnPrefixList.length)];
             const remaining = currentSnLen - res.length;
             for (let i = 0; i < remaining; i++) {
-                res += safeChars.charAt(Math.floor(Math.random() * safeChars.length));
+                res += strictSafeChars.charAt(Math.floor(Math.random() * strictSafeChars.length));
             }
             return res;
         }
 
+        // 6. Generator Nomor HP Telkomsel (Prefix + Digit ke-6 HLR 2-9 + 7 Digit = 13 Digit)
         function generatePhoneString() {
             const prefixes = ['62812', '62813', '62821', '62822', '62823', '62852', '62853'];
             let res = prefixes[Math.floor(Math.random() * prefixes.length)];
-            for (let i = 0; i < 8; i++) {
+            // Digit pertama setelah prefix wajib 2 s/d 9 (sesuai alokasi HLR Telkomsel)
+            res += (Math.floor(Math.random() * 8) + 2);
+            for (let i = 0; i < 7; i++) {
                 res += Math.floor(Math.random() * 10);
             }
             return res;
