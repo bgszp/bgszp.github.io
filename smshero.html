@@ -43,7 +43,7 @@
     <div class="container">
         <!-- HEADER SALDO -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Webhook (ID)</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Webhook (.IO)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
@@ -115,7 +115,7 @@
             </div>
         </div>
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
-            └> Sistem Webhook & Sinkronisasi Batal aktif...
+            └> Sistem Diagnostik aktif...
         </div>
     </div>
     
@@ -123,7 +123,7 @@
 
     <script>
         const WORKER_URL = "https://herosms-proxy.tiktiksatu001.workers.dev"; 
-        const KURS_USD = 17757; 
+        const KURS_USD = 16000; 
         const ID_NEGARA_INDONESIA = "6"; 
         
         let daftarOrderan = []; 
@@ -244,13 +244,23 @@
                 document.getElementById("btnPesanAksi").disabled = true;
 
                 const resText = await fetchHeroAPI('getPrices', { service: serviceId, country: ID_NEGARA_INDONESIA });
-                let data = JSON.parse(resText);
+                
+                let data;
+                try {
+                    data = JSON.parse(resText);
+                } catch(e) {
+                    // DIAGNOSTIK: Tangkap error spesifik jika terhalang CF atau hasil aneh
+                    if (resText.includes("<html") || resText.toLowerCase().includes("cloudflare")) {
+                        throw new Error("Akses diblokir oleh Keamanan Cloudflare.");
+                    }
+                    throw new Error("Respons API ditolak: " + resText.substring(0, 25));
+                }
                 
                 let stockID = 0; let priceUSD = 0;
                 if (data[ID_NEGARA_INDONESIA] && data[ID_NEGARA_INDONESIA][serviceId]) {
                     stockID = data[ID_NEGARA_INDONESIA][serviceId].count;
                     priceUSD = data[ID_NEGARA_INDONESIA][serviceId].cost;
-                } else { throw new Error("Stok kosong."); }
+                } else { throw new Error("Stok layanan sedang kosong."); }
                 
                 daftarServerTersedia = [];
                 for (let opId in MASTER_OPERATOR) {
@@ -268,6 +278,7 @@
             } catch (e) {
                 document.getElementById("labelServerTerpilih").innerHTML = `<span style="color:var(--accent-red);">❌ Gagal Memuat</span>`;
                 document.getElementById("btnPesanAksi").disabled = true; 
+                logConsole("Load Error: " + e.message);
             }
         }
 
@@ -320,7 +331,6 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        // PERBAIKAN: Fungsi Batal dengan konfirmasi
         async function eksekusiBatalkanServer(index) {
             const item = daftarOrderan[index];
             item.is_cancelling = true; renderUILayout();
@@ -329,13 +339,10 @@
                 await fetchHeroAPI('setStatus', { status: 8, id: item.order_id });
                 item.status = "cancelled"; 
                 item.is_cancelling = false;
-                renderUILayout(); 
-                simpanDaftarOrderanKeLokal(); 
-                ambilSaldoLive(); 
-                showToast("Dibatalkan!"); 
+                renderUILayout(); simpanDaftarOrderanKeLokal(); ambilSaldoLive(); showToast("Dibatalkan!"); 
             } catch (e) { 
-                item.is_cancelling = false; // Kembalikan ke normal jika gagal agar bisa dicoba lagi
-                logConsole("Gagal membatalkan ke server. Akan dicoba lagi.");
+                item.is_cancelling = false; 
+                logConsole("Gagal batal, akan retri.");
                 renderUILayout();
             }
         }
@@ -402,7 +409,6 @@
                 let isBlocked = (item.status === "pending" && index !== activeOrderIndex);
                 let maxWait = isBlocked ? 120 : 300; 
                 
-                // PERBAIKAN: Panggil auto-cancel secara asinkron tanpa merusak tampilan langsung
                 if (item.status === "pending" && sec >= maxWait && !item.is_cancelling) { 
                     eksekusiBatalkanServer(index);
                 }
