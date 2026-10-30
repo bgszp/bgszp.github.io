@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMSCode.gg Shopee Panel</title>
+    <title>SMSCode.gg Multi Panel</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <style>
         :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
@@ -57,7 +57,7 @@
     <div class="container">
         <!-- HEADER SALDO -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis Shopee ID</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Multi OTP ID</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
@@ -85,7 +85,14 @@
             <label class="form-label">🛒 Setup Layanan</label>
             
             <div class="unified-order-box">
-                <select id="dropdownOperator" class="unified-select-op" onchange="muatProdukShopee(true)">
+                <!-- PILIH LAYANAN (BARU) -->
+                <select id="dropdownPlatform" class="unified-select-op" onchange="gantiPlatform()" style="margin-bottom: 5px; border-bottom: 1px solid #25274d; padding-bottom: 8px;">
+                    <option value="shopee">🟠 Layanan: Shopee</option>
+                    <option value="whatsapp">🟢 Layanan: WhatsApp</option>
+                </select>
+
+                <!-- PILIH OPERATOR -->
+                <select id="dropdownOperator" class="unified-select-op" onchange="muatProduk(true)">
                     <option value="">Memuat Operator...</option>
                 </select>
 
@@ -131,7 +138,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
-            └> Sistem Webhook & Multi-Tier Diinisialisasi.
+            └> Sistem Webhook & Multi-Layanan Diinisialisasi.
         </div>
     </div>
     
@@ -141,7 +148,10 @@
         let daftarOrderan = []; 
         let daftarServerTersedia = [];
         let produkTerpilihArray = []; 
-        let shopeePlatformId = null; 
+        
+        // VARIABEL PLATFORM
+        let activePlatform = "shopee"; 
+        let platformData = { "shopee": null, "whatsapp": null };
         let siklusCek = 0;
 
         const WORKER_URL = "https://smscode-proxy.tiktiksatu001.workers.dev";
@@ -220,17 +230,39 @@
             printLog("🧹 Cache UI dibersihkan, me-refresh harga otomatis...");
         }
 
-        async function inisialisasiLayananShopee() {
-            try {
-                printLog("🔄 Mengambil ID Layanan Shopee...");
-                const resSrv = await apiSMSCode('catalog/services?country_id=7', 'GET');
-                const shopeeSrv = resSrv.data.find(s => s.name.toLowerCase().includes("shopee"));
-                if (!shopeeSrv) throw new Error("Layanan Shopee tidak ditemukan.");
-                
-                shopeePlatformId = shopeeSrv.id;
+        // FUNGSI GANTI PLATFORM DARI DROPDOWN
+        function gantiPlatform() {
+            activePlatform = document.getElementById("dropdownPlatform").value;
+            produkTerpilihArray = []; 
+            perbaruiLabelTerpilih();
+            muatOperator();
+        }
 
-                printLog("🔄 Mengambil daftar Operator...");
-                const resOp = await apiSMSCode(`catalog/operators?country_id=7&platform_id=${shopeePlatformId}`, 'GET');
+        async function inisialisasiLayanan() {
+            try {
+                printLog("🔄 Mengambil ID Semua Layanan...");
+                const resSrv = await apiSMSCode('catalog/services?country_id=7', 'GET');
+                
+                const srvShopee = resSrv.data.find(s => s.name.toLowerCase().includes("shopee"));
+                const srvWa = resSrv.data.find(s => s.name.toLowerCase().includes("whatsapp"));
+                
+                if (srvShopee) platformData["shopee"] = srvShopee.id;
+                if (srvWa) platformData["whatsapp"] = srvWa.id;
+
+                await muatOperator();
+            } catch (e) {
+                printLog(`⚠️ Error Inisialisasi: ${e.message}`);
+                document.getElementById("dropdownOperator").innerHTML = `<option value="">Gagal Memuat</option>`;
+            }
+        }
+
+        async function muatOperator() {
+            try {
+                let currentId = platformData[activePlatform];
+                if (!currentId) throw new Error("ID Layanan tidak ditemukan.");
+
+                printLog(`🔄 Mengambil Operator ${activePlatform.toUpperCase()}...`);
+                const resOp = await apiSMSCode(`catalog/operators?country_id=7&platform_id=${currentId}`, 'GET');
                 
                 let dropdownOp = document.getElementById("dropdownOperator");
                 dropdownOp.innerHTML = "";
@@ -245,20 +277,21 @@
                         dropdownOp.appendChild(opt);
                     });
                 }
-                await muatProdukShopee(false);
+                await muatProduk(false);
             } catch (e) {
-                printLog(`⚠️ Error Inisialisasi: ${e.message}`);
+                printLog(`⚠️ Error Operator: ${e.message}`);
                 document.getElementById("dropdownOperator").innerHTML = `<option value="">Gagal Memuat</option>`;
             }
         }
 
-        async function muatProdukShopee(autoOpen = false) {
-            if (!shopeePlatformId) return;
+        async function muatProduk(autoOpen = false) {
+            let currentId = platformData[activePlatform];
+            if (!currentId) return;
             try {
                 if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Mencari harga...`;
                 
                 let opIdRaw = document.getElementById("dropdownOperator").value;
-                let queryUrl = `catalog/products?country_id=7&platform_id=${shopeePlatformId}&limit=100`;
+                let queryUrl = `catalog/products?country_id=7&platform_id=${currentId}&limit=100`;
                 if (opIdRaw && opIdRaw !== "null") queryUrl += `&operator_id=${opIdRaw}`;
 
                 let idYangSudahDicentang = [];
@@ -279,6 +312,7 @@
 
                 produkTerpilihArray = [];
                 let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
+                let platName = activePlatform === "shopee" ? "Shopee" : "WhatsApp";
 
                 if (daftarServerTersedia.length > 0) { 
                     if (!autoOpen && idYangSudahDicentang.length > 0) {
@@ -287,7 +321,7 @@
                                 produkTerpilihArray.push({
                                     id: srv.id,
                                     price: srv.price,
-                                    name: `Shopee ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`
+                                    name: `${platName} ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`
                                 });
                             }
                         });
@@ -298,7 +332,7 @@
                         produkTerpilihArray.push({
                             id: firstSrv.id,
                             price: firstSrv.price,
-                            name: `Shopee ${opText} (Rp ${firstSrv.price.toLocaleString('id-ID')})`
+                            name: `${platName} ${opText} (Rp ${firstSrv.price.toLocaleString('id-ID')})`
                         });
                     }
                     
@@ -332,10 +366,11 @@
                 produkTerpilihArray.splice(existingIndex, 1);
             } else {
                 let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
+                let platName = activePlatform === "shopee" ? "Shopee" : "WhatsApp";
                 produkTerpilihArray.push({
                     id: srv.id,
                     price: srv.price,
-                    name: `Shopee ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`
+                    name: `${platName} ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`
                 });
             }
             
@@ -370,7 +405,6 @@
                 let isChecked = produkTerpilihArray.some(p => p.id === srv.id);
                 let isSelectedClass = isChecked ? "selected" : "";
                 
-                // PERBAIKAN: Angka selalu berwarna cyan menyala, meskipun tidak dicentang
                 let numberBadge = `<span style="font-size: 11px; font-weight: bold; color: var(--accent-cyan); margin-left: 8px; width: 22px; text-align: left; display: inline-block;">[${index + 1}]</span>`;
                 
                 html += `
@@ -412,7 +446,7 @@
                             phone: createdOrder.phone_number, 
                             layanan: prod.name, 
                             waktu_dibuat: Date.now(), 
-                            waktu_awal: Date.now(), // Tambahan variabel untuk menyimpan waktu awal mula pesanan
+                            waktu_awal: Date.now(), 
                             status: "pending", 
                             otp: "",
                             resend_count: 0 
@@ -449,7 +483,7 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); if (!shopeePlatformId) { inisialisasiLayananShopee(); } else { muatProdukShopee(false); } }
+        function refreshSemuaDataLive() { ambilSaldoLive(); if (!platformData[activePlatform]) { inisialisasiLayanan(); } else { muatProduk(false); } }
 
         async function ambilSaldoLive() {
             try {
@@ -481,9 +515,8 @@
                     item.last_otp = item.otp; 
                     item.status = "pending";
                     item.otp = "";
-                    item.waktu_dibuat = Date.now(); // Reset waktu pengecekan langkah ini
+                    item.waktu_dibuat = Date.now(); 
                     item.resend_count = (item.resend_count || 0) + 1; 
-                    // Catatan: item.waktu_awal TIDAK direset agar timer 20 menit tetap berjalan normal
                     
                     renderUILayout();
                     simpanDaftarOrderanKeLokal();
@@ -565,10 +598,7 @@
             let flagSimpan = false; let countAktif = 0; let countRiwayat = 0;
 
             daftarOrderan.forEach((item, index) => {
-                // Waktu yang dihitung dari saat request terakhir (untuk limit cancel auto)
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
-                
-                // PERBAIKAN: Waktu yang dihitung mutlak dari awal order dibuat (untuk timer 20 menit dan cooldown batal)
                 let globalSec = Math.floor((Date.now() - (item.waktu_awal || item.waktu_dibuat)) / 1000); 
 
                 let isTopQueue = (countAktif === 0 && item.status !== "completed" && item.status !== "history_received" && item.status !== "cancelled");
@@ -619,10 +649,8 @@
 
                 countAktif++;
                 
-                // Cooldown Batal dihitung dari waktu AWAL order. Sehingga jika user resend (biasanya setelah >2 menit), mereka bisa langsung Batal.
                 let cool = Math.max(0, 120 - globalSec); 
                 
-                // Format Timer 20 Menit (1200 detik) berjalan mundur
                 let sisaTotal = Math.max(0, 1200 - globalSec);
                 let m = Math.floor(sisaTotal / 60);
                 let s = sisaTotal % 60;
@@ -657,7 +685,6 @@
                     </div>`;
                 } else if (item.status === "pending") {
                     if (item.resend_count > 0) {
-                        // PERBAIKAN: Jika ini fase Resend, beri dua tombol sekaligus: Batalkan atau Selesai
                         btnAksi = `
                         <div style="display:flex; gap: 8px; margin-top: 10px;">
                             <button class="btn-action-half" style="background:var(--accent-red); color:white;" onclick="eksekusiBatalkanServer(${index})"><i class="fa-solid fa-xmark"></i> Batalkan</button>
@@ -686,7 +713,6 @@
                     </div>
                     ${kotakOtp}
 
-                    <!-- PERBAIKAN: Layout flexbox dengan posisi timer global 20 Menit di sebelah kanan (kotak oranye) -->
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
                         <div style="font-size:11px; font-weight:600; color:${colStat};">${textStat}</div>
                         <div style="font-size:11px; font-weight:bold; color:var(--accent-cyan); background:#1a1b35; padding:3px 8px; border-radius:4px; border:1px solid var(--border-color);">⏱️ ${globalTimeStr}</div>
