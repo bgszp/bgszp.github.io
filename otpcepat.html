@@ -19,7 +19,7 @@
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
-        .btn-copy-static.btn-green { background: #1d3f31; border:color: #2e6f4e; color: var(--accent-green); }
+        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
         .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
@@ -156,6 +156,7 @@
         let vak_lastServiceId = null; 
         let otpcepat_countryId = "6"; 
         let otpcepat_allServicesCache = [];
+        let otpcepat_sudahInitNegara = false;
         
         let vak_produkTerpilihId = null; 
         let vak_namaProdukTerpilih = ""; 
@@ -169,7 +170,6 @@
             return "Rp " + Math.ceil(num).toLocaleString("id-ID"); 
         }
 
-        // Fungsi pembersih nama layanan: mengubah "Shopee / Shopeepay" menjadi "Shopee" saja
         function bersihkanNamaLayanan(namaAsli, isSpesial = false) {
             if (!namaAsli) return "";
             let n = namaAsli.toString().trim();
@@ -232,45 +232,52 @@
             }
         }
 
-        async function inisialisasiNegaraDanOperator() {
+        async function inisialisasiNegaraDanOperator(force = false) {
+            if (otpcepat_sudahInitNegara && !force) return;
             try {
-                const resNegara = await apiOtpCepat_Silent('getCountries');
-                if (resNegara.isJson && resNegara.data && Array.isArray(resNegara.data.data)) {
-                    const indo = resNegara.data.data.find(c => 
-                        c.countryName && c.countryName.toLowerCase().includes("indo")
-                    );
-                    if (indo && indo.countryID !== undefined) {
-                        otpcepat_countryId = indo.countryID.toString();
-                    }
+                const cachedOp = localStorage.getItem("cache_op_otpcepat");
+                if (cachedOp && !force) {
+                    renderOpsiOperator(JSON.parse(cachedOp));
+                    otpcepat_sudahInitNegara = true;
+                    return;
                 }
 
-                const resOp = await apiOtpCepat_Silent('getOperators', { country_id: otpcepat_countryId });
-                if (resOp.isJson && resOp.data && Array.isArray(resOp.data.data)) {
-                    const selectOp = document.getElementById("vak_dropdownOperator");
-                    const currentVal = selectOp.value;
-                    let htmlOp = `<option value="random">⚡ Semua Operator (Acak)</option>`;
-                    resOp.data.data.forEach(op => {
-                        if (op && op.toLowerCase() !== "random") {
-                            let label = op.charAt(0).toUpperCase() + op.slice(1);
-                            htmlOp += `<option value="${op}">${label}</option>`;
-                        }
-                    });
-                    selectOp.innerHTML = htmlOp;
-                    if ([...selectOp.options].some(o => o.value === currentVal)) {
-                        selectOp.value = currentVal;
-                    }
+                const [resNegara, resOp] = await Promise.all([
+                    apiOtpCepat_Silent('getCountries'),
+                    apiOtpCepat_Silent('getOperators', { country_id: otpcepat_countryId })
+                ]);
+
+                if (resNegara.isJson && resNegara.data && Array.isArray(resNegara.data.data)) {
+                    const indo = resNegara.data.data.find(c => c.countryName && c.countryName.toLowerCase().includes("indo"));
+                    if (indo && indo.countryID !== undefined) otpcepat_countryId = indo.countryID.toString();
                 }
-            } catch (e) {
-                console.log("Inisialisasi negara/operator dilewati:", e);
-            }
+
+                if (resOp.isJson && resOp.data && Array.isArray(resOp.data.data)) {
+                    localStorage.setItem("cache_op_otpcepat", JSON.stringify(resOp.data.data));
+                    renderOpsiOperator(resOp.data.data);
+                }
+                otpcepat_sudahInitNegara = true;
+            } catch (e) {}
+        }
+
+        function renderOpsiOperator(listOp) {
+            const selectOp = document.getElementById("vak_dropdownOperator");
+            const currentVal = selectOp.value;
+            let htmlOp = `<option value="random">⚡ Semua Operator (Acak)</option>`;
+            listOp.forEach(op => {
+                if (op && op.toLowerCase() !== "random") {
+                    let label = op.charAt(0).toUpperCase() + op.slice(1);
+                    htmlOp += `<option value="${op}">${label}</option>`;
+                }
+            });
+            selectOp.innerHTML = htmlOp;
+            if ([...selectOp.options].some(o => o.value === currentVal)) selectOp.value = currentVal;
         }
 
         window.vak_ambilSaldoLive = async function(silent = false) {
             try {
                 if(!silent) document.getElementById("vak_txtSaldoLive").innerText = "...";
-                
                 const res = silent ? await apiOtpCepat_Silent('getBalance') : await apiOtpCepat('getBalance'); 
-                
                 if (res.isJson && res.data && res.data.data && res.data.data.saldo !== undefined) {
                     let nominalSaldo = parseFloat(res.data.data.saldo);
                     document.getElementById("vak_txtSaldoLive").innerText = vak_formatRupiah(nominalSaldo);
@@ -284,9 +291,11 @@
 
         window.vak_refreshSemuaDataLive = async function() { 
             document.getElementById("vak_txtSaldoLive").innerText = "...";
-            await inisialisasiNegaraDanOperator();
-            await window.vak_muatProdukLayanan(true); 
-            setTimeout(() => { window.vak_ambilSaldoLive(false); }, 800);
+            Promise.all([
+                window.vak_ambilSaldoLive(false),
+                inisialisasiNegaraDanOperator(false),
+                window.vak_muatProdukLayanan(true)
+            ]);
         }
 
         document.addEventListener("DOMContentLoaded", async function() {
@@ -294,6 +303,15 @@
             const savedProxy = localStorage.getItem("proxy_url_otpcepat") || "https://otpcepat.tiktiksatu001.workers.dev";
             
             document.getElementById("vak_proxyUrl").value = savedProxy;
+
+            // Load data cache lokal terlebih dahulu agar UI instan 0 detik
+            const lokalSrv = localStorage.getItem("cache_srv_otpcepat");
+            if (lokalSrv) {
+                try { 
+                    otpcepat_allServicesCache = JSON.parse(lokalSrv);
+                    terapkanFilterLayananKeCache(document.getElementById("vak_dropdownLayanan").value);
+                } catch(e) {}
+            }
 
             if(savedKey && savedProxy) {
                 document.getElementById("vak_otpKey").value = savedKey;
@@ -322,7 +340,8 @@
             let pindah = false;
             vak_daftarOrderan.forEach(item => { if (item.status === "received") { item.status = "history_received"; pindah = true; } });
             if (pindah) { vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); }
-            window.vak_refreshSemuaDataLive(); vak_showToast("Dibersihkan!");
+            window.vak_ambilSaldoLive(true); 
+            vak_showToast("Dibersihkan!");
         }
 
         window.vak_layananDiubahOlehUser = function() {
@@ -341,10 +360,21 @@
         window.vak_muatProdukLayanan = async function(isRefresh = false) {
             let serviceCode = document.getElementById("vak_dropdownLayanan").value;
             
-            if (serviceCode !== vak_lastServiceId || !otpcepat_allServicesCache || otpcepat_allServicesCache.length === 0 || isRefresh) {
+            if (otpcepat_allServicesCache.length === 0) {
+                const lokalSrv = localStorage.getItem("cache_srv_otpcepat");
+                if (lokalSrv) {
+                    try { otpcepat_allServicesCache = JSON.parse(lokalSrv); } catch(e) {}
+                }
+            }
+
+            if (otpcepat_allServicesCache.length > 0) {
+                terapkanFilterLayananKeCache(serviceCode);
+            } else {
                 document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data...</span>`;
                 document.getElementById("vak_btnPesanAksi").disabled = true;
-                
+            }
+
+            if (otpcepat_allServicesCache.length === 0 || isRefresh) {
                 try {
                     const [resReg, resSpec] = await Promise.all([
                         apiOtpCepat('getServices', { country_id: otpcepat_countryId }),
@@ -377,26 +407,28 @@
                         });
                     }
 
-                    otpcepat_allServicesCache = gabungan;
-                    vak_lastServiceId = serviceCode;
-
+                    if (gabungan.length > 0) {
+                        otpcepat_allServicesCache = gabungan;
+                        localStorage.setItem("cache_srv_otpcepat", JSON.stringify(gabungan));
+                        vak_lastServiceId = serviceCode;
+                        terapkanFilterLayananKeCache(serviceCode);
+                    }
                 } catch (e) {
-                    document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block; word-wrap:break-word;">🚨 ERROR: ${e.message}</span>`;
-                    document.getElementById("vak_btnPesanAksi").disabled = true;
-                    vak_cachedOffers = [];
-                    return;
+                    if (otpcepat_allServicesCache.length === 0) {
+                        document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px;">🚨 ERROR: ${e.message}</span>`;
+                        document.getElementById("vak_btnPesanAksi").disabled = true;
+                    }
                 }
             }
+        }
 
+        function terapkanFilterLayananKeCache(serviceCode) {
             let hasilFilter = otpcepat_allServicesCache.filter(item => cocokkanNamaLayanan(item.rawName || item.serviceName, serviceCode));
-            
             if (hasilFilter.length === 0 && otpcepat_allServicesCache.length > 0) {
                 hasilFilter = otpcepat_allServicesCache;
             }
-
             hasilFilter.sort((a, b) => a.price - b.price);
             vak_cachedOffers = hasilFilter;
-            
             window.vak_terapkanFilterOperator();
         }
 
@@ -514,8 +546,9 @@
                     let text = chosenObjs.length === 1 
                         ? `${vak_formatRupiah(chosenObjs[0].price)} (${chosenObjs[0].serviceName})` 
                         : `${chosenObjs.length} Tier Dipilih`;
+                    // Tulisan "Target:" dihilangkan sesuai permintaan
                     document.getElementById("vak_labelServerTerpilih").innerHTML = `
-                        <span style="color:var(--accent-purple); font-weight:bold; font-size:13px; margin-right:8px;">🎯 Target: ${text}</span>
+                        <span style="color:var(--accent-purple); font-weight:bold; font-size:13px; margin-right:8px;">🎯 ${text}</span>
                     `;
                     document.getElementById("vak_btnPesanAksi").disabled = false;
                 } else {
