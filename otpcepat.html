@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTPCepat Panel Integrasi</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --bg-main: #0b0c16; --bg-card: #121324; --bg-item: #181933; --border-color: #2c2e5c; --accent-cyan: #00ffcc; --accent-purple: #9d4edd; --accent-red: #ff5555; --accent-green: #50fa7b; --text-main: #f8f8f2; --text-sub: #8b8da9; }
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 480px; margin: 0 auto 10px auto; background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+        
+        .pemicu-dropdown { background: var(--bg-item); border: 1px solid #32356b; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 13px; color: #fff; user-select: none; }
+        .search-input { width: 100%; padding: 10px; border-radius: 8px; background: #0b0c16; border: 1px solid #3d3463; color: #fff; font-size: 13px; outline: none; margin-bottom: 6px; }
+        .search-input:focus { border-color: var(--accent-cyan); }
+        .card-order { background: #1a1b35; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 12px; }
+        .box-copy-statik { display: flex; justify-content: space-between; align-items: center; background: #131428; padding: 8px 10px; border-radius: 8px; border: 1px solid #222448; margin: 6px 0; }
+        .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
+        .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+        .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
+        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
+        .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .btn-resend { background: #4a3c8c; color: #fff; }
+        .btn-selesai { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
+        .history-card { background: #121324; border: 1px solid #2c2e5c; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: stretch; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ffcc; color: #0f0c1b; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; opacity: 0; z-index: 99; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        
+        .dropdown-box-wrapper { background: #181933; border: 1px solid #3d3463; border-radius: 14px; padding: 14px; margin-top: 12px; }
+        .unified-order-box { display: flex; flex-direction: column; gap: 8px; }
+        .unified-select-op { border: 1px solid #2c2e5c; background: #0b0c16; border-radius: 10px; color: var(--accent-cyan); font-weight: bold; font-size: 13px; padding: 12px 14px; outline: none; cursor: pointer; width: 100%; }
+        .dropdown-selected-bar { background: #0b0c16; border: 1px solid #2c2e5c; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; }
+        
+        .dropdown-list-options { display: none; background: #121324; border: 1px solid #2c2e5c; border-radius: 10px; margin-top: 4px; max-height: 250px; overflow-y: auto; }
+        .dropdown-list-options.active { display: block; }
+        .dropdown-item-row { padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1b35; cursor: pointer; font-size: 13px; }
+        .dropdown-item-row.selected { background: #25204d; border-left: 3px solid var(--accent-cyan); }
+        
+        .btn-pesan-sekarang { background: linear-gradient(45deg, #6c5ce7, #4834d4); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-pesan-sekarang:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 8px; font-weight: 600; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (OTPCepat)</h3>
+            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
+                👛 <span id="vak_txtSaldoLive">Rp 0</span>
+                <span onclick="vak_refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+            <div class="pemicu-dropdown" onclick="vak_toggleApiKeyDropdown()">
+                <span>🔑 Konfigurasi API Key & Proxy</span>
+                <span id="vak_panahApiKey" style="font-size: 10px;">▼</span>
+            </div>
+            <div id="vak_wadahApiKeyDropdown" style="display: none; background: var(--bg-item); padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <label style="font-size: 11px; color: var(--accent-cyan); font-weight: bold; margin-bottom:4px; display:block;">🔑 OTPCepat API Key:</label>
+                <input type="password" id="vak_otpKey" placeholder="API Key OTPCepat" class="search-input">
+                
+                <label style="font-size: 11px; color: var(--accent-purple); font-weight: bold; margin-bottom:4px; margin-top:4px; display:block;">🌐 Link Proxy Pribadi (Worker):</label>
+                <input type="text" id="vak_proxyUrl" placeholder="https://otpcepat.tiktiksatu001.workers.dev" value="https://otpcepat.tiktiksatu001.workers.dev" class="search-input">
+                
+                <button onclick="vak_simpanKonfigurasi()" style="width: 100%; margin-top: 8px; padding: 8px 12px; background: var(--accent-cyan); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">Simpan Semua</button>
+                <small id="vak_statusKey" style="color: var(--accent-red); font-size: 10px; display: block; margin-top: 6px; text-align: center;">⚠️ Konfigurasi belum lengkap.</small>
+            </div>
+        </div>
+
+        <div class="dropdown-box-wrapper">
+            <label class="form-label">🛒 Setup Layanan Utama</label>
+            <div class="unified-order-box">
+                <select id="vak_dropdownLayanan" class="unified-select-op" onchange="vak_layananDiubahOlehUser()">
+                    <option value="sh" selected>Shopee (Indonesia)</option>
+                    <option value="wa">WhatsApp (Indonesia)</option>
+                    <option value="tg">Telegram (Indonesia)</option>
+                </select>
+                
+                <select id="vak_dropdownOperator" class="unified-select-op" onchange="vak_terapkanFilterOperator()" style="color: #ffb86c;">
+                    <option value="random" selected>⚡ Semua Operator (Acak)</option>
+                    <option value="telkomsel">Telkomsel</option>
+                    <option value="indosat">Indosat</option>
+                    <option value="axis">Axis / XL</option>
+                    <option value="three">Three (Tri)</option>
+                    <option value="smartfren">Smartfren</option>
+                </select>
+                
+                <div class="dropdown-selected-bar" onclick="vak_toggleDropdownList()">
+                    <span id="vak_labelServerTerpilih" style="color: #fff;">Mencari data...</span>
+                    <span style="font-size: 11px; color: var(--accent-cyan); font-weight: bold;">▼ Ubah Tier</span>
+                </div>
+                <div id="vak_containerListDropdown" class="dropdown-list-options"></div>
+            </div>
+            
+            <button class="btn-pesan-sekarang" id="vak_btnPesanAksi" onclick="vak_eksekusiBeliTerpilih()" disabled>
+                <i class="fa-solid fa-cart-shopping"></i> PESAN SEKARANG
+            </button>
+        </div>
+
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📱 Nomor & OTP Aktif:</span>
+                <button onclick="vak_bersihkanAktif()" style="background: var(--accent-red); color: white; border: none; padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer;">🧹 Bersihkan</button>
+            </div>
+            <div id="vak_containerListOrder">
+                <div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+            <div class="pemicu-dropdown" onclick="vak_toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
+                <span>📜 Riwayat Sukses (<span id="vak_countRiwayatBadge">0</span>)</span>
+                <span id="vak_panahRiwayat" style="font-size: 10px;">▼</span>
+            </div>
+            <div id="vak_wadahRiwayatDropdown" style="display: none; background: #0b0c16; padding: 12px; border-radius: 0 0 10px 10px; border: 1px solid #222448; border-top: none; margin-top: -2px;">
+                <div style="text-align: right; margin-bottom: 10px;">
+                    <span onclick="vak_hapusSemuaRiwayatBawah()" style="cursor: pointer; font-size: 10px; color: var(--accent-red); font-weight: bold;">🗑️ Hapus Riwayat</span>
+                </div>
+                <div id="vak_containerRiwayat">
+                    <div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
+            └> Mesin API: OTPCepat (otpcepat.org) Aktif.<br>
+            └> Tampilan & Posisi Kolom 100% Tetap Sama.<br>
+            └> Isolasi Storage & Firebase Aman (Anti-Crash dgn Vak-SMS).
+        </div>
+    </div>
+    
+    <div class="toast" id="vak_toastNotif">Berhasil! ✨</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+        import { getDatabase, ref, get, set, child, remove } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuNaE700uoAXECmd7hG73wiJK6cY1ttcE",
+            authDomain: "panel-smsbower.firebaseapp.com",
+            databaseURL: "https://panel-smsbower-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "panel-smsbower",
+            storageBucket: "panel-smsbower.firebasestorage.app",
+            messagingSenderId: "147643043216",
+            appId: "1:147643043216:web:09035ac3f71cb353efb715"
+        };
+
+        // Nama App Firebase dibedakan agar tidak bentrok jika di-load bersamaan
+        const app = initializeApp(firebaseConfig, "AppOTPCepat");
+        const db = getDatabase(app);
+
+        let vak_daftarOrderan = []; 
+        let vak_daftarServerTersedia = [];
+        let vak_cachedOffers = []; 
+        let vak_lastServiceId = null; 
+        let otpcepat_countryId = "6"; // Default fallback ID Indonesia, otomatis di-update dari API getCountries
+        let otpcepat_allServicesCache = [];
+        
+        let vak_produkTerpilihId = null; 
+        let vak_namaProdukTerpilih = ""; 
+        let vak_hargaProdukTerpilih = 0; 
+        let vak_siklusCek = 0;
+        let vak_modeCentang = false;
+        let vak_hargaTercentang = []; // Menyimpan serviceID yang dicentang pada mode Sniper
+
+        function vak_formatRupiah(angka) { 
+            let num = parseFloat(angka) || 0;
+            return "Rp " + Math.ceil(num).toLocaleString("id-ID"); 
+        }
+
+        // Pemanggil API Utama OTPCepat via Cloudflare Worker Baru
+        async function apiOtpCepat(action, params = {}) {
+            const token = localStorage.getItem("otp_key_otpcepat");
+            const proxyPribadi = localStorage.getItem("proxy_url_otpcepat") || "https://otpcepat.tiktiksatu001.workers.dev";
+            
+            if (!token) throw new Error("API Key belum disetting.");
+            if (!proxyPribadi) throw new Error("Proxy Pribadi belum disetting.");
+            
+            let baseUrl = proxyPribadi.trim();
+            let urlObj;
+
+            // Mendukung Worker Direct Query (?api_key=...) maupun Worker tipe ?url=
+            if (baseUrl.includes("?url=") || baseUrl.endsWith("=")) {
+                let target = `https://otpcepat.org/api/handler_api.php?api_key=${encodeURIComponent(token.trim())}&action=${encodeURIComponent(action)}`;
+                for (const [k, v] of Object.entries(params)) {
+                    target += `&${encodeURIComponent(k)}=${encodeURIComponent(v)}`;
+                }
+                target += `&_t=${Date.now()}`;
+                urlObj = baseUrl + encodeURIComponent(target);
+            } else {
+                const u = new URL(baseUrl);
+                u.searchParams.set("api_key", token.trim());
+                u.searchParams.set("action", action);
+                for (const [k, v] of Object.entries(params)) {
+                    u.searchParams.set(k, v);
+                }
+                u.searchParams.set("_t", Date.now());
+                urlObj = u.toString();
+            }
+
+            try {
+                const res = await fetch(urlObj, { headers: { 'Accept': 'application/json' } });
+                const text = await res.text();
+                let parsed = JSON.parse(text);
+
+                if (parsed.status === false || parsed.status === "false") {
+                    throw new Error(parsed.msg || "Permintaan ditolak oleh server OTPCepat.");
+                }
+                return { isJson: true, data: parsed, raw: text };
+            } catch (e) {
+                throw new Error(e.message || "Gagal menyambung ke Worker OTPCepat.");
+            }
+        }
+
+        async function apiOtpCepat_Silent(action, params = {}) {
+            try {
+                return await apiOtpCepat(action, params);
+            } catch (e) {
+                return { isJson: false, data: null, raw: "silent_error", errorMsg: e.message };
+            }
+        }
+
+        // Deteksi otomatis Country ID Indonesia & Daftar Operator dari OTPCepat
+        async function inisialisasiNegaraDanOperator() {
+            try {
+                const resNegara = await apiOtpCepat_Silent('getCountries');
+                if (resNegara.isJson && resNegara.data && Array.isArray(resNegara.data.data)) {
+                    const indo = resNegara.data.data.find(c => 
+                        c.countryName && c.countryName.toLowerCase().includes("indo")
+                    );
+                    if (indo && indo.countryID !== undefined) {
+                        otpcepat_countryId = indo.countryID.toString();
+                    }
+                }
+
+                const resOp = await apiOtpCepat_Silent('getOperators', { country_id: otpcepat_countryId });
+                if (resOp.isJson && resOp.data && Array.isArray(resOp.data.data)) {
+                    const selectOp = document.getElementById("vak_dropdownOperator");
+                    const currentVal = selectOp.value;
+                    let htmlOp = `<option value="random">⚡ Semua Operator (Acak)</option>`;
+                    resOp.data.data.forEach(op => {
+                        if (op && op.toLowerCase() !== "random") {
+                            let label = op.charAt(0).toUpperCase() + op.slice(1);
+                            htmlOp += `<option value="${op}">${label}</option>`;
+                        }
+                    });
+                    selectOp.innerHTML = htmlOp;
+                    if ([...selectOp.options].some(o => o.value === currentVal)) {
+                        selectOp.value = currentVal;
+                    }
+                }
+            } catch (e) {
+                console.log("Inisialisasi negara/operator dilewati:", e);
+            }
+        }
+
+        window.vak_ambilSaldoLive = async function(silent = false) {
+            try {
+                if(!silent) document.getElementById("vak_txtSaldoLive").innerText = "...";
+                
+                const res = silent ? await apiOtpCepat_Silent('getBalance') : await apiOtpCepat('getBalance'); 
+                
+                if (res.isJson && res.data && res.data.data && res.data.data.saldo !== undefined) {
+                    let nominalSaldo = parseFloat(res.data.data.saldo);
+                    document.getElementById("vak_txtSaldoLive").innerText = vak_formatRupiah(nominalSaldo);
+                } else if (!silent) {
+                    throw new Error("Gagal");
+                }
+            } catch(e) { 
+                if(!silent) document.getElementById("vak_txtSaldoLive").innerText = "Error"; 
+            }
+        }
+
+        window.vak_refreshSemuaDataLive = async function() { 
+            document.getElementById("vak_txtSaldoLive").innerText = "...";
+            await inisialisasiNegaraDanOperator();
+            await window.vak_muatProdukLayanan(true); // Flag true agar tidak mereset centang
+            setTimeout(() => { window.vak_ambilSaldoLive(false); }, 800);
+        }
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            const savedKey = localStorage.getItem("otp_key_otpcepat");
+            const savedProxy = localStorage.getItem("proxy_url_otpcepat") || "https://otpcepat.tiktiksatu001.workers.dev";
+            
+            document.getElementById("vak_proxyUrl").value = savedProxy;
+
+            if(savedKey && savedProxy) {
+                document.getElementById("vak_otpKey").value = savedKey;
+                document.getElementById("vak_statusKey").innerText = "✅ Tersambung!"; 
+                document.getElementById("vak_statusKey").style.color = "#50fa7b";
+                window.vak_refreshSemuaDataLive();
+            } else {
+                window.vak_toggleApiKeyDropdown();
+            }
+
+            const orderanLokal = localStorage.getItem("daftar_orderan_otpcepat");
+            if (orderanLokal) { 
+                vak_daftarOrderan = JSON.parse(orderanLokal); 
+                vak_renderUILayout(); 
+            }
+
+            setInterval(window.vak_mesinWaktuTerpusat, 1000);
+            setInterval(window.vak_mesinCekSmsTerpusat, 3000); 
+        });
+
+        window.vak_toggleRiwayatDropdown = function() { const w = document.getElementById("vak_wadahRiwayatDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
+        window.vak_toggleApiKeyDropdown = function() { const w = document.getElementById("vak_wadahApiKeyDropdown"); w.style.display = (w.style.display === "none" || w.style.display === "") ? "block" : "none"; }
+        window.vak_toggleDropdownList = function() { document.getElementById("vak_containerListDropdown").classList.toggle("active"); }
+
+        window.vak_bersihkanAktif = function() {
+            let pindah = false;
+            vak_daftarOrderan.forEach(item => { if (item.status === "received") { item.status = "history_received"; pindah = true; } });
+            if (pindah) { vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); }
+            window.vak_refreshSemuaDataLive(); vak_showToast("Dibersihkan!");
+        }
+
+        window.vak_layananDiubahOlehUser = function() {
+            vak_hargaTercentang = []; 
+            window.vak_muatProdukLayanan(false);
+        }
+
+        // Mencocokkan pilihan dropdown (sh/wa/tg) dengan nama layanan dari API OTPCepat
+        function cocokkanNamaLayanan(serviceName, kodeFilter) {
+            let n = (serviceName || "").toLowerCase();
+            if (kodeFilter === "sh") return n.includes("shopee") || n.includes("shope");
+            if (kodeFilter === "wa") return n.includes("whatsapp") || n.includes("wa ") || n === "wa";
+            if (kodeFilter === "tg") return n.includes("telegram") || n.includes("tele");
+            return n.includes(kodeFilter.toLowerCase());
+        }
+
+        window.vak_muatProdukLayanan = async function(isRefresh = false) {
+            let serviceCode = document.getElementById("vak_dropdownLayanan").value;
+            
+            if (serviceCode !== vak_lastServiceId || !otpcepat_allServicesCache || otpcepat_allServicesCache.length === 0 || isRefresh) {
+                document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data...</span>`;
+                document.getElementById("vak_btnPesanAksi").disabled = true;
+                
+                try {
+                    // Tarik dari getServices (Reguler) dan getSpecialServices (Spesial) secara paralel
+                    const [resReg, resSpec] = await Promise.all([
+                        apiOtpCepat('getServices', { country_id: otpcepat_countryId }),
+                        apiOtpCepat_Silent('getSpecialServices')
+                    ]);
+
+                    let gabungan = [];
+                    if (resReg.isJson && resReg.data && Array.isArray(resReg.data.data)) {
+                        resReg.data.data.forEach(s => {
+                            gabungan.push({
+                                serviceID: s.serviceID.toString(),
+                                serviceName: s.serviceName,
+                                price: parseFloat(s.price) || 0,
+                                tipe: "Reguler"
+                            });
+                        });
+                    }
+                    if (resSpec && resSpec.isJson && resSpec.data && Array.isArray(resSpec.data.data)) {
+                        resSpec.data.data.forEach(s => {
+                            // Hindari duplikat serviceID
+                            if (!gabungan.some(g => g.serviceID === s.serviceID.toString())) {
+                                gabungan.push({
+                                    serviceID: s.serviceID.toString(),
+                                    serviceName: `${s.serviceName} ⭐`,
+                                    price: parseFloat(s.price) || 0,
+                                    tipe: "Spesial"
+                                });
+                            }
+                        });
+                    }
+
+                    otpcepat_allServicesCache = gabungan;
+                    vak_lastServiceId = serviceCode;
+
+                } catch (e) {
+                    document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block; word-wrap:break-word;">🚨 ERROR: ${e.message}</span>`;
+                    document.getElementById("vak_btnPesanAksi").disabled = true;
+                    vak_cachedOffers = [];
+                    return;
+                }
+            }
+
+            // Filter sesuai layanan yang dipilih (Shopee / WA / Telegram)
+            let hasilFilter = otpcepat_allServicesCache.filter(item => cocokkanNamaLayanan(item.serviceName, serviceCode));
+            
+            // Jika tidak ada yang cocok dengan kata kunci, tampilkan semua layanan agar tetap bisa dipakai
+            if (hasilFilter.length === 0 && otpcepat_allServicesCache.length > 0) {
+                hasilFilter = otpcepat_allServicesCache;
+            }
+
+            hasilFilter.sort((a, b) => a.price - b.price);
+            vak_cachedOffers = hasilFilter;
+            
+            window.vak_terapkanFilterOperator();
+        }
+
+        window.vak_terapkanFilterOperator = function() {
+            if (!vak_cachedOffers || vak_cachedOffers.length === 0) {
+                vak_daftarServerTersedia = [];
+                vak_renderDropdownOptions();
+                document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-weight:bold; font-size:13px; margin-right:8px;">Layanan Tidak Ditemukan</span>`;
+                document.getElementById("vak_btnPesanAksi").disabled = true;
+                return;
+            }
+
+            try {
+                let opSelect = document.getElementById("vak_dropdownOperator");
+                let opName = opSelect.options[opSelect.selectedIndex].text.replace("⚡ ", "");
+
+                vak_daftarServerTersedia = vak_cachedOffers.map(offer => {
+                    return { 
+                        id: offer.serviceID, 
+                        opName: opName, 
+                        price: offer.price, 
+                        serviceName: offer.serviceName,
+                        tipe: offer.tipe
+                    };
+                });
+
+                if (vak_modeCentang) {
+                    let availableIds = vak_daftarServerTersedia.map(s => s.id);
+                    vak_hargaTercentang = vak_hargaTercentang.filter(id => availableIds.includes(id));
+                    
+                    if(vak_hargaTercentang.length === 0 && vak_daftarServerTersedia.length > 0) {
+                        vak_hargaTercentang.push(vak_daftarServerTersedia[0].id);
+                    }
+                    vak_renderDropdownOptions();
+                    vak_updateLabelTerpilih();
+                } else {
+                    if (vak_daftarServerTersedia.length > 0) {
+                        let idx = vak_daftarServerTersedia.findIndex(s => s.id === vak_produkTerpilihId);
+                        vak_pilihServerDropdown(idx >= 0 ? idx : 0);
+                    } else {
+                        document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-weight:bold; font-size:13px; margin-right:8px;">Stok Kosong</span>`;
+                        document.getElementById("vak_btnPesanAksi").disabled = true;
+                    }
+                }
+            } catch (error) {
+                console.error("Filter Error:", error);
+                document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-weight:bold; font-size:13px; margin-right:8px;">Filter Gagal</span>`;
+                document.getElementById("vak_btnPesanAksi").disabled = true;
+            }
+        }
+
+        window.vak_toggleModeCentang = function(isChecked) {
+            vak_modeCentang = isChecked;
+            if(isChecked) {
+                if(vak_produkTerpilihId && !vak_hargaTercentang.includes(vak_produkTerpilihId)) {
+                    vak_hargaTercentang = [vak_produkTerpilihId];
+                }
+            }
+            vak_renderDropdownOptions();
+            vak_updateLabelTerpilih();
+        }
+
+        window.vak_toggleCentangHarga = function(index, e) {
+            if(e) e.stopPropagation(); 
+            const srv = vak_daftarServerTersedia[index];
+            const srvId = srv.id;
+            const idx = vak_hargaTercentang.indexOf(srvId);
+            
+            if(idx > -1) { vak_hargaTercentang.splice(idx, 1); } 
+            else { vak_hargaTercentang.push(srvId); }
+            
+            vak_renderDropdownOptions();
+            vak_updateLabelTerpilih();
+        }
+
+        function vak_renderDropdownOptions() {
+            const container = document.getElementById("vak_containerListDropdown");
+            if(vak_daftarServerTersedia.length === 0) { container.innerHTML = `<div style="padding: 12px; text-align: center;">Kosong</div>`; return; }
+            
+            let html = `<div style="padding: 10px 14px; background: #1a1b35; border-bottom: 1px solid #2c2e5c; display: flex; justify-content: space-between; align-items: center; border-radius: 10px 10px 0 0;">
+                <span style="font-size: 11px; font-weight: bold; color: var(--accent-purple);">🎯 Mode Sniper (Multi-ID)</span>
+                <label style="position: relative; display: inline-block; width: 34px; height: 18px; margin: 0;">
+                    <input type="checkbox" style="opacity: 0; width: 0; height: 0;" ${vak_modeCentang ? 'checked' : ''} onchange="vak_toggleModeCentang(this.checked)">
+                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${vak_modeCentang ? '#9d4edd' : '#444'}; border-radius: 34px; transition: .4s;">
+                        <span style="position: absolute; content: ''; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .4s; transform: ${vak_modeCentang ? 'translateX(16px)' : 'translateX(0)'};"></span>
+                    </span>
+                </label>
+            </div>`;
+
+            vak_daftarServerTersedia.forEach((srv, index) => {
+                if (vak_modeCentang) {
+                    let isChecked = vak_hargaTercentang.includes(srv.id);
+                    html += `<div class="dropdown-item-row" onclick="vak_toggleCentangHarga(${index}, event)" style="cursor:pointer; display:flex; align-items:center; gap: 12px; background: ${isChecked ? '#25204d' : 'transparent'};">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} style="pointer-events: none; accent-color: var(--accent-purple); width: 16px; height: 16px; margin: 0;">
+                                <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+                                    <span><span style="color:#fff; font-weight:bold;">${vak_formatRupiah(srv.price)}</span> <span style="font-size:10px; color:#aaa;">(${srv.serviceName})</span></span>
+                                    <span style="color:var(--accent-purple); font-weight:bold;">ID: ${srv.id}</span>
+                                </div>
+                            </div>`;
+                } else {
+                    let sel = (vak_produkTerpilihId === srv.id) ? "selected" : "";
+                    html += `<div class="dropdown-item-row ${sel}" onclick="vak_pilihServerDropdown(${index})">
+                                <span><span style="color:#fff; font-weight:bold;">${vak_formatRupiah(srv.price)}</span> <span style="font-size:10px; color:#aaa;">(${srv.serviceName})</span></span>
+                                <span style="color:var(--accent-cyan); font-weight:bold;">ID: ${srv.id}</span>
+                            </div>`;
+                }
+            });
+            container.innerHTML = html;
+        }
+
+        window.vak_updateLabelTerpilih = function() {
+            if (vak_modeCentang) {
+                if(vak_hargaTercentang.length > 0) {
+                    let chosenObjs = vak_daftarServerTersedia.filter(s => vak_hargaTercentang.includes(s.id));
+                    let text = chosenObjs.length === 1 
+                        ? `${vak_formatRupiah(chosenObjs[0].price)} (${chosenObjs[0].serviceName})` 
+                        : `${chosenObjs.length} Tier Dipilih`;
+                    document.getElementById("vak_labelServerTerpilih").innerHTML = `
+                        <span style="color:var(--accent-purple); font-weight:bold; font-size:13px; margin-right:8px;">🎯 Target: ${text}</span>
+                    `;
+                    document.getElementById("vak_btnPesanAksi").disabled = false;
+                } else {
+                    document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-weight:bold; font-size:13px; margin-right:8px;">Pilih minimal 1 tier</span>`;
+                    document.getElementById("vak_btnPesanAksi").disabled = true;
+                }
+            } else {
+                const srv = vak_daftarServerTersedia.find(s => s.id === vak_produkTerpilihId) || vak_daftarServerTersedia[0];
+                if(srv) {
+                    document.getElementById("vak_labelServerTerpilih").innerHTML = `
+                        <span style="color:var(--accent-cyan); font-weight:bold; font-size:14px; margin-right:8px;">${vak_formatRupiah(srv.price)}</span>
+                        <span style="font-size:11px; color:#8b8da9;">${srv.serviceName} (ID:${srv.id})</span>
+                    `;
+                    document.getElementById("vak_btnPesanAksi").disabled = false; 
+                }
+            }
+        }
+
+        window.vak_pilihServerDropdown = function(index) {
+            const srv = vak_daftarServerTersedia[index];
+            if(srv) {
+                vak_produkTerpilihId = srv.id; 
+                vak_namaProdukTerpilih = `${srv.serviceName} (${srv.opName})`;
+                vak_hargaProdukTerpilih = srv.price; 
+                
+                vak_updateLabelTerpilih();
+                document.getElementById("vak_containerListDropdown").classList.remove("active");
+                vak_renderDropdownOptions();
+            }
+        }
+
+        window.vak_eksekusiBeliTerpilih = async function() {
+            const btn = document.getElementById("vak_btnPesanAksi"); 
+            const teksAsli = btn.innerHTML;
+            btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
+            
+            // Batalkan orderan pending sebelumnya otomatis (status=2 adalah Cancel di OTPCepat)
+            vak_daftarOrderan.forEach(item => {
+                if (item.status === "pending") {
+                    item.status = "cancelled";
+                    apiOtpCepat_Silent('set_status', { order_id: item.order_id, status: 2 });
+                }
+            });
+            vak_renderUILayout();
+            vak_simpanDaftarOrderanKeLokal();
+            
+            try {
+                let opId = document.getElementById("vak_dropdownOperator").value || "random";
+                let targetServiceIds = vak_modeCentang ? vak_hargaTercentang : [vak_produkTerpilihId];
+                if (!targetServiceIds || targetServiceIds.length === 0) throw new Error("Pilih layanan terlebih dahulu.");
+
+                let finalOrder = null;
+                let isRecycled = false;
+
+                for (let i = 0; i < targetServiceIds.length; i++) {
+                    if (finalOrder) break; 
+
+                    let currentSrvId = targetServiceIds[i];
+                    let srvObj = vak_daftarServerTersedia.find(s => s.id === currentSrvId);
+                    let maxRetries = vak_modeCentang ? 2 : 3; 
+                    let attempt = 0;
+
+                    while (attempt < maxRetries) {
+                        attempt++;
+                        if (vak_modeCentang) {
+                            btn.innerHTML = `🎯 TARGET ID:${currentSrvId} (${attempt}/${maxRetries})...`;
+                        } else if (attempt > 1) {
+                            btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
+                        }
+                        
+                        try {
+                            const responseData = await apiOtpCepat('get_order', {
+                                operator_id: opId,
+                                service_id: currentSrvId,
+                                country_id: otpcepat_countryId
+                            });
+                            
+                            let orderData = responseData.data.data;
+                            let pPhone = orderData ? orderData.number : null; 
+                            let pId = orderData ? orderData.order_id : null;
+                            let pCost = (orderData && orderData.price !== undefined) ? orderData.price : (srvObj ? srvObj.price : vak_hargaProdukTerpilih);
+                            
+                            if (responseData.isJson && pPhone && pId) {
+                                let phoneStr = pPhone.toString();
+                                let actIdStr = pId.toString();
+                                
+                                const dbRef = ref(db);
+                                const snapshot = await get(child(dbRef, `blocklist_otpcepat/${phoneStr}`));
+
+                                if (snapshot.exists() && ((Date.now() - snapshot.val().timestamp) / 3600000) < 24) {
+                                    btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
+                                    await apiOtpCepat_Silent('set_status', { order_id: actIdStr, status: 2 }); 
+                                    window.vak_ambilSaldoLive(true); 
+                                    await new Promise(r => setTimeout(r, 1500)); 
+                                    continue; 
+                                } else {
+                                    finalOrder = { 
+                                        phone: phoneStr, 
+                                        id: actIdStr, 
+                                        cost: parseFloat(pCost),
+                                        srvName: srvObj ? `${srvObj.serviceName} (${srvObj.opName})` : vak_namaProdukTerpilih
+                                    }; 
+                                    break; 
+                                }
+                            } else {
+                                throw new Error("Gagal mendapatkan nomor");
+                            }
+                        } catch (apiErr) {
+                            if (apiErr.message.includes("NO BALANCE")) {
+                                throw new Error("Saldo OTPCepat tidak mencukupi (NO BALANCE).");
+                            }
+                            await new Promise(r => setTimeout(r, 1000));
+                        }
+                    }
+                }
+
+                if (finalOrder) {
+                    vak_daftarOrderan.unshift({ 
+                        order_id: finalOrder.id, 
+                        phone: finalOrder.phone, 
+                        layanan: finalOrder.srvName, 
+                        harga: finalOrder.cost, 
+                        waktu_dibuat: Date.now(), 
+                        waktu_dibuat_asli: Date.now(), 
+                        status: "pending", 
+                        otp: "", 
+                        is_recycled: isRecycled, 
+                        otp_count: 1 
+                    });
+                    vak_renderUILayout(); 
+                    vak_simpanDaftarOrderanKeLokal(); 
+                    window.vak_ambilSaldoLive(true);
+                } else { 
+                    alert("Gagal mendapatkan nomor. Stok mungkin sedang kosong pada layanan/operator yang dipilih."); 
+                }
+            } catch (e) { 
+                alert("Gagal order: " + e.message); 
+            } finally { 
+                btn.disabled = false; 
+                btn.innerHTML = teksAsli; 
+            }
+        }
+
+        window.vak_simpanKonfigurasi = function() {
+            const key = document.getElementById("vak_otpKey").value.trim();
+            const proxy = document.getElementById("vak_proxyUrl").value.trim();
+            if(!key || !proxy) return alert("API Key dan Link Proxy Pribadi wajib diisi!");
+            
+            localStorage.setItem("otp_key_otpcepat", key);
+            localStorage.setItem("proxy_url_otpcepat", proxy);
+            
+            document.getElementById("vak_statusKey").innerText = "✅ Tersimpan! Memuat data...";
+            document.getElementById("vak_statusKey").style.color = "#50fa7b";
+            window.vak_refreshSemuaDataLive(); 
+            window.vak_toggleApiKeyDropdown();
+        }
+
+        // Di OTPCepat: status 2 = Cancel, 3 = Resend SMS, 4 = Finish
+        window.vak_eksekusiBatalkanServer = async function(index) {
+            const item = vak_daftarOrderan[index];
+            try { 
+                await apiOtpCepat('set_status', { order_id: item.order_id, status: 2 }); 
+                item.status = "cancelled"; 
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Dibatalkan & Saldo Kembali!"); 
+                window.vak_ambilSaldoLive(true);
+            } catch (e) { alert("Gagal membatalkan: " + e.message); }
+        }
+        
+        window.vak_blokirManual = async function(index) {
+            const item = vak_daftarOrderan[index];
+            if (!confirm(`Batalkan & Blokir nomor ${item.phone} dari panel OTPCepat?`)) return;
+            try {
+                set(ref(db, 'blocklist_otpcepat/' + item.phone), { timestamp: Date.now() }).catch(err => console.log(err));
+                await apiOtpCepat('set_status', { order_id: item.order_id, status: 2 });
+                item.status = "cancelled"; 
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); vak_showToast("Nomor di-BAN & Saldo Kembali!"); 
+                window.vak_ambilSaldoLive(true);
+            } catch (e) { alert("Gagal memblokir: " + e.message); }
+        }
+
+        window.vak_eksekusiResend = async function(index) {
+            const item = vak_daftarOrderan[index];
+            try { 
+                await apiOtpCepat('set_status', { order_id: item.order_id, status: 3 }); 
+                
+                item.status = "pending";
+                item.otp = ""; 
+                item.otp_count = (item.otp_count || 1) + 1; 
+                
+                if (!item.waktu_dibuat_asli) item.waktu_dibuat_asli = item.waktu_dibuat;
+                item.waktu_dibuat = Date.now(); 
+                
+                vak_renderUILayout(); 
+                vak_simpanDaftarOrderanKeLokal();
+                vak_showToast("Menunggu OTP Ke-" + item.otp_count + "!"); 
+            } catch (e) {
+                alert("Gagal kirim ulang: " + e.message);
+            }
+        }
+        
+        window.vak_eksekusiSelesai = async function(index) {
+            const item = vak_daftarOrderan[index];
+            try { 
+                await apiOtpCepat_Silent('set_status', { order_id: item.order_id, status: 4 }); 
+                item.status = "completed"; 
+                vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); window.vak_ambilSaldoLive(true); vak_showToast("Selesai!"); 
+            } catch(err) { console.log(err); }
+        }
+
+        // Mengekstrak angka kode OTP atau teks SMS dari respon get_status OTPCepat
+        function ekstrakKodeOtp(teksSms) {
+            if (!teksSms) return "";
+            let match = teksSms.toString().match(/\b\d{4,8}\b/);
+            return match ? match[0] : teksSms.toString();
+        }
+
+        window.vak_mesinCekSmsTerpusat = async function() {
+            vak_siklusCek++; 
+            let sudahCekSatuOrderan = false; 
+            
+            for (let index = 0; index < vak_daftarOrderan.length; index++) {
+                let i = vak_daftarOrderan[index];
+                if (i.status !== "pending") continue; 
+                
+                if (sudahCekSatuOrderan) continue;
+                sudahCekSatuOrderan = true;
+                
+                try {
+                    // 1. Cek jika ada webhook di Firebase khusus OTPCepat
+                    const dbRef = ref(db);
+                    const snapshot = await get(child(dbRef, `otpcepat_otp/${i.order_id}`));
+                    
+                    if (snapshot.exists()) {
+                        const fbData = snapshot.val();
+                        if (fbData && fbData.otp) {
+                            i.status = "received"; 
+                            i.otp = fbData.otp; 
+                            
+                            set(ref(db, 'blocklist_otpcepat/' + i.phone), { timestamp: Date.now() }).catch(err => console.log(err));
+                            vak_putarSuaraNotifKeras(); 
+                            vak_munculkanPopupNative(i.phone, i.otp, i.layanan); 
+                            vak_renderUILayout(); 
+                            vak_simpanDaftarOrderanKeLokal();
+                            window.vak_ambilSaldoLive(true); 
+                            
+                            remove(child(dbRef, `otpcepat_otp/${i.order_id}`));
+                            continue;
+                        }
+                    }
+
+                    // 2. Polling langsung ke endpoint get_status OTPCepat
+                    const resStatus = await apiOtpCepat_Silent('get_status', { order_id: i.order_id });
+                    if (resStatus.isJson && resStatus.data && resStatus.data.data) {
+                        const d = resStatus.data.data;
+                        const st = (d.status || "").toLowerCase();
+                        const rawSms = (d.sms || "").trim();
+
+                        if ((st === "recieved" || st === "received" || st === "done") && rawSms !== "" && rawSms !== "text_sms") {
+                            let kodeBersih = ekstrakKodeOtp(rawSms);
+                            i.status = "received";
+                            i.otp = kodeBersih;
+
+                            set(ref(db, 'blocklist_otpcepat/' + i.phone), { timestamp: Date.now() }).catch(err => console.log(err));
+                            vak_putarSuaraNotifKeras();
+                            vak_munculkanPopupNative(i.phone, i.otp, i.layanan);
+                            vak_renderUILayout();
+                            vak_simpanDaftarOrderanKeLokal();
+                            window.vak_ambilSaldoLive(true);
+                        } else if (st === "cancel" || st === "cancelled") {
+                            i.status = "cancelled";
+                            vak_renderUILayout();
+                            vak_simpanDaftarOrderanKeLokal();
+                            window.vak_ambilSaldoLive(true);
+                        }
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function vak_renderUILayout() {
+            const containerAktif = document.getElementById("vak_containerListOrder");
+            const containerRiwayat = document.getElementById("vak_containerRiwayat");
+            let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
+
+            vak_daftarOrderan.forEach((item, index) => {
+                item.otp_count = item.otp_count || 1; 
+
+                if (!item.waktu_dibuat_asli) item.waktu_dibuat_asli = item.waktu_dibuat;
+
+                let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
+                let secAsli = Math.floor((Date.now() - item.waktu_dibuat_asli) / 1000);
+
+                let isResend = item.otp_count > 1;
+                let limitDetik = isResend ? 1200 : 300;
+                let waktuBerjalan = isResend ? secAsli : sec;
+
+                if (item.status === "pending" && waktuBerjalan >= limitDetik) { 
+                    item.status = "cancelled"; 
+                    apiOtpCepat_Silent('set_status', { order_id: item.order_id, status: 2 });
+                    window.vak_ambilSaldoLive(true); 
+                }
+                if (item.status === "cancelled") return; 
+
+                let d = new Date(item.waktu_dibuat_asli);
+                let timeStr = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + " " + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
+                let labelWarning = item.is_recycled ? `<span style="color:#ff5555; font-size:9px; border:1px solid #ff5555; padding:2px 4px; border-radius:4px; margin-left:4px;">⚠️ Pernah Dipakai</span>` : "";
+                
+                let labelOtpKe = item.otp_count > 1 ? `<span style="background:#4a3c8c; color:#fff; font-size:8px; padding:1px 4px; border-radius:4px; margin-left:5px;">Ke-${item.otp_count}</span>` : '';
+
+                if (item.status === "completed" || item.status === "history_received") {
+                    let btnKirimUlang = item.status === "history_received" ? `<div style="margin-top:10px; display:flex; gap:6px;"><button onclick="vak_eksekusiResend(${index})" class="btn-action-half btn-resend">Kirim Ulang</button><button onclick="vak_eksekusiSelesai(${index})" class="btn-action-half btn-selesai">Tutup</button></div>` : "";
+                    let teksHargaHistory = item.harga ? vak_formatRupiah(item.harga) : '-';
+                    htmlRiwayat += `
+                    <div class="history-card">
+                        <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;"><span>${item.layanan} ${labelWarning} • ${teksHargaHistory}</span><span>⏱️ ${timeStr}</span></div>
+                        <div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:14px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="vak_salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>
+                        <div class="box-copy-statik otp-masuk" style="margin-top:6px;"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold; display:flex; align-items:center;">Kode OTP: ${labelOtpKe}</div><div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div></div><button onclick="vak_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button></div>
+                        ${btnKirimUlang}
+                    </div>`; countRiwayat++; return;
+                }
+
+                countAktif++; 
+                
+                let sisa = Math.max(0, limitDetik - waktuBerjalan); 
+                let cool = Math.max(0, 120 - sec); 
+                let sisaMax = Math.max(0, 1200 - secAsli); 
+                if (item.layanan.includes("WhatsApp") || item.layanan.includes("WA")) { cool = 0; }
+
+                let textStat = item.otp_count > 1 ? `⚡ Cek Ke-${item.otp_count}... (${sec}s)` : `⚡ Cek OTP... (${sec}s)`; 
+                let colStat = "#ffb86c"; let btnAksi = ""; let kotakOtp = "";
+                let labelSalin = countAktif === 1 ? "Salin" : `Salin (Antrian ${countAktif})`; let classSalin = countAktif === 1 ? "btn-copy-static" : "btn-copy-static btn-copy-queue";
+                
+                let btnBlokirManual = (item.status === "pending" && item.otp_count === 1) ? `<button onclick="vak_blokirManual(${index})" style="background:#ff9800; color:#000; border:none; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold; cursor:pointer;" title="Blokir & Batal"><i class="fa-solid fa-ban"></i> Blokir</button>` : "";
+                
+                let badgeMaxTime = !isResend ? `<span style="background:#25204d; border:1px solid #4a3c8c; color:#e0aaff; padding:2px 5px; border-radius:4px; font-size:9px; margin-left:6px; font-weight:bold;" title="Waktu Maksimal OTPCepat"><i class="fa-solid fa-clock"></i> ${Math.floor(sisaMax/60)}m ${(sisaMax%60).toString().padStart(2, '0')}s</span>` : "";
+
+                let teksHargaAsli = item.harga ? vak_formatRupiah(item.harga) : '-';
+                let badgeHargaAsli = `<div style="font-size:10px; font-weight:bold; color:var(--accent-cyan); background:#1d203f; padding:3px 7px; border-radius:5px; border:1px solid #3d3f7a;" title="Harga Asli">💰 ${teksHargaAsli}</div>`;
+
+                if (item.status === "received") { 
+                    textStat = `🎉 Menunggu Tindakan (Aktif)`; colStat = "#50fa7b"; 
+                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold; display:flex; align-items:center;">KodeOTP: ${labelOtpKe}</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="vak_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
+                    btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="vak_eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button><button onclick="vak_eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button></div>`;
+                } else if (item.status === "pending") {
+                    if (item.otp_count > 1) {
+                        btnAksi = `<button class="btn-batal" disabled style="background:#444; cursor:not-allowed;">🔒 Tidak Bisa Batal (Kirim Ulang)</button>`;
+                    } else {
+                        btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="vak_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
+                    }
+                }
+                
+                htmlAktif += `<div class="card-order"><div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:5px;"><span style="display:flex; align-items:center;">${item.layanan} ${labelWarning} ${btnBlokirManual} ${badgeMaxTime}</span><span>⏱️ ${Math.floor(sisa/60)}m ${sisa%60}s</span></div><div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:15px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="vak_salinTeksToast('${item.phone}')" class="${classSalin}"><i class="fa-regular fa-copy"></i> ${labelSalin}</button></div>${kotakOtp}<div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;"><div style="font-size:11px; font-weight:600; color:${colStat};">${textStat}</div>${badgeHargaAsli}</div>${btnAksi}</div>`;
+            });
+
+            containerAktif.innerHTML = countAktif > 0 ? htmlAktif : `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada pesanan aktif.</div>`;
+            containerRiwayat.innerHTML = countRiwayat > 0 ? htmlRiwayat : `<div style="text-align: center; padding: 15px 10px; color: #6272a4; font-style: italic; font-size: 11px;">Belum ada riwayat sukses.</div>`;
+            document.getElementById("vak_countRiwayatBadge").innerText = countRiwayat;
+        }
+
+        function vak_simpanDaftarOrderanKeLokal() { localStorage.setItem("daftar_orderan_otpcepat", JSON.stringify(vak_daftarOrderan)); }
+        window.vak_hapusSemuaRiwayatBawah = function() { vak_daftarOrderan = vak_daftarOrderan.filter(i => i.status !== "completed" && i.status !== "history_received"); vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); }
+        window.vak_mesinWaktuTerpusat = function() { if (vak_daftarOrderan.some(i => i.status === "pending" || i.status === "received")) vak_renderUILayout(); }
+        
+        window.vak_showToast = function(m) { const t = document.getElementById('vak_toastNotif'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
+        window.vak_salinTeksToast = function(txt) { navigator.clipboard.writeText(txt); vak_showToast("Disalin!"); }
+
+        window.vak_putarSuaraNotifKeras = function() {
+            try { 
+                const AudioContext = window.AudioContext || window.webkitAudioContext; 
+                if (!AudioContext) return;
+                const ctx = new AudioContext(); 
+                const now = ctx.currentTime; 
+
+                function putarNadaKeras(freq, tipe, mulai, durasi, panAwal, panAkhir, volMaks) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = tipe;
+                    osc.frequency.setValueAtTime(freq, mulai);
+
+                    gain.gain.setValueAtTime(0, mulai);
+                    gain.gain.linearRampToValueAtTime(volMaks, mulai + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.01, mulai + durasi);
+
+                    if (ctx.createStereoPanner) {
+                        const panner = ctx.createStereoPanner();
+                        panner.pan.setValueAtTime(panAwal, mulai);
+                        if (panAwal !== panAkhir) {
+                            panner.pan.linearRampToValueAtTime(panAkhir, mulai + durasi);
+                        }
+                        osc.connect(gain).connect(panner).connect(ctx.destination);
+                    } else {
+                        osc.connect(gain).connect(ctx.destination);
+                    }
+
+                    osc.start(mulai);
+                    osc.stop(mulai + durasi);
+                }
+
+                putarNadaKeras(1046.50, 'square', now, 0.2, -1, -1, 1.2); 
+                putarNadaKeras(1318.51, 'square', now + 0.1, 0.2, 1, 1, 1.2); 
+                putarNadaKeras(1567.98, 'square', now + 0.2, 0.2, -1, -1, 1.2); 
+                
+                putarNadaKeras(2093.00, 'sawtooth', now + 0.3, 0.8, 1, -1, 0.8); 
+                putarNadaKeras(1046.50, 'square', now + 0.3, 1.0, -1, 1, 1.0); 
+
+            } catch (e) { console.log(e); }
+        }
+
+        window.vak_munculkanPopupNative = function(nomor, otp, layanan) {
+            if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+                cordova.plugins.notification.local.schedule({ id: Math.floor(Date.now() / 1000), title: `🎉 OTP MASUK (${layanan})`, text: `KODE OTP: ${otp}  (No: ${nomor})`, foreground: true, vibrate: true, priority: 2, wakeup: true });
+            } 
+        }
+    </script>
+</body>
+</html>
