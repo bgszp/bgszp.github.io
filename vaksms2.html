@@ -82,9 +82,8 @@
                 <select id="vak_dropdownOperator" class="unified-select-op" onchange="vak_terapkanFilterOperator()" style="color: #ffb86c;">
                     <option value="any" selected>⚡ Semua Operator (Acak)</option>
                     <option value="telkomsel">Telkomsel</option>
-                    <option value="indosat">Indosat</option>
-                    <option value="im3ooredoo">IM3 Ooredoo</option>
-                    <option value="xlAxiata">XL / Axis</option>
+                    <option value="indosat">Indosat / IM3</option>
+                    <option value="xl">XL Axiata</option>
                     <option value="axis">Axis</option>
                     <option value="three">Three (Tri)</option>
                     <option value="smartfren">Smartfren</option>
@@ -128,8 +127,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Bug "Reset Centang Saat Refresh/Bersihkan" Diperbaiki.<br>
-            └> Pilihan Sniper Aman Tersimpan.
+            └> Double-Layer Operator Filter (API + Prefix HLR).<br>
+            └> Auto-Reject jika server memberi operator nyasar.
         </div>
     </div>
     
@@ -164,7 +163,29 @@
         let vak_hargaProdukTerpilih = 0; 
         let vak_siklusCek = 0;
         let vak_modeCentang = false;
-        let vak_hargaTercentang = []; // Array untuk menyimpan harga yang dicentang
+        let vak_hargaTercentang = [];
+
+        // --- DATABASE PREFIX HLR OPERATOR INDONESIA ---
+        const PREFIX_OPERATOR = {
+            telkomsel: ['62811', '62812', '62813', '62821', '62822', '62823', '62851', '62852', '62853'],
+            indosat:   ['62814', '62815', '62816', '62855', '62856', '62857', '62858'],
+            xl:        ['62817', '62818', '62819', '62859', '62877', '62878', '62879'],
+            axis:      ['62831', '62832', '62833', '62838'],
+            three:     ['62895', '62896', '62897', '62898', '62899'],
+            smartfren: ['62881', '62882', '62883', '62884', '62885', '62886', '62887', '62888', '62889']
+        };
+
+        // Fungsi Validasi kesesuaian nomor dengan operator yang dipilih
+        function vak_cekKesesuaianPrefix(nomorHP, opId) {
+            if (opId === "any" || !PREFIX_OPERATOR[opId]) return true;
+            let cleanNum = nomorHP.toString().replace(/\D/g, '');
+            if (cleanNum.startsWith('08')) {
+                cleanNum = '628' + cleanNum.substring(2);
+            } else if (cleanNum.startsWith('8')) {
+                cleanNum = '628' + cleanNum.substring(1);
+            }
+            return PREFIX_OPERATOR[opId].some(prefix => cleanNum.startsWith(prefix));
+        }
 
         function vak_formatRupiah(angka) { return "Rp " + Math.ceil(angka).toLocaleString("id-ID"); }
 
@@ -236,7 +257,7 @@
 
         window.vak_refreshSemuaDataLive = async function() { 
             document.getElementById("vak_txtSaldoLive").innerText = "...";
-            await window.vak_muatProdukLayanan(true); // Kirim flag "true" agar tidak mereset centang
+            await window.vak_muatProdukLayanan(true);
             setTimeout(() => { window.vak_ambilSaldoLive(false); }, 1500);
         }
 
@@ -272,9 +293,8 @@
             window.vak_refreshSemuaDataLive(); vak_showToast("Dibersihkan!");
         }
 
-        // Fungsi khusus saat *user* secara sadar mengubah Dropdown Layanan (Shopee -> Telegram, dll)
         window.vak_layananDiubahOlehUser = function() {
-            vak_hargaTercentang = []; // HANYA RESET CENTANG DI SINI
+            vak_hargaTercentang = []; 
             window.vak_muatProdukLayanan(false);
         }
 
@@ -334,7 +354,6 @@
                 });
 
                 if (vak_modeCentang) {
-                    // Validasi: Pertahankan harga yang dicentang asalkan harganya masih ada di daftar terbaru
                     let availablePrices = vak_daftarServerTersedia.map(s => s.price);
                     vak_hargaTercentang = vak_hargaTercentang.filter(p => availablePrices.includes(p));
                     
@@ -345,7 +364,8 @@
                     vak_updateLabelTerpilih();
                 } else {
                     if (vak_daftarServerTersedia.length > 0) {
-                        vak_pilihServerDropdown(0);
+                        let currentIdx = vak_daftarServerTersedia.findIndex(s => s.id === vak_produkTerpilihId);
+                        vak_pilihServerDropdown(currentIdx >= 0 ? currentIdx : 0);
                     } else {
                         document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-weight:bold; font-size:13px; margin-right:8px;">Stok Kosong</span>`;
                         document.getElementById("vak_btnPesanAksi").disabled = true;
@@ -472,6 +492,9 @@
             try {
                 let serviceId = document.getElementById("vak_dropdownLayanan").value;
                 let opId = document.getElementById("vak_dropdownOperator").value;
+                let elemNamaSrv = document.getElementById("vak_dropdownLayanan").options[document.getElementById("vak_dropdownLayanan").selectedIndex].text.split(' ')[0];
+                let opLabel = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
+                vak_namaProdukTerpilih = `${elemNamaSrv} (${opLabel})`;
                 
                 let targetPrices = vak_modeCentang ? vak_hargaTercentang : [vak_hargaProdukTerpilih];
                 if (targetPrices.length === 0) throw new Error("Pilih harga terlebih dahulu.");
@@ -483,13 +506,14 @@
                     if (finalOrder) break; 
 
                     let currentPriceTarget = targetPrices[i];
-                    let maxRetries = vak_modeCentang ? 2 : 3; 
+                    // Jika memilih operator spesifik, beri kesempatan retry lebih banyak (4x) untuk menyaring prefix
+                    let maxRetries = (opId !== "any") ? 4 : (vak_modeCentang ? 2 : 3); 
                     let attempt = 0;
 
                     while (attempt < maxRetries) {
                         attempt++;
                         if (vak_modeCentang) {
-                            btn.innerHTML = `🎯 TARGET ($${currentPriceTarget})...`;
+                            btn.innerHTML = `🎯 TARGET ($${currentPriceTarget}) [${attempt}/${maxRetries}]...`;
                         } else {
                             if (attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                         }
@@ -518,6 +542,15 @@
                                 let phoneStr = pPhone.toString();
                                 let actIdStr = pId.toString();
                                 
+                                // 1. VALIDASI PREFIX HLR OPERATOR LOKAL
+                                if (!vak_cekKesesuaianPrefix(phoneStr, opId)) {
+                                    btn.innerHTML = `⚠️ BUKAN ${opLabel.toUpperCase()}! GANTI...`;
+                                    await apiVakSmsV2_Silent('setStatus', { idNum: actIdStr, status: 'bad' });
+                                    await new Promise(r => setTimeout(r, 1200));
+                                    continue;
+                                }
+
+                                // 2. VALIDASI BLOCKLIST FIREBASE (24 JAM)
                                 const dbRef = ref(db);
                                 const snapshot = await get(child(dbRef, `blocklist/${phoneStr}`));
 
@@ -525,7 +558,7 @@
                                     btn.innerHTML = `⚠️ NOMOR BEKAS! GANTI...`;
                                     await apiVakSmsV2_Silent('setStatus', { idNum: actIdStr, status: 'bad' }); 
                                     window.vak_ambilSaldoLive(true); 
-                                    await new Promise(r => setTimeout(r, 1500)); 
+                                    await new Promise(r => setTimeout(r, 1200)); 
                                     continue; 
                                 } else {
                                     finalOrder = { phone: phoneStr, id: actIdStr, cost: parseFloat(pCost) }; 
@@ -549,7 +582,9 @@
                     });
                     vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); 
                     window.vak_ambilSaldoLive(true);
-                } else { alert("Gagal mendapatkan nomor. Stok mungkin kosong atau error pada harga yang dipilih."); }
+                } else { 
+                    alert(`Gagal mendapatkan nomor ${opLabel} yang sesuai pada tier harga tersebut. Silakan coba lagi atau pilih tier lain.`); 
+                }
             } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
         }
 
