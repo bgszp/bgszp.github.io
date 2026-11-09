@@ -441,7 +441,6 @@
                 brandName: 'VIVO',
                 tac: '86365805',
                 tacList: ['86365805', '86931506'],
-                // OUI Resmi Vivo Mobile Communication Co., Ltd.
                 oui: ['08fa79', '0c6046', '10bc97', 'b40fb3', 'cc812a', 'd4ecab'],
                 snInfo: '12 Karakter (VIVO)',
                 snPrefix: ['10A', '88B', 'V24', '62C'],
@@ -482,7 +481,6 @@
                 brandName: 'HONOR',
                 tac: '86095606',
                 tacList: ['86095606', '86274106'],
-                // OUI Resmi Honor Device Co., Ltd.
                 oui: ['90ffd6', '98bedc', '9c0567', 'a06974', 'c0280b', '0cb789'],
                 snInfo: '16 Karakter (HONOR)',
                 isHonorSn: true,
@@ -803,6 +801,7 @@
             }, 900);
         }
 
+        // Generator MAC: 6 Digit OUI Resmi + 6 Digit Belakang Acak Penuh (000000 - ffffff)
         function generateFreshMacString() {
             const hexChars = '0123456789abcdef';
             const evenHex = '02468ace';
@@ -822,17 +821,6 @@
                 nicTail += hexChars.charAt(Math.floor(Math.random() * 16));
             }
             return char1 + char2 + char3to6 + nicTail;
-        }
-
-        function generatePairedMacString(baseMac12) {
-            const hexChars = '0123456789abcdef';
-            const prefix10 = baseMac12.substring(0, 10);
-            const origLast2 = baseMac12.substring(10, 12);
-            let newLast2 = '';
-            do {
-                newLast2 = hexChars.charAt(Math.floor(Math.random() * 16)) + hexChars.charAt(Math.floor(Math.random() * 16));
-            } while (newLast2 === origLast2);
-            return prefix10 + newLast2;
         }
 
         function generateMsinString() {
@@ -923,11 +911,9 @@
 
         function generateFullProfileSet() {
             createNewSessionId();
-            const wifiMac = getUniqueRandom(generateFreshMacString);
-            const gsmBtMac = getUniqueRandom(() => generatePairedMacString(wifiMac));
-
-            document.getElementById('macOutput').value = wifiMac;
-            document.getElementById('macGsmOutput').value = gsmBtMac;
+            // Masing-masing MAC (GSM & Wi-Fi) sekarang diacak penuh 6 digit belakangnya secara mandiri
+            document.getElementById('macGsmOutput').value = getUniqueRandom(generateFreshMacString);
+            document.getElementById('macOutput').value = getUniqueRandom(generateFreshMacString);
             document.getElementById('msinOutput').value = getUniqueRandom(generateMsinString);
             document.getElementById('imeiOutput').value = getUniqueRandom(generateImeiString);
             document.getElementById('snOutput').value = getUniqueRandom(generateSnString);
@@ -948,15 +934,8 @@
 
         function handleMAC(inputId, btnId, btnText, fieldKey) {
             checkSessionCycle(fieldKey);
-            const otherId = inputId === 'macOutput' ? 'macGsmOutput' : 'macOutput';
-            const otherVal = document.getElementById(otherId).value;
-
-            let mac;
-            if (otherVal && otherVal.length === 12 && currentOuiList.includes(otherVal.substring(0, 6))) {
-                mac = getUniqueRandom(() => generatePairedMacString(otherVal));
-            } else {
-                mac = getUniqueRandom(generateFreshMacString);
-            }
+            // Langsung mengacak penuh 6 digit OUI + 6 digit belakang setiap kali diklik
+            const mac = getUniqueRandom(generateFreshMacString);
 
             document.getElementById(inputId).value = mac;
             copyToClipboard(inputId, btnId, btnText);
