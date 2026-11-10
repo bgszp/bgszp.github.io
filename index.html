@@ -93,9 +93,16 @@
         .row-copas-alarm.alarm-nyala::before { content: ''; position: absolute; z-index: -2; left: -50%; top: -50%; width: 200%; height: 200%; background: conic-gradient(transparent, #ff007f, #00ffcc, transparent 30%); animation: putarGlow 2s linear infinite; }
         .row-copas-alarm.alarm-nyala::after { content: ''; position: absolute; z-index: -1; inset: 2px; background: #141026; border-radius: 6px; }
         
-        .publik-nyala { border-color: transparent; box-shadow: 0 0 12px rgba(0, 255, 204, 0.5); }
-        .publik-nyala::before { content: ''; position: absolute; z-index: -2; left: -50%; top: -50%; width: 200%; height: 200%; background: conic-gradient(transparent, #00ffcc, #00b4db, transparent 30%); animation: putarGlow 2s linear infinite; }
-        .publik-nyala::after { content: ''; position: absolute; z-index: -1; inset: 2px; background: #141026; border-radius: 6px; }
+        /* Animasi Ringan (Pulse Border-Color) untuk Catatan Publik */
+        .publik-nyala { 
+            border-color: #00ffcc; 
+            animation: kedipPublik 1.8s ease-in-out infinite; 
+        }
+
+        @keyframes kedipPublik {
+            0%, 100% { border-color: #00ffcc; box-shadow: 0 0 8px rgba(0, 255, 204, 0.35); }
+            50% { border-color: #3d3463; box-shadow: none; }
+        }
 
         @keyframes putarGlow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
@@ -121,9 +128,9 @@
             <span id="badge-status-ip" style="font-size: 9px; font-family: monospace; font-weight: bold; letter-spacing: 0.3px;"></span>
         </div>
 
-        <!-- TAMPILAN IP & PING JARINGAN (KANAN ATAS) -->
-        <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk ganti target ping (Cloudflare / Ipify)" style="position: absolute; right: 0; top: -22px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
-            <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP & Ping...
+        <!-- TAMPILAN IP JARINGAN (KANAN ATAS - PING DINONAKTIFKAN) -->
+        <div id="teks-ip-jaringan" onclick="gantiTargetPing()" title="Klik untuk memuat ulang (Refresh) IP" style="position: absolute; right: 0; top: -22px; font-size: 11px; font-family: monospace; color: #00ffcc; font-weight: bold; letter-spacing: 0.5px; z-index: 5; white-space: nowrap; cursor: pointer; user-select: none;">
+            <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px;"></i> Memuat IP...
         </div>
 
         <div class="pemicu-menu-utama" onclick="togglePanel('wadahOTP1', 'panahSrv1')" style="flex: 1; padding: 8px 0; justify-content: center; font-size: 11px;">
@@ -470,15 +477,13 @@
         setInterval(cekAlarmCopas, 5000);
 
         let currentIP = "Memuat IP...";
-        let lastPing = 0;
-        let lastLabelTarget = "CF";
-        let modePingTarget = "shopee"; 
 
+        // Klik teks IP di kanan atas untuk memuat ulang (refresh) IP secara manual
         window.gantiTargetPing = function() {
-            modePingTarget = (modePingTarget === "shopee") ? "ipify" : "shopee";
+            currentIP = "Memuat IP...";
+            window.renderStatusIP();
             updateIPAddress(); 
-            let namaTarget = (modePingTarget === "shopee") ? "CLOUDFLARE" : "IPIFY";
-            if(window.showToast) window.showToast("Target Ping diubah ke: " + namaTarget);
+            if(window.showToast) window.showToast("Memuat ulang IP... 🔄");
         }
 
         // Fungsi untuk menandai IP ke Firebase (Centang / Silang)
@@ -490,7 +495,6 @@
             const ipKey = currentIP.replace(/\./g, '_');
             const dataIP = (window.DATA_IP_FIREBASE && window.DATA_IP_FIREBASE[ipKey]) ? window.DATA_IP_FIREBASE[ipKey] : null;
             
-            // Jika tombol yang sama diklik ulang, hapus tanda dari Firebase
             if (dataIP && dataIP.status === statusBaru) {
                 if (window.simpanStatusIPFirebase) window.simpanStatusIPFirebase(currentIP, null);
             } else {
@@ -498,7 +502,7 @@
             }
         };
 
-        // Fungsi untuk memperbarui warna IP dan tombol berdasarkan data Firebase
+        // Fungsi untuk memperbarui warna IP dan tombol berdasarkan data Firebase (Tanpa Ping)
         window.renderStatusIP = function() {
             const ipText = document.getElementById('teks-ip-jaringan');
             const btnBaik = document.getElementById('btn-ip-baik');
@@ -511,18 +515,12 @@
                 return;
             }
 
-            let warnaPing = "#00ffcc"; 
-            if (lastPing > 150) warnaPing = "#f0ad4e"; 
-            if (lastPing > 300) warnaPing = "#ff4a4a"; 
-
-            // Cek apakah IP pernah digunakan di Firebase
             const ipKey = currentIP.replace(/\./g, '_');
             const infoIP = (window.DATA_IP_FIREBASE && window.DATA_IP_FIREBASE[ipKey]) ? window.DATA_IP_FIREBASE[ipKey] : null;
 
             let warnaTeksIP = "#00ffcc"; // Warna default: Biru Muda (Belum pernah dipakai)
             
             if (btnBaik && btnBuruk && badgeStatus) {
-                // Reset gaya tombol default
                 btnBaik.style.background = "rgba(0, 255, 204, 0.1)";
                 btnBaik.style.color = "#00ffcc";
                 btnBuruk.style.background = "rgba(255, 74, 74, 0.1)";
@@ -548,13 +546,11 @@
 
             ipText.innerHTML = `
                 <i class="fa-solid fa-wifi" style="font-size: 10px; margin-right: 3px; color: ${warnaTeksIP};"></i> 
-                <span style="color: ${warnaTeksIP};">${currentIP}</span> 
-                <span style="color: #6e678a; margin: 0 4px;">|</span> 
-                <span style="color: ${warnaPing};">${lastPing}ms</span>
-                <span style="font-size: 9px; color: #8e85b3; margin-left: 3px;">(${lastLabelTarget})</span>
+                <span style="color: ${warnaTeksIP};">${currentIP}</span>
             `;
         };
 
+        // Hanya mengambil IP saat dibutuhkan (Tanpa Ping CF & Tanpa Loop 10 Detik)
         async function updateIPAddress() {
             const ipText = document.getElementById('teks-ip-jaringan');
             if (!ipText) return;
@@ -562,19 +558,6 @@
                 const resIP = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
                 const dataIP = await resIP.json();
                 currentIP = dataIP.ip;
-
-                if (modePingTarget === "ipify") {
-                    const startWaktu = performance.now();
-                    await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
-                    lastPing = Math.round(performance.now() - startWaktu);
-                    lastLabelTarget = "Ipify";
-                } else {
-                    const startWaktu = performance.now();
-                    await fetch('https://cp.cloudflare.com/generate_204?t=' + Date.now(), { mode: 'no-cors' });
-                    lastPing = Math.round(performance.now() - startWaktu);
-                    lastLabelTarget = "CF";
-                }
-                
                 window.renderStatusIP();
             } catch (error) {
                 currentIP = "Terputus";
@@ -604,16 +587,16 @@
                 .catch(err => console.log("Gagal memuat kota_pulau_jawa.json"));
 
             muatDataCopas();
-            updateIPAddress(); 
+            updateIPAddress(); // Hanya panggil 1x saat halaman pertama dibuka
             generateUserAuto(); 
         });
 
+        // Otomatis cek IP baru saat HP selesai Mode Pesawat / kembali online
         window.addEventListener('online', updateIPAddress);
         window.addEventListener('offline', () => {
             currentIP = "Terputus";
             window.renderStatusIP();
         });
-        setInterval(updateIPAddress, 10000);
 
         window.eksekusiSalinTeks = function(teks) {
             if (navigator.clipboard && window.isSecureContext) { return navigator.clipboard.writeText(teks); } else {
