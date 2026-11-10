@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pembayaran QRIS Shopee - Rp39.780</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; margin: 0; padding: 16px; display: flex; justify-content: center; }
+    .card { background: #fff; max-width: 380px; width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 20px; text-align: center; box-sizing: border-box; }
+    .title { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 4px; }
+    .amount { font-size: 26px; font-weight: 800; color: #ee4d2d; margin: 8px 0; }
+    .meta { font-size: 12px; color: #666; margin-bottom: 16px; }
+    #qrCanvas { border: 1px solid #eee; border-radius: 8px; max-width: 100%; height: auto; }
+    .nmid { font-size: 11px; color: #888; margin-top: 8px; font-family: monospace; }
+    .btn { display: block; width: 100%; padding: 13px; border-radius: 8px; font-weight: 700; font-size: 14px; text-decoration: none; margin-top: 12px; cursor: pointer; border: none; box-sizing: border-box; }
+    .btn-primary { background: #ee4d2d; color: #fff; }
+    .btn-outline { background: #fff; color: #ee4d2d; border: 1px solid #ee4d2d; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="title">Shopee Indonesia</div>
+    <div class="amount">Rp39.780</div>
+    <div class="meta">Jatuh tempo: 12 Nov 2026, 04:39 WIB<br>Ref: 101386974636311518</div>
+
+    <canvas id="qrCanvas"></canvas>
+    <div class="nmid">NMID: ID2025444802321</div>
+
+    <button class="btn btn-primary" onclick="saveAndOpenShopee()">🚀 Simpan QR & Buka Shopee</button>
+    <button class="btn btn-outline" onclick="copyPayload()">📋 Salin String QRIS</button>
+  </div>
+
+  <script>
+    const qrisPayload = "00020101021226610016ID.CO.SHOPEE.WWW01189360091800215732120208215732120303UBE51440014ID.CO.QRIS.WWW0215ID20254448023210303UBE520459655303360540839780.005802ID5916Shopee Indonesia6015KOTA JAKARTA SE61051295062220518101386974636311518630431DE";
+
+    const canvas = document.getElementById('qrCanvas');
+    QRCode.toCanvas(canvas, qrisPayload, { width: 260, margin: 2 });
+
+    function saveAndOpenShopee() {
+      // 1. Unduh gambar QR otomatis ke Galeri
+      const link = document.createElement('a');
+      link.download = 'QRIS_Shopee_39780.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      // 2. Buka aplikasi Shopee setelah jeda 600ms
+      setTimeout(() => {
+        window.location.href = "shopeeid://main";
+      }, 600);
+    }
+
+    function copyPayload() {
+      navigator.clipboard.writeText(qrisPayload);
+      alert("String QRIS berhasil disalin!");
+    }
+  </script>
+</body>
+</html>
