@@ -21,16 +21,13 @@
 <div class="box">
   <h3 style="margin:0;">Uncensored AI Chat</h3>
   
-  <!-- Pilih Penyedia API -->
   <select id="provider" onchange="gantiProvider()">
     <option value="hf">Server 1: Hugging Face Router (Token hf_...)</option>
     <option value="or">Server 2: OpenRouter Free Uncensored (Token sk-or-...)</option>
   </select>
 
-  <!-- Kolom Token -->
   <input type="password" id="api_token" placeholder="Tempel Token hf_... di sini" onchange="simpanToken()">
 
-  <!-- Pilihan Model (Otomatis menyesuaikan server) -->
   <select id="model_id"></select>
   <div class="small">*Atau ketik manual ID model di bawah jika ingin coba model lain:</div>
   <input type="text" id="custom_model" placeholder="Kosongkan jika memakai pilihan di atas">
@@ -44,10 +41,10 @@
 <script>
   const daftarModel = {
     hf: [
-      { id: "NousResearch/Hermes-3-Llama-3.1-8B", name: "Nous Hermes 3 Llama 3.1 8B (Uncensored / Cepat)" },
-      { id: "Qwen/Qwen2.5-Coder-32B-Instruct", name: "Qwen 2.5 Coder 32B (Coding & Teknis)" },
-      { id: "meta-llama/Llama-3.3-70B-Instruct", name: "Llama 3.3 70B Instruct (Bebas System Prompt)" },
-      { id: "mistralai/Mistral-Nemo-Instruct-2407", name: "Mistral Nemo 12B (Minim Filter / Roleplay)" }
+      { id: "Qwen/Qwen2.5-Coder-32B-Instruct", name: "Qwen 2.5 Coder 32B (Coding & Teknis - Aktif)" },
+      { id: "Qwen/Qwen2.5-72B-Instruct", name: "Qwen 2.5 72B Instruct (Umum & Patuh System Prompt)" },
+      { id: "meta-llama/Llama-3.3-70B-Instruct", name: "Llama 3.3 70B Instruct (Model Besar)" },
+      { id: "NousResearch/Hermes-3-Llama-3.1-8B:featherless-ai", name: "Nous Hermes 3 8B (Uncensored via Featherless)" }
     ],
     or: [
       { id: "cognitivecomputations/dolphin3.0-mistral-24b:free", name: "Dolphin 3.0 Mistral 24B (100% Uncensored - Gratis)" },
@@ -103,23 +100,17 @@
     btn.disabled = true;
     btn.innerText = 'Memproses...';
 
-    // Endpoint terpadu baru
     const url = prov === 'hf' 
       ? "https://router.huggingface.co/v1/chat/completions"
       : "https://openrouter.ai/api/v1/chat/completions";
 
-    const headers = {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json"
-    };
-    if (prov === 'hf') {
-      headers["X-HF-Bill-To"] = ""; // Hindari blokir billing default
-    }
-
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: headers,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           model: model,
           messages: [
@@ -149,7 +140,6 @@
     chatbox.scrollTop = chatbox.scrollHeight;
   }
 
-  // Inisialisasi saat halaman dibuka
   gantiProvider();
 </script>
 
