@@ -24,7 +24,7 @@
         .box-copy-statik.otp-masuk { background: #152923; border-color: #24523b; }
         .btn-copy-static { background: #25274d; border: 1px solid #3d3f7a; color: var(--accent-cyan); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
         .btn-copy-queue { background: #2a1b3d; border: 1px solid #5a2e8c; color: #e0aaff; } 
-        .btn-copy-static.btn-green { background: #1d3f31; border-color: #2e6f4e; color: var(--accent-green); }
+        .btn-copy-static.btn-green { background: #1d3f31; border: 1px solid #2e6f4e; color: var(--accent-green); }
         .btn-batal { color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-action-half { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; }
         .btn-resend { background: #4a3c8c; color: #fff; }
@@ -47,6 +47,7 @@
 </head>
 <body>
     <div class="container">
+        <!-- HEADER SALDO -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
             <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Spesialis (Shopee & WA)</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
@@ -55,6 +56,7 @@
             </div>
         </div>
 
+        <!-- SETTING TOKEN -->
         <div style="margin-bottom: 12px;">
             <div class="pemicu-dropdown" onclick="bower_toggleApiKeyDropdown()">
                 <span>🔑 Konfigurasi API Key (SMSBower)</span>
@@ -70,14 +72,17 @@
             </div>
         </div>
 
+        <!-- AREA PEMESANAN DENGAN MULTI LAYANAN & NEGARA -->
         <div class="dropdown-box-wrapper">
             <label class="form-label">🛒 Setup Layanan Utama</label>
             <div class="unified-order-box">
                 <select id="bower_dropdownLayanan" class="unified-select-op" onchange="bower_muatProdukLayanan(true)">
-                    <option value="ka" selected>Shopee (Indonesia)</option>
-                    <option value="wa">WhatsApp (Indonesia)</option>
+                    <option value="ka_6" selected>Shopee (Indonesia)</option>
+                    <option value="ka_4">Shopee (Filipina)</option>
+                    <option value="wa_6">WhatsApp (Indonesia)</option>
                 </select>
 
+                <!-- DROPDOWN OPERATOR -->
                 <select id="bower_dropdownOperator" class="unified-select-op" style="color: #ffb86c;">
                     <option value="any" selected>⚡ Semua Operator (Acak)</option>
                     <option value="telkomsel">Telkomsel</option>
@@ -98,6 +103,7 @@
             </button>
         </div>
 
+        <!-- NOMOR AKTIF -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
@@ -108,6 +114,7 @@
             </div>
         </div>
 
+        <!-- RIWAYAT SUKSES -->
         <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
             <div class="pemicu-dropdown" onclick="bower_toggleRiwayatDropdown()" style="background: #141529; border-color: #2c2e5c;">
                 <span>📜 Riwayat Sukses (<span id="bower_countRiwayatBadge">0</span>)</span>
@@ -124,7 +131,7 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 100px; overflow-y: auto;">
             └> Sistem Panel SMSBower Diinisialisasi.<br>
-            └> Filter Prefix Operator Lokal Aktif.<br>
+            └> Multi-Negara (ID & PH) + Filter Prefix Aktif.<br>
             └> Auto-Blokir 3x24 Jam (Firebase) Aktif.<br>
             └> Tracking OTP ke-X (Multi-Resend) Aktif.
         </div>
@@ -136,7 +143,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
         import { getDatabase, ref, get, set, child } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
-        // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyBuNaE700uoAXECmd7hG73wiJK6cY1ttcE",
             authDomain: "panel-smsbower.firebaseapp.com",
@@ -151,7 +157,7 @@
         const db = getDatabase(app);
 
         const BOWER_NILAI_KURS = 17815; 
-        const BOWER_ALLOWED_PROVIDERS = [2295, 3160, 3309, 3340, 2738, 3435, 3029, 1329, 3406, 3451];
+        const BOWER_ALLOWED_PROVIDERS = [2295, 3160, 3309, 3340, 2738, 3435, 3029, 1329, 3406];
 
         const PREFIX_OPERATOR = {
             "telkomsel": ["811", "812", "813", "821", "822", "851", "852", "853"],
@@ -172,6 +178,18 @@
 
         function bower_formatRupiah(angka) {
             return "Rp " + Math.ceil(angka).toLocaleString("id-ID");
+        }
+
+        // Helper untuk memisahkan kode layanan dan kode negara dari dropdown
+        function bower_parseLayananNegara() {
+            const rawVal = document.getElementById("bower_dropdownLayanan").value;
+            const parts = rawVal.split("_");
+            const serviceId = parts[0] || "ka";
+            const countryId = parts[1] || "6";
+            let prefixLabel = "Shopee";
+            if (serviceId === "wa") prefixLabel = "WhatsApp";
+            else if (countryId === "4") prefixLabel = "Shopee PH";
+            return { serviceId, countryId, prefixLabel };
         }
 
         async function apiSMSBower(endpoint, method = "GET", payload = null) {
@@ -219,17 +237,18 @@
 
         window.bower_muatProdukLayanan = async function(autoOpen = false) {
             try {
-                let serviceId = document.getElementById("bower_dropdownLayanan").value;
-                let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
-                let prefixLayanan = elemNamaSrv.split(' ')[0]; 
+                const { serviceId, countryId, prefixLabel } = bower_parseLayananNegara();
 
                 if(autoOpen) document.getElementById("bower_labelServerTerpilih").innerHTML = `Mencari harga...`;
-                const resProd = await apiSMSBower(`catalog/products?service=${serviceId}`, 'GET');
+                const resProd = await apiSMSBower(`catalog/products?service=${serviceId}&country=${countryId}`, 'GET');
                 let arrData = resProd.data;
                 if (!arrData || arrData.length === 0) throw new Error("Stok kosong.");
 
-                arrData = arrData.filter(item => BOWER_ALLOWED_PROVIDERS.includes(parseInt(item.id)));
-                if (arrData.length === 0) throw new Error("Provider pilihan kosong.");
+                // Filter provider khusus hanya diterapkan untuk Indonesia (countryId === "6")
+                if (countryId === "6") {
+                    arrData = arrData.filter(item => BOWER_ALLOWED_PROVIDERS.includes(parseInt(item.id)));
+                    if (arrData.length === 0) throw new Error("Provider pilihan kosong.");
+                }
 
                 arrData.sort((a, b) => b.price - a.price); 
                 let totalItems = arrData.length;
@@ -246,7 +265,7 @@
                 if (bower_daftarServerTersedia.length > 0) { 
                     const srv = bower_daftarServerTersedia[0]; 
                     bower_produkTerpilihId = srv.id;
-                    bower_namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
+                    bower_namaProdukTerpilih = `${prefixLabel} (Prov ${srv.id})`;
                     bower_hargaProdukTerpilih = srv.price; 
                     
                     let badgeClass = srv.rank === 'Gold' ? 'badge-gold' : (srv.rank === 'Silver' ? 'badge-silver' : 'badge-bronze');
@@ -276,11 +295,10 @@
         }
 
         window.bower_pilihServerDropdown = function(index) {
-            let elemNamaSrv = document.getElementById("bower_dropdownLayanan").options[document.getElementById("bower_dropdownLayanan").selectedIndex].text;
-            let prefixLayanan = elemNamaSrv.split(' ')[0]; 
+            const { prefixLabel } = bower_parseLayananNegara();
             const srv = bower_daftarServerTersedia[index];
             bower_produkTerpilihId = srv.id; 
-            bower_namaProdukTerpilih = `${prefixLayanan} (Prov ${srv.id})`;
+            bower_namaProdukTerpilih = `${prefixLabel} (Prov ${srv.id})`;
             bower_hargaProdukTerpilih = srv.price; 
             
             let badgeClass = srv.rank === 'Gold' ? 'badge-gold' : (srv.rank === 'Silver' ? 'badge-silver' : 'badge-bronze');
@@ -295,7 +313,7 @@
             btn.disabled = true; btn.innerHTML = `MEMPROSES...`;
             
             try {
-                let serviceId = document.getElementById("bower_dropdownLayanan").value;
+                const { serviceId, countryId } = bower_parseLayananNegara();
                 let opId = document.getElementById("bower_dropdownOperator").value;
                 
                 if (serviceId === "ka") {
@@ -318,14 +336,16 @@
                     const responseData = await apiSMSBower('orders/create', 'POST', { 
                         provider_id: bower_produkTerpilihId, 
                         service: serviceId,
-                        operator: opId
+                        country: countryId,
+                        operator: countryId === "6" ? opId : "any"
                     });
                     const createdOrder = responseData.data?.orders?.[0];
                     
                     if (createdOrder) {
                         let phone = createdOrder.phone_number;
                         
-                        if (opId !== "any") {
+                        // Filter Prefix Operator Lokal hanya berlaku jika negara adalah Indonesia (6)
+                        if (countryId === "6" && opId !== "any") {
                             let prefix = phone.substring(2, 5); 
                             if (!PREFIX_OPERATOR[opId].includes(prefix)) {
                                 btn.innerHTML = `⚠️ BUKAN ${opId.toUpperCase()}! GANTI...`;
@@ -370,7 +390,7 @@
                         waktu_dibuat: Date.now(), 
                         status: "pending", 
                         otp: "",
-                        otp_count: 1, // SET OTP KE-1 SAAT PERTAMA BELI
+                        otp_count: 1,
                         is_recycled: isRecycled 
                     });
                     bower_renderUILayout(); bower_simpanDaftarOrderanKeLokal(); window.bower_ambilSaldoLive();
@@ -421,14 +441,13 @@
             }
         }
 
-        // === FUNGSI KIRIM ULANG (RESEND) YANG DIPERBARUI ===
         window.bower_eksekusiResend = async function(index) {
             const item = bower_daftarOrderan[index];
             try { 
                 await apiSMSBower('orders/resend', 'POST', { id: item.order_id }); 
-                item.otp_count = (item.otp_count || 1) + 1; // Tambah counter ke-2, ke-3 dst
-                item.otp = ""; // Kosongkan layar dari OTP yang lama
-                item.status = "pending"; // Ubah status kembali ke pencarian loading
+                item.otp_count = (item.otp_count || 1) + 1; 
+                item.otp = ""; 
+                item.status = "pending"; 
                 bower_renderUILayout();
                 bower_simpanDaftarOrderanKeLokal();
                 bower_showToast(`Meminta OTP ke-${item.otp_count}...`); 
@@ -473,10 +492,9 @@
             let htmlAktif = ""; let htmlRiwayat = ""; let countAktif = 0; let countRiwayat = 0;
 
             bower_daftarOrderan.forEach((item, index) => {
-                let currentOtpCount = item.otp_count || 1; // Pastikan counter selalu terbaca minimal 1
+                let currentOtpCount = item.otp_count || 1; 
                 let sec = Math.floor((Date.now() - item.waktu_dibuat) / 1000);
                 
-                // MENCEGAH BUG: Auto-Cancel 5 menit HANYA berlaku untuk OTP ke-1.
                 if (item.status === "pending" && currentOtpCount === 1 && sec >= 300) { 
                     item.status = "cancelled"; 
                     apiSMSBower(`orders/cancel`, 'POST', { id: item.order_id }).catch(e=>{}); 
@@ -496,7 +514,7 @@
                     <div class="history-card">
                         <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b8da9; margin-bottom:8px;"><span>${item.layanan} ${labelWarning} • ${teksHargaHistory}</span><span>⏱️ ${timeStr}</span></div>
                         <div class="box-copy-statik"><div><div style="font-size:9px; color:#8b8da9;">Nomor HP:</div><div style="font-size:14px; font-weight:bold; color:#fff; margin-top:2px;">${item.phone}</div></div><button onclick="bower_salinTeksToast('${item.phone}')" class="btn-copy-static"><i class="fa-regular fa-copy"></i> Salin</button></div>
-                        <div class="box-copy-statik otp-masuk" style="margin-top:6px;"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP ke-${currentOtpCount}:</div><div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button></div>
+                        <div class="box-copy-statik otp-masuk" style="margin-top:6px;"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP ke-${currentOtpCount}:</div><div style="font-size:16px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp || '-'}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin</button></div>
                         ${btnKirimUlang}
                     </div>`; countRiwayat++; return;
                 }
@@ -518,7 +536,7 @@
 
                 if (item.status === "received") { 
                     textStat = `🎉 OTP ke-${currentOtpCount} Berhasil Masuk!`; colStat = "#50fa7b"; 
-                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">KodeOTP ke-${currentOtpCount}:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> SalinOTP</button></div>`;
+                    kotakOtp = `<div class="box-copy-statik otp-masuk"><div><div style="font-size:9px; color:#50fa7b; font-weight:bold;">Kode OTP ke-${currentOtpCount}:</div><div style="font-size:18px; font-weight:bold; color:#50fa7b; letter-spacing:1px;">${item.otp}</div></div><button onclick="bower_salinTeksToast('${item.otp}')" class="btn-copy-static btn-green"><i class="fa-regular fa-copy"></i> Salin OTP</button></div>`;
                     btnAksi = `<div style="display:flex; gap: 8px; margin-top: 10px;"><button onclick="bower_eksekusiResend(${index})" class="btn-action-half btn-resend"><i class="fa-solid fa-rotate-right"></i> Kirim Ulang</button><button onclick="bower_eksekusiSelesai(${index})" class="btn-action-half btn-selesai"><i class="fa-solid fa-check-double"></i> Selesai</button></div>`;
                 } else if (item.status === "pending") {
                     btnAksi = `<button class="btn-batal" ${cool > 0 ? 'disabled style="background:#444;"' : 'style="background:var(--accent-red);"'} onclick="bower_eksekusiBatalkanServer(${index})">${cool > 0 ? `Tunggu (${cool}s)` : '❌ Batalkan Pesanan'}</button>`;
