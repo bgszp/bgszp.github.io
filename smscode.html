@@ -139,7 +139,7 @@
         </div>
 
         <div id="miniConsoleLog" style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 100px; overflow-y: auto;">
-            └> Sistem Webhook & Multi-Layanan Diinisialisasi.
+            └> Sistem Webhook & Dynamic Country Diinisialisasi.
         </div>
     </div>
     
@@ -150,15 +150,16 @@
         let daftarServerTersedia = [];
         let produkTerpilihArray = []; 
         let siklusCek = 0;
+        let cacheNegara = null; 
 
-        // --- KONFIGURASI LAYANAN DAN NEGARA ---
+        // KITA UBAH MENGGUNAKAN KODE ISO NEGARA (ID / PH) AGAR TIDAK MUNGKIN SALAH ID LAGI
         let activePlatform = "shopee_id"; 
         const configLayanan = {
-            "shopee_id": { search: "shopee", country: 7, label: "Shopee ID" },
-            "shopee_ph": { search: "shopee", country: 43, label: "Shopee PH" }, // Country ID Philippines
-            "whatsapp_id": { search: "whatsapp", country: 7, label: "WhatsApp ID" }
+            "shopee_id": { search: "shopee", country_code: "ID", country: null, label: "Shopee ID" },
+            "shopee_ph": { search: "shopee", country_code: "PH", country: null, label: "Shopee PH" },
+            "whatsapp_id": { search: "whatsapp", country_code: "ID", country: null, label: "WhatsApp ID" }
         };
-        let platformData = {}; // Menyimpan ID Layanan yang sudah diambil dari API agar tidak meload ulang
+        let platformData = {}; 
 
         const WORKER_URL = "https://smscode-proxy.tiktiksatu001.workers.dev";
 
@@ -236,7 +237,6 @@
             printLog("🧹 Cache UI dibersihkan, me-refresh harga otomatis...");
         }
 
-        // FUNGSI GANTI PLATFORM DARI DROPDOWN
         function gantiPlatform() {
             activePlatform = document.getElementById("dropdownPlatform").value;
             produkTerpilihArray = []; 
@@ -249,11 +249,26 @@
             }
         }
 
+        async function getCountryId(isoCode) {
+            if (!cacheNegara) {
+                const res = await apiSMSCode('catalog/countries', 'GET');
+                cacheNegara = res.data;
+            }
+            const match = cacheNegara.find(c => c.code.toUpperCase() === isoCode.toUpperCase());
+            return match ? match.id : null;
+        }
+
         async function inisialisasiLayanan() {
             try {
                 let cfg = configLayanan[activePlatform];
+                
+                printLog(`🔄 Mencari ID Resmi Negara ${cfg.country_code}...`);
+                const cid = await getCountryId(cfg.country_code);
+                if (!cid) throw new Error(`Negara ${cfg.country_code} tidak ditemukan.`);
+                cfg.country = cid; 
+
                 printLog(`🔄 Mengambil ID Layanan ${cfg.label}...`);
-                const resSrv = await apiSMSCode(`catalog/services?country_id=${cfg.country}`, 'GET');
+                const resSrv = await apiSMSCode(`catalog/services?country_id=${cid}`, 'GET');
                 
                 const srvMatch = resSrv.data.find(s => s.name.toLowerCase().includes(cfg.search));
                 if (!srvMatch) throw new Error(`Layanan ${cfg.label} tidak ditemukan.`);
@@ -261,7 +276,7 @@
                 platformData[activePlatform] = srvMatch.id;
 
                 printLog(`🔄 Mengambil daftar Operator ${cfg.label}...`);
-                const resOp = await apiSMSCode(`catalog/operators?country_id=${cfg.country}&platform_id=${srvMatch.id}`, 'GET');
+                const resOp = await apiSMSCode(`catalog/operators?country_id=${cid}&platform_id=${srvMatch.id}`, 'GET');
                 
                 let dropdownOp = document.getElementById("dropdownOperator");
                 dropdownOp.innerHTML = "";
@@ -288,7 +303,7 @@
             try {
                 let cfg = configLayanan[activePlatform];
                 let currentId = platformData[activePlatform];
-                if (!currentId) throw new Error("ID Layanan tidak ditemukan.");
+                if (!currentId || !cfg.country) throw new Error("ID Layanan tidak ditemukan.");
 
                 printLog(`🔄 Mengambil daftar Operator ${cfg.label}...`);
                 const resOp = await apiSMSCode(`catalog/operators?country_id=${cfg.country}&platform_id=${currentId}`, 'GET');
@@ -316,7 +331,7 @@
         async function muatProduk(autoOpen = false) {
             let cfg = configLayanan[activePlatform];
             let currentId = platformData[activePlatform];
-            if (!currentId) return;
+            if (!currentId || !cfg.country) return;
 
             try {
                 if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Mencari harga...`;
