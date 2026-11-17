@@ -57,7 +57,7 @@
     <div class="container">
         <!-- HEADER SALDO -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Multi OTP ID</h3>
+            <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">🔵 Panel Multi OTP</h3>
             <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
                 <span onclick="refreshSemuaDataLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;">🔄</span>
@@ -85,10 +85,11 @@
             <label class="form-label">🛒 Setup Layanan</label>
             
             <div class="unified-order-box">
-                <!-- PILIH LAYANAN (BARU) -->
+                <!-- PILIH LAYANAN & NEGARA (BARU) -->
                 <select id="dropdownPlatform" class="unified-select-op" onchange="gantiPlatform()" style="margin-bottom: 5px; border-bottom: 1px solid #25274d; padding-bottom: 8px;">
-                    <option value="shopee">🟠 Layanan: Shopee</option>
-                    <option value="whatsapp">🟢 Layanan: WhatsApp</option>
+                    <option value="shopee_id">🟠 Layanan: Shopee (Indonesia)</option>
+                    <option value="shopee_ph">🟡 Layanan: Shopee (Philippines)</option>
+                    <option value="whatsapp_id">🟢 Layanan: WhatsApp (Indonesia)</option>
                 </select>
 
                 <!-- PILIH OPERATOR -->
@@ -148,11 +149,16 @@
         let daftarOrderan = []; 
         let daftarServerTersedia = [];
         let produkTerpilihArray = []; 
-        
-        // VARIABEL PLATFORM
-        let activePlatform = "shopee"; 
-        let platformData = { "shopee": null, "whatsapp": null };
         let siklusCek = 0;
+
+        // --- KONFIGURASI LAYANAN DAN NEGARA ---
+        let activePlatform = "shopee_id"; 
+        const configLayanan = {
+            "shopee_id": { search: "shopee", country: 7, label: "Shopee ID" },
+            "shopee_ph": { search: "shopee", country: 43, label: "Shopee PH" }, // Country ID Philippines
+            "whatsapp_id": { search: "whatsapp", country: 7, label: "WhatsApp ID" }
+        };
+        let platformData = {}; // Menyimpan ID Layanan yang sudah diambil dari API agar tidak meload ulang
 
         const WORKER_URL = "https://smscode-proxy.tiktiksatu001.workers.dev";
 
@@ -235,21 +241,43 @@
             activePlatform = document.getElementById("dropdownPlatform").value;
             produkTerpilihArray = []; 
             perbaruiLabelTerpilih();
-            muatOperator();
+            
+            if (!platformData[activePlatform]) {
+                inisialisasiLayanan();
+            } else {
+                muatOperator();
+            }
         }
 
         async function inisialisasiLayanan() {
             try {
-                printLog("🔄 Mengambil ID Semua Layanan...");
-                const resSrv = await apiSMSCode('catalog/services?country_id=7', 'GET');
+                let cfg = configLayanan[activePlatform];
+                printLog(`🔄 Mengambil ID Layanan ${cfg.label}...`);
+                const resSrv = await apiSMSCode(`catalog/services?country_id=${cfg.country}`, 'GET');
                 
-                const srvShopee = resSrv.data.find(s => s.name.toLowerCase().includes("shopee"));
-                const srvWa = resSrv.data.find(s => s.name.toLowerCase().includes("whatsapp"));
+                const srvMatch = resSrv.data.find(s => s.name.toLowerCase().includes(cfg.search));
+                if (!srvMatch) throw new Error(`Layanan ${cfg.label} tidak ditemukan.`);
                 
-                if (srvShopee) platformData["shopee"] = srvShopee.id;
-                if (srvWa) platformData["whatsapp"] = srvWa.id;
+                platformData[activePlatform] = srvMatch.id;
 
-                await muatOperator();
+                printLog(`🔄 Mengambil daftar Operator ${cfg.label}...`);
+                const resOp = await apiSMSCode(`catalog/operators?country_id=${cfg.country}&platform_id=${srvMatch.id}`, 'GET');
+                
+                let dropdownOp = document.getElementById("dropdownOperator");
+                dropdownOp.innerHTML = "";
+                
+                if(resOp.data.length === 0) {
+                    dropdownOp.innerHTML = `<option value="">Tidak ada operator tersedia</option>`;
+                } else {
+                    resOp.data.forEach(op => {
+                        let opt = document.createElement("option");
+                        opt.value = op.operator_id === null ? "null" : op.operator_id;
+                        opt.text = op.name + (op.code === "any" ? " (Paling Murah)" : "");
+                        dropdownOp.appendChild(opt);
+                    });
+                }
+                
+                await muatProduk(false);
             } catch (e) {
                 printLog(`⚠️ Error Inisialisasi: ${e.message}`);
                 document.getElementById("dropdownOperator").innerHTML = `<option value="">Gagal Memuat</option>`;
@@ -258,11 +286,12 @@
 
         async function muatOperator() {
             try {
+                let cfg = configLayanan[activePlatform];
                 let currentId = platformData[activePlatform];
                 if (!currentId) throw new Error("ID Layanan tidak ditemukan.");
 
-                printLog(`🔄 Mengambil Operator ${activePlatform.toUpperCase()}...`);
-                const resOp = await apiSMSCode(`catalog/operators?country_id=7&platform_id=${currentId}`, 'GET');
+                printLog(`🔄 Mengambil daftar Operator ${cfg.label}...`);
+                const resOp = await apiSMSCode(`catalog/operators?country_id=${cfg.country}&platform_id=${currentId}`, 'GET');
                 
                 let dropdownOp = document.getElementById("dropdownOperator");
                 dropdownOp.innerHTML = "";
@@ -285,13 +314,15 @@
         }
 
         async function muatProduk(autoOpen = false) {
+            let cfg = configLayanan[activePlatform];
             let currentId = platformData[activePlatform];
             if (!currentId) return;
+
             try {
                 if(autoOpen) document.getElementById("labelServerTerpilih").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Mencari harga...`;
                 
                 let opIdRaw = document.getElementById("dropdownOperator").value;
-                let queryUrl = `catalog/products?country_id=7&platform_id=${currentId}&limit=100`;
+                let queryUrl = `catalog/products?country_id=${cfg.country}&platform_id=${currentId}&limit=100`;
                 if (opIdRaw && opIdRaw !== "null") queryUrl += `&operator_id=${opIdRaw}`;
 
                 let idYangSudahDicentang = [];
@@ -312,7 +343,6 @@
 
                 produkTerpilihArray = [];
                 let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
-                let platName = activePlatform === "shopee" ? "Shopee" : "WhatsApp";
 
                 if (daftarServerTersedia.length > 0) { 
                     if (!autoOpen && idYangSudahDicentang.length > 0) {
@@ -321,7 +351,7 @@
                                 produkTerpilihArray.push({
                                     id: srv.id,
                                     price: srv.price,
-                                    name: `${platName} ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`
+                                    name: `${cfg.label} ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`
                                 });
                             }
                         });
@@ -332,7 +362,7 @@
                         produkTerpilihArray.push({
                             id: firstSrv.id,
                             price: firstSrv.price,
-                            name: `${platName} ${opText} (Rp ${firstSrv.price.toLocaleString('id-ID')})`
+                            name: `${cfg.label} ${opText} (Rp ${firstSrv.price.toLocaleString('id-ID')})`
                         });
                     }
                     
@@ -365,12 +395,12 @@
             if (existingIndex > -1) {
                 produkTerpilihArray.splice(existingIndex, 1);
             } else {
+                let cfg = configLayanan[activePlatform];
                 let opText = document.getElementById("dropdownOperator").options[document.getElementById("dropdownOperator").selectedIndex].text;
-                let platName = activePlatform === "shopee" ? "Shopee" : "WhatsApp";
                 produkTerpilihArray.push({
                     id: srv.id,
                     price: srv.price,
-                    name: `${platName} ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`
+                    name: `${cfg.label} ${opText} (Rp ${srv.price.toLocaleString('id-ID')})`
                 });
             }
             
@@ -483,7 +513,14 @@
             refreshSemuaDataLive(); toggleApiKeyDropdown();
         }
 
-        function refreshSemuaDataLive() { ambilSaldoLive(); if (!platformData[activePlatform]) { inisialisasiLayanan(); } else { muatProduk(false); } }
+        function refreshSemuaDataLive() { 
+            ambilSaldoLive(); 
+            if (!platformData[activePlatform]) { 
+                inisialisasiLayanan(); 
+            } else { 
+                muatProduk(false); 
+            } 
+        }
 
         async function ambilSaldoLive() {
             try {
