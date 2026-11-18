@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GPT-6.2 Sol Chat</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+    }
+    header {
+      background-color: #1e293b;
+      padding: 12px 16px;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .model-badge {
+      font-size: 0.75rem;
+      background-color: #3b82f6;
+      color: #ffffff;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .api-bar {
+      display: flex;
+      gap: 8px;
+    }
+    .api-bar input {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #475569;
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-size: 0.85rem;
+    }
+    .api-bar button, .clear-btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      background-color: #10b981;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .clear-btn {
+      background-color: #ef4444;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+    }
+    #chat-box {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      line-height: 1.5;
+      font-size: 0.92rem;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+    .msg.user {
+      background-color: #2563eb;
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+    .msg.bot {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+    }
+    .input-area {
+      background-color: #1e293b;
+      padding: 10px 12px;
+      border-top: 1px solid #334155;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    textarea {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background-color: #0f172a;
+      color: #f8fafc;
+      resize: none;
+      rows: 1;
+      max-height: 120px;
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+    button#send-btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      background-color: #3b82f6;
+      color: #ffffff;
+      font-weight: 600;
+      cursor: pointer;
+      height: 40px;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-top">
+      <strong>Respan AI Client</strong>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span class="model-badge">gpt-6.2-sol:free</span>
+        <button class="clear-btn" onclick="clearChat()">Reset</button>
+      </div>
+    </div>
+    <div class="api-bar">
+      <input type="password" id="api-key" placeholder="Paste API Key Respan di sini...">
+      <button onclick="saveKey()">Simpan</button>
+    </div>
+  </header>
+
+  <div id="chat-box">
+    <div class="msg bot">Halo! Masukkan API Key Respan Anda di atas, klik Simpan, lalu mulai kirim pesan.</div>
+  </div>
+
+  <div class="input-area">
+    <textarea id="prompt-input" rows="1" placeholder="Ketik pesan..."></textarea>
+    <button id="send-btn" onclick="sendMessage()">Kirim</button>
+  </div>
+
+  <script>
+    const ENDPOINT = "https://gateway.respan.ai/v1/chat/completions";
+    const MODEL = "openai/gpt-6.2-sol:free";
+    
+    const apiKeyInput = document.getElementById("api-key");
+    const chatBox = document.getElementById("chat-box");
+    const promptInput = document.getElementById("prompt-input");
+    const sendBtn = document.getElementById("send-btn");
+
+    let conversationHistory = [];
+
+    // Muat API Key dari localStorage saat halaman dibuka
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedKey = localStorage.getItem("respan_api_key");
+      if (savedKey) apiKeyInput.value = savedKey;
+    });
+
+    // Simpan API Key ke localStorage browser HP
+    function saveKey() {
+      const key = apiKeyInput.value.trim();
+      if (!key) {
+        alert("API Key tidak boleh kosong!");
+        return;
+      }
+      localStorage.setItem("respan_api_key", key);
+      alert("API Key tersimpan di browser ini!");
+    }
+
+    // Reset riwayat obrolan
+    function clearChat() {
+      conversationHistory = [];
+      chatBox.innerHTML = '<div class="msg bot">Riwayat obrolan direset. Silakan mulai topik baru.</div>';
+    }
+
+    // Tambah gelembung pesan ke layar
+    function appendMessage(text, sender) {
+      const div = document.createElement("div");
+      div.className = `msg ${sender}`;
+      div.textContent = text;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return div;
+    }
+
+    // Kirim request ke API Respan
+    async function sendMessage() {
+      const text = promptInput.value.trim();
+      const apiKey = apiKeyInput.value.trim() || localStorage.getItem("respan_api_key");
+
+      if (!apiKey) {
+        alert("Masukkan dan simpan API Key Respan terlebih dahulu!");
+        return;
+      }
+      if (!text) return;
+
+      appendMessage(text, "user");
+      promptInput.value = "";
+      conversationHistory.push({ role: "user", content: text });
+
+      sendBtn.disabled = true;
+      const loadingBubble = appendMessage("Mengetik...", "bot");
+
+      try {
+        const response = await fetch(ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            messages: conversationHistory
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error?.message || `HTTP Error ${response.status}`);
+        }
+
+        const reply = data.choices?.[0]?.message?.content || "Tidak ada balasan dari model.";
+        loadingBubble.textContent = reply;
+        conversationHistory.push({ role: "assistant", content: reply });
+
+      } catch (err) {
+        loadingBubble.textContent = `Gagal: ${err.message}\n\n(Jika muncul error 'Failed to fetch' / CORS, berarti server Respan memblokir request langsung dari browser dan harus menggunakan Pendekatan 2 / Cloudflare Worker).`;
+      } finally {
+        sendBtn.disabled = false;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+  </script>
+</body>
+</html>
