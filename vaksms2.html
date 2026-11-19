@@ -74,9 +74,10 @@
             <label class="form-label">🛒 Setup Layanan Utama</label>
             <div class="unified-order-box">
                 <select id="vak_dropdownLayanan" class="unified-select-op" onchange="vak_layananDiubahOlehUser()">
-                    <option value="sh" selected>Shopee (Indonesia)</option>
-                    <option value="wa">WhatsApp (Indonesia)</option>
-                    <option value="tg">Telegram (Indonesia)</option>
+                    <option value="sh|id" selected>Shopee (Indonesia)</option>
+                    <option value="sh|ph">Shopee (Filipina)</option>
+                    <option value="wa|id">WhatsApp (Indonesia)</option>
+                    <option value="tg|id">Telegram (Indonesia)</option>
                 </select>
                 
                 <select id="vak_dropdownOperator" class="unified-select-op" onchange="vak_terapkanFilterOperator()" style="color: #ffb86c;">
@@ -127,8 +128,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Double-Layer Operator Filter (API + Prefix HLR).<br>
-            └> Auto-Reject jika server memberi operator nyasar.
+            └> Layanan Shopee Filipina (PH) Ditambahkan.<br>
+            └> Double-Layer Operator Filter (Khusus ID).
         </div>
     </div>
     
@@ -175,7 +176,14 @@
             smartfren: ['62881', '62882', '62883', '62884', '62885', '62886', '62887', '62888', '62889']
         };
 
-        // Fungsi Validasi kesesuaian nomor dengan operator yang dipilih
+        // Helper untuk memecah kode layanan dan negara (misal "sh|ph" -> service: "sh", country: "ph")
+        function vak_getSelectedService() {
+            const raw = document.getElementById("vak_dropdownLayanan").value;
+            const parts = raw.split('|');
+            return { raw: raw, service: parts[0], country: parts[1] || 'id' };
+        }
+
+        // Fungsi Validasi kesesuaian nomor dengan operator yang dipilih (khusus ID)
         function vak_cekKesesuaianPrefix(nomorHP, opId) {
             if (opId === "any" || !PREFIX_OPERATOR[opId]) return true;
             let cleanNum = nomorHP.toString().replace(/\D/g, '');
@@ -295,18 +303,26 @@
 
         window.vak_layananDiubahOlehUser = function() {
             vak_hargaTercentang = []; 
+            const sel = vak_getSelectedService();
+            // Jika memilih negara selain Indonesia (misal Filipina), kembalikan operator ke Acak
+            if (sel.country !== 'id') {
+                document.getElementById("vak_dropdownOperator").value = "any";
+            }
             window.vak_muatProdukLayanan(false);
         }
 
         window.vak_muatProdukLayanan = async function(isRefresh = false) {
-            let serviceId = document.getElementById("vak_dropdownLayanan").value;
+            const sel = vak_getSelectedService();
+            const serviceKey = sel.raw;
+            const serviceId = sel.service;
+            const countryId = sel.country;
             
-            if (serviceId !== vak_lastServiceId || !vak_cachedOffers || vak_cachedOffers.length === 0 || isRefresh) {
+            if (serviceKey !== vak_lastServiceId || !vak_cachedOffers || vak_cachedOffers.length === 0 || isRefresh) {
                 document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="font-size:12px; color:#aaa;">Mencari data...</span>`;
                 document.getElementById("vak_btnPesanAksi").disabled = true;
                 
                 try {
-                    const resProd = await apiVakSmsV2('getOfferNumberList', { services: serviceId, country: 'id' });
+                    const resProd = await apiVakSmsV2('getOfferNumberList', { services: serviceId, country: countryId });
                     if (!resProd.isJson) throw new Error(`Data gagal dimuat.`); 
                     let rootData = resProd.data;
                     if (!rootData[serviceId] || !rootData[serviceId].priceMap) { throw new Error(`Stok Kosong / Tidak Tersedia.`); }
@@ -322,7 +338,7 @@
                     if (vak_cachedOffers.length === 0) throw new Error(`Stok habis.`);
 
                     vak_cachedOffers.sort((a, b) => a.price - b.price);
-                    vak_lastServiceId = serviceId;
+                    vak_lastServiceId = serviceKey;
 
                 } catch (e) {
                     document.getElementById("vak_labelServerTerpilih").innerHTML = `<span style="color:#ff5555; font-size:10px; line-height:1.2; display:block; word-wrap:break-word;">🚨 ERROR: ${e.message}</span>`;
@@ -336,6 +352,15 @@
         }
 
         window.vak_terapkanFilterOperator = function() {
+            const sel = vak_getSelectedService();
+            const opSelect = document.getElementById("vak_dropdownOperator");
+
+            // Cegah pemilihan operator Indonesia saat layanan Filipina aktif
+            if (sel.country !== 'id' && opSelect.value !== 'any') {
+                opSelect.value = 'any';
+                vak_showToast("Filipina otomatis Semua Operator!");
+            }
+
             if (!vak_cachedOffers || vak_cachedOffers.length === 0) {
                 vak_daftarServerTersedia = [];
                 vak_renderDropdownOptions();
@@ -346,8 +371,9 @@
 
             try {
                 let elemNamaSrv = document.getElementById("vak_dropdownLayanan").options[document.getElementById("vak_dropdownLayanan").selectedIndex].text;
-                let prefixLayanan = elemNamaSrv.split(' ')[0]; 
-                let opName = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
+                let baseNama = elemNamaSrv.split(' ')[0];
+                let prefixLayanan = sel.country === 'ph' ? `${baseNama} PH` : baseNama;
+                let opName = opSelect.options[opSelect.selectedIndex].text.replace("⚡ ", "");
 
                 vak_daftarServerTersedia = vak_cachedOffers.map(offer => {
                     return { id: offer.priceStr, opName: opName, price: offer.price, stock: offer.stock, prefix: prefixLayanan };
@@ -490,11 +516,15 @@
             vak_simpanDaftarOrderanKeLokal();
             
             try {
-                let serviceId = document.getElementById("vak_dropdownLayanan").value;
-                let opId = document.getElementById("vak_dropdownOperator").value;
+                const sel = vak_getSelectedService();
+                const serviceId = sel.service;
+                const countryId = sel.country;
+                const opId = (countryId === 'id') ? document.getElementById("vak_dropdownOperator").value : "any";
+                
                 let elemNamaSrv = document.getElementById("vak_dropdownLayanan").options[document.getElementById("vak_dropdownLayanan").selectedIndex].text.split(' ')[0];
+                let prefixLayanan = countryId === 'ph' ? `${elemNamaSrv} PH` : elemNamaSrv;
                 let opLabel = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
-                vak_namaProdukTerpilih = `${elemNamaSrv} (${opLabel})`;
+                vak_namaProdukTerpilih = `${prefixLayanan} (${opLabel})`;
                 
                 let targetPrices = vak_modeCentang ? vak_hargaTercentang : [vak_hargaProdukTerpilih];
                 if (targetPrices.length === 0) throw new Error("Pilih harga terlebih dahulu.");
@@ -506,8 +536,7 @@
                     if (finalOrder) break; 
 
                     let currentPriceTarget = targetPrices[i];
-                    // Jika memilih operator spesifik, beri kesempatan retry lebih banyak (4x) untuk menyaring prefix
-                    let maxRetries = (opId !== "any") ? 4 : (vak_modeCentang ? 2 : 3); 
+                    let maxRetries = (countryId === 'id' && opId !== "any") ? 4 : (vak_modeCentang ? 2 : 3); 
                     let attempt = 0;
 
                     while (attempt < maxRetries) {
@@ -518,8 +547,8 @@
                             if (attempt > 1) btn.innerHTML = `MENCARI BARU... (${attempt}/${maxRetries})`;
                         }
                         
-                        let apiParams = { service: serviceId, country: 'id' };
-                        if (opId !== "any") {
+                        let apiParams = { service: serviceId, country: countryId };
+                        if (countryId === 'id' && opId !== "any") {
                             apiParams.operator = opId;
                         }
 
@@ -529,7 +558,7 @@
                             apiParams.fixedPrice = 1; 
                         } else {
                             apiParams.price = true; 
-                            apiParams.maxPrice = (opId !== "any") ? (currentPriceTarget + 0.015) : currentPriceTarget;
+                            apiParams.maxPrice = (countryId === 'id' && opId !== "any") ? (currentPriceTarget + 0.015) : currentPriceTarget;
                         }
                         
                         try {
@@ -542,8 +571,8 @@
                                 let phoneStr = pPhone.toString();
                                 let actIdStr = pId.toString();
                                 
-                                // 1. VALIDASI PREFIX HLR OPERATOR LOKAL
-                                if (!vak_cekKesesuaianPrefix(phoneStr, opId)) {
+                                // 1. VALIDASI PREFIX HLR OPERATOR LOKAL (Khusus Indonesia)
+                                if (countryId === 'id' && !vak_cekKesesuaianPrefix(phoneStr, opId)) {
                                     btn.innerHTML = `⚠️ BUKAN ${opLabel.toUpperCase()}! GANTI...`;
                                     await apiVakSmsV2_Silent('setStatus', { idNum: actIdStr, status: 'bad' });
                                     await new Promise(r => setTimeout(r, 1200));
@@ -583,7 +612,7 @@
                     vak_renderUILayout(); vak_simpanDaftarOrderanKeLokal(); 
                     window.vak_ambilSaldoLive(true);
                 } else { 
-                    alert(`Gagal mendapatkan nomor ${opLabel} yang sesuai pada tier harga tersebut. Silakan coba lagi atau pilih tier lain.`); 
+                    alert(`Gagal mendapatkan nomor ${prefixLayanan} (${opLabel}) pada tier harga tersebut. Silakan coba lagi atau pilih tier lain.`); 
                 }
             } catch (e) { alert("Gagal order: " + e.message); } finally { btn.disabled = false; btn.innerHTML = teksAsli; }
         }
