@@ -128,8 +128,8 @@
         </div>
         <div style="margin-top: 12px; padding: 8px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); max-height: 140px; overflow-y: auto;">
             └> Tampilan & Posisi Kolom TETAP SAMA.<br>
-            └> Layanan Shopee Filipina (PH) Ditambahkan.<br>
-            └> Double-Layer Operator Filter (Khusus ID).
+            └> Operator Dinamis Terpisah (ID & Filipina).<br>
+            └> Validasi Prefix HLR Khusus Indonesia.
         </div>
     </div>
     
@@ -158,6 +158,8 @@
         let vak_daftarServerTersedia = [];
         let vak_cachedOffers = []; 
         let vak_lastServiceId = null; 
+        let vak_lastOperatorCountry = 'id';
+        let vak_cachedPhOperators = null; // Cache operator live Filipina dari API
         
         let vak_produkTerpilihId = null; 
         let vak_namaProdukTerpilih = ""; 
@@ -165,6 +167,23 @@
         let vak_siklusCek = 0;
         let vak_modeCentang = false;
         let vak_hargaTercentang = [];
+
+        // --- DAFTAR OPERATOR TERPISAH PER NEGARA ---
+        const OP_INDONESIA = [
+            { value: 'any', label: '⚡ Semua Operator (Acak)' },
+            { value: 'telkomsel', label: 'Telkomsel' },
+            { value: 'indosat', label: 'Indosat / IM3' },
+            { value: 'xl', label: 'XL Axiata' },
+            { value: 'axis', label: 'Axis' },
+            { value: 'three', label: 'Three (Tri)' },
+            { value: 'smartfren', label: 'Smartfren' }
+        ];
+
+        const OP_FILIPINA_FALLBACK = [
+            { value: 'globe', label: 'Globe Telecom' },
+            { value: 'smart', label: 'Smart' },
+            { value: 'sun', label: 'Sun Cellular' }
+        ];
 
         // --- DATABASE PREFIX HLR OPERATOR INDONESIA ---
         const PREFIX_OPERATOR = {
@@ -176,14 +195,108 @@
             smartfren: ['62881', '62882', '62883', '62884', '62885', '62886', '62887', '62888', '62889']
         };
 
-        // Helper untuk memecah kode layanan dan negara (misal "sh|ph" -> service: "sh", country: "ph")
         function vak_getSelectedService() {
             const raw = document.getElementById("vak_dropdownLayanan").value;
             const parts = raw.split('|');
             return { raw: raw, service: parts[0], country: parts[1] || 'id' };
         }
 
-        // Fungsi Validasi kesesuaian nomor dengan operator yang dipilih (khusus ID)
+        function vak_formatNamaOperator(code) {
+            return code.toString()
+                .replace(/[_-]+/g, ' ')
+                .replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function vak_renderDropdownOperatorList(list, keepValue = 'any') {
+            const opSelect = document.getElementById("vak_dropdownOperator");
+            let html = '';
+            list.forEach(op => {
+                html += `<option value="${op.value}">${op.label}</option>`;
+            });
+            opSelect.innerHTML = html;
+            const exists = list.some(op => op.value === keepValue);
+            opSelect.value = exists ? keepValue : 'any';
+        }
+
+        // Menarik daftar operator resmi Filipina secara live tanpa mengganggu operator Indonesia
+        async function vak_sinkronkanDropdownOperator(countryId) {
+            const opSelect = document.getElementById("vak_dropdownOperator");
+            const prevVal = (countryId === vak_lastOperatorCountry) ? opSelect.value : 'any';
+
+            if (countryId === 'id') {
+                if (vak_lastOperatorCountry !== 'id') {
+                    vak_renderDropdownOperatorList(OP_INDONESIA, 'any');
+                    vak_lastOperatorCountry = 'id';
+                }
+                return;
+            }
+
+            if (countryId === 'ph') {
+                // Jika sudah pernah ditarik & tidak pindah negara, pertahankan pilihan user
+                if (vak_lastOperatorCountry === 'ph' && vak_cachedPhOperators && vak_cachedPhOperators.length > 0) {
+                    return;
+                }
+
+                // Tampilkan sementara opsi Acak + fallback agar tidak kosong saat menarik live list
+                if (!vak_cachedPhOperators) {
+                    vak_renderDropdownOperatorList(
+                        [{ value: 'any', label: '⚡ Semua Operator PH (Acak)' }, ...OP_FILIPINA_FALLBACK],
+                        prevVal
+                    );
+                }
+
+                if (!vak_cachedPhOperators) {
+                    try {
+                        const res = await apiVakSmsV2_Silent('getCountryList');
+                        if (res.isJson && res.data) {
+                            let phObj = null;
+                            if (Array.isArray(res.data)) {
+                                phObj = res.data.find(c =>
+                                    (c.countryCode && c.countryCode.toLowerCase() === 'ph') ||
+                                    (c.code && c.code.toLowerCase() === 'ph')
+                                );
+                            } else if (typeof res.data === 'object') {
+                                phObj = res.data.ph || res.data.PH || null;
+                            }
+
+                            if (phObj) {
+                                const rawOps = phObj.operatorList || phObj.operators || [];
+                                let parsedOps = [];
+                                if (Array.isArray(rawOps)) {
+                                    parsedOps = rawOps.map(o => typeof o === 'string' ? o : (o.code || o.id || o.name || '')).filter(Boolean);
+                                } else if (typeof rawOps === 'string') {
+                                    parsedOps = rawOps.split(',').map(s => s.trim()).filter(Boolean);
+                                } else if (rawOps && typeof rawOps === 'object') {
+                                    parsedOps = Object.keys(rawOps);
+                                }
+
+                                const uniqueOps = [...new Set(parsedOps.filter(o => o.toLowerCase() !== 'any'))];
+                                if (uniqueOps.length > 0) {
+                                    vak_cachedPhOperators = uniqueOps.map(code => ({
+                                        value: code,
+                                        label: vak_formatNamaOperator(code)
+                                    }));
+                                }
+                            }
+                        }
+                    } catch (e) { console.log("Gagal tarik operator PH live, memakai fallback."); }
+                }
+
+                // Pastikan user tidak keburu pindah kembali ke Indonesia saat fetch berjalan
+                if (vak_getSelectedService().country === 'ph') {
+                    const finalPhOps = (vak_cachedPhOperators && vak_cachedPhOperators.length > 0)
+                        ? vak_cachedPhOperators
+                        : OP_FILIPINA_FALLBACK;
+                    vak_renderDropdownOperatorList(
+                        [{ value: 'any', label: '⚡ Semua Operator PH (Acak)' }, ...finalPhOps],
+                        prevVal
+                    );
+                    vak_lastOperatorCountry = 'ph';
+                }
+            }
+        }
+
+        // Validasi kesesuaian nomor dengan operator (khusus Indonesia)
         function vak_cekKesesuaianPrefix(nomorHP, opId) {
             if (opId === "any" || !PREFIX_OPERATOR[opId]) return true;
             let cleanNum = nomorHP.toString().replace(/\D/g, '');
@@ -265,6 +378,8 @@
 
         window.vak_refreshSemuaDataLive = async function() { 
             document.getElementById("vak_txtSaldoLive").innerText = "...";
+            const sel = vak_getSelectedService();
+            await vak_sinkronkanDropdownOperator(sel.country);
             await window.vak_muatProdukLayanan(true);
             setTimeout(() => { window.vak_ambilSaldoLive(false); }, 1500);
         }
@@ -301,13 +416,10 @@
             window.vak_refreshSemuaDataLive(); vak_showToast("Dibersihkan!");
         }
 
-        window.vak_layananDiubahOlehUser = function() {
+        window.vak_layananDiubahOlehUser = async function() {
             vak_hargaTercentang = []; 
             const sel = vak_getSelectedService();
-            // Jika memilih negara selain Indonesia (misal Filipina), kembalikan operator ke Acak
-            if (sel.country !== 'id') {
-                document.getElementById("vak_dropdownOperator").value = "any";
-            }
+            await vak_sinkronkanDropdownOperator(sel.country);
             window.vak_muatProdukLayanan(false);
         }
 
@@ -355,12 +467,6 @@
             const sel = vak_getSelectedService();
             const opSelect = document.getElementById("vak_dropdownOperator");
 
-            // Cegah pemilihan operator Indonesia saat layanan Filipina aktif
-            if (sel.country !== 'id' && opSelect.value !== 'any') {
-                opSelect.value = 'any';
-                vak_showToast("Filipina otomatis Semua Operator!");
-            }
-
             if (!vak_cachedOffers || vak_cachedOffers.length === 0) {
                 vak_daftarServerTersedia = [];
                 vak_renderDropdownOptions();
@@ -373,7 +479,9 @@
                 let elemNamaSrv = document.getElementById("vak_dropdownLayanan").options[document.getElementById("vak_dropdownLayanan").selectedIndex].text;
                 let baseNama = elemNamaSrv.split(' ')[0];
                 let prefixLayanan = sel.country === 'ph' ? `${baseNama} PH` : baseNama;
-                let opName = opSelect.options[opSelect.selectedIndex].text.replace("⚡ ", "");
+                let opName = opSelect.options[opSelect.selectedIndex]
+                    ? opSelect.options[opSelect.selectedIndex].text.replace("⚡ ", "")
+                    : "Semua Operator (Acak)";
 
                 vak_daftarServerTersedia = vak_cachedOffers.map(offer => {
                     return { id: offer.priceStr, opName: opName, price: offer.price, stock: offer.stock, prefix: prefixLayanan };
@@ -519,11 +627,14 @@
                 const sel = vak_getSelectedService();
                 const serviceId = sel.service;
                 const countryId = sel.country;
-                const opId = (countryId === 'id') ? document.getElementById("vak_dropdownOperator").value : "any";
+                const opSelect = document.getElementById("vak_dropdownOperator");
+                const opId = opSelect.value || "any";
                 
                 let elemNamaSrv = document.getElementById("vak_dropdownLayanan").options[document.getElementById("vak_dropdownLayanan").selectedIndex].text.split(' ')[0];
                 let prefixLayanan = countryId === 'ph' ? `${elemNamaSrv} PH` : elemNamaSrv;
-                let opLabel = document.getElementById("vak_dropdownOperator").options[document.getElementById("vak_dropdownOperator").selectedIndex].text.replace("⚡ ", "");
+                let opLabel = opSelect.options[opSelect.selectedIndex]
+                    ? opSelect.options[opSelect.selectedIndex].text.replace("⚡ ", "")
+                    : "Semua Operator (Acak)";
                 vak_namaProdukTerpilih = `${prefixLayanan} (${opLabel})`;
                 
                 let targetPrices = vak_modeCentang ? vak_hargaTercentang : [vak_hargaProdukTerpilih];
@@ -548,7 +659,7 @@
                         }
                         
                         let apiParams = { service: serviceId, country: countryId };
-                        if (countryId === 'id' && opId !== "any") {
+                        if (opId !== "any") {
                             apiParams.operator = opId;
                         }
 
@@ -558,7 +669,7 @@
                             apiParams.fixedPrice = 1; 
                         } else {
                             apiParams.price = true; 
-                            apiParams.maxPrice = (countryId === 'id' && opId !== "any") ? (currentPriceTarget + 0.015) : currentPriceTarget;
+                            apiParams.maxPrice = (opId !== "any") ? (currentPriceTarget + 0.015) : currentPriceTarget;
                         }
                         
                         try {
@@ -571,7 +682,7 @@
                                 let phoneStr = pPhone.toString();
                                 let actIdStr = pId.toString();
                                 
-                                // 1. VALIDASI PREFIX HLR OPERATOR LOKAL (Khusus Indonesia)
+                                // 1. VALIDASI PREFIX HLR OPERATOR LOKAL (Khusus Indonesia, tidak bentrok dengan PH)
                                 if (countryId === 'id' && !vak_cekKesesuaianPrefix(phoneStr, opId)) {
                                     btn.innerHTML = `⚠️ BUKAN ${opLabel.toUpperCase()}! GANTI...`;
                                     await apiVakSmsV2_Silent('setStatus', { idNum: actIdStr, status: 'bad' });
@@ -624,6 +735,7 @@
             
             localStorage.setItem("otp_key_vaksms", key);
             localStorage.setItem("proxy_url_vaksms", proxy);
+            vak_cachedPhOperators = null; // Reset cache agar ikut tarik live dengan key baru
             
             document.getElementById("vak_statusKey").innerText = "✅ Tersimpan! Memuat data...";
             document.getElementById("vak_statusKey").style.color = "#50fa7b";
