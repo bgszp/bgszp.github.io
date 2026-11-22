@@ -85,11 +85,12 @@
             <label class="form-label">🛒 Setup Layanan</label>
             
             <div class="unified-order-box">
-                <!-- PILIH LAYANAN & NEGARA (BARU) -->
+                <!-- PILIH LAYANAN & NEGARA -->
                 <select id="dropdownPlatform" class="unified-select-op" onchange="gantiPlatform()" style="margin-bottom: 5px; border-bottom: 1px solid #25274d; padding-bottom: 8px;">
                     <option value="shopee_id">🟠 Layanan: Shopee (Indonesia)</option>
                     <option value="shopee_ph">🟡 Layanan: Shopee (Philippines)</option>
                     <option value="whatsapp_id">🟢 Layanan: WhatsApp (Indonesia)</option>
+                    <option value="whatsapp_ph">🔵 Layanan: WhatsApp (Philippines)</option>
                 </select>
 
                 <!-- PILIH OPERATOR -->
@@ -152,12 +153,12 @@
         let siklusCek = 0;
         let cacheNegara = null; 
 
-        // KITA UBAH MENGGUNAKAN KODE ISO NEGARA (ID / PH) AGAR TIDAK MUNGKIN SALAH ID LAGI
         let activePlatform = "shopee_id"; 
         const configLayanan = {
             "shopee_id": { search: "shopee", country_code: "ID", country: null, label: "Shopee ID" },
             "shopee_ph": { search: "shopee", country_code: "PH", country: null, label: "Shopee PH" },
-            "whatsapp_id": { search: "whatsapp", country_code: "ID", country: null, label: "WhatsApp ID" }
+            "whatsapp_id": { search: "whatsapp", country_code: "ID", country: null, label: "WhatsApp ID" },
+            "whatsapp_ph": { search: "whatsapp", country_code: "PH", country: null, label: "WhatsApp PH" }
         };
         let platformData = {}; 
 
