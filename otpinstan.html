@@ -37,7 +37,7 @@
             background: var(--bg-card);
             border-radius: 14px;
             border: 1px solid var(--border-color);
-            padding: 15px;
+            padding: 14px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.6);
             margin-bottom: 10px;
         }
@@ -47,14 +47,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 5px;
-            margin-top: 10px;
+            margin-bottom: 4px;
+            margin-top: 9px;
         }
         .pemicu-dropdown {
             background: var(--bg-item);
             border: 1px solid #32356b;
             border-radius: 10px;
-            padding: 10px 12px;
+            padding: 9px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -78,7 +78,7 @@
         }
         .search-input {
             width: 100%;
-            padding: 9px 10px;
+            padding: 8px 10px;
             border-radius: 8px;
             background: #0b0c16;
             border: 1px solid #3d3463;
@@ -98,7 +98,7 @@
             background: var(--bg-item);
             border: 1px solid #32356b;
             color: #ccc;
-            padding: 10px;
+            padding: 9px;
             border-radius: 10px;
             font-size: 12px;
             font-weight: bold;
@@ -115,111 +115,50 @@
             box-shadow: 0 0 10px rgba(108, 92, 231, 0.35);
         }
 
-        /* Select Negara */
-        .select-negara {
+        /* Dropdown Compact */
+        .row-flex {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .select-compact {
             width: 100%;
             background: var(--bg-item);
             border: 1px solid #32356b;
             border-radius: 10px;
-            padding: 10px 12px;
+            padding: 9px 10px;
             color: #fff;
             font-size: 12px;
             font-weight: 600;
             outline: none;
             cursor: pointer;
         }
-        .select-negara option { background: #121324; color: #fff; }
-
-        /* Daftar Tier Harga (Server 1..5) */
-        .tier-list {
-            max-height: 175px;
-            overflow-y: auto;
-            background: #0f1020;
-            border: 1px solid #2c2e5c;
+        .select-compact:focus { border-color: var(--accent-purple); }
+        .select-compact option { background: #121324; color: #fff; }
+        .btn-icon-refresh {
+            background: #25274d;
+            border: 1px solid #3d3f7a;
+            color: var(--accent-cyan);
             border-radius: 10px;
-            padding: 4px;
-        }
-        .tier-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 10px;
-            border-radius: 7px;
+            padding: 9px 12px;
             cursor: pointer;
             font-size: 12px;
-            margin-bottom: 3px;
-            border: 1px solid transparent;
+            flex-shrink: 0;
         }
-        .tier-item:last-child { margin-bottom: 0; }
-        .tier-item:hover { background: #1c1e3d; }
-        .tier-item.terpilih {
-            background: #252757;
-            border-color: var(--accent-purple);
-        }
+        .btn-icon-refresh:hover { background: #2f3263; }
 
-        /* Info Harga Terpilih */
-        .info-harga-bar {
-            background: rgba(255, 184, 108, 0.1);
-            border: 1px solid rgba(255, 184, 108, 0.35);
-            color: var(--accent-orange);
-            border-radius: 8px;
-            padding: 8px 10px;
-            font-size: 11px;
-            font-weight: bold;
-            margin-top: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* Grid Operator */
-        .op-auto-btn {
-            width: 100%;
-            background: var(--bg-item);
-            border: 1px solid #32356b;
-            color: #ccc;
-            padding: 8px 10px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 6px;
-            text-align: center;
-        }
-        .op-auto-btn.terpilih {
-            background: #252757;
-            border-color: var(--accent-purple);
-            color: var(--accent-green);
-        }
-        .op-grid {
+        /* Grid 2 Kolom untuk Harga & Operator */
+        .grid-2-col {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            max-height: 130px;
-            overflow-y: auto;
+            grid-template-columns: 1.25fr 1fr;
+            gap: 8px;
+            margin-top: 2px;
         }
-        .op-btn {
-            background: var(--bg-item);
-            border: 1px solid #2c2e5c;
-            color: #ddd;
-            padding: 7px 10px;
-            border-radius: 8px;
-            font-size: 11px;
-            text-align: left;
-            cursor: pointer;
-        }
-        .op-btn:hover { background: #20224a; }
-        .op-btn.terpilih {
-            background: #252757;
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-        }
-        .op-btn small { display: block; font-size: 9px; color: var(--text-sub); }
 
         /* Tombol Pesan */
         .btn-pesan-premium {
             width: 100%;
-            padding: 12px;
+            padding: 11px;
             background: #5f27cd;
             color: white;
             border: none;
@@ -319,16 +258,16 @@
 <body>
     <div class="container">
         <!-- Header Saldo & Server -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;">
             <h3 style="color: #fff; margin: 0; font-size: 15px; font-weight: 600;">⚡ Server 4 (Murah)</h3>
-            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
+            <div style="background: var(--bg-item); border: 1px solid var(--border-color); padding: 4px 11px; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: var(--accent-green);">
                 👛 <span id="txtSaldoLive">Rp 0</span>
-                <span onclick="ambilSaldoLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 4px;" title="Refresh Saldo">🔄</span>
+                <span onclick="ambilSaldoLive()" style="cursor: pointer; font-size: 11px; color: var(--accent-cyan); margin-left: 3px;" title="Refresh Saldo">🔄</span>
             </div>
         </div>
 
         <!-- Konfigurasi API Key -->
-        <div style="margin-bottom: 10px;">
+        <div style="margin-bottom: 8px;">
             <div class="pemicu-dropdown" onclick="toggleApiKeyDropdown()">
                 <span>🔑 Konfigurasi API Key</span>
                 <span style="font-size: 10px;">▼</span>
@@ -343,48 +282,44 @@
             </div>
         </div>
 
-        <!-- 1. Pilih Layanan (Shopee & WhatsApp) -->
-        <div class="label-sec">
-            <span>Layanan</span>
-            <span id="btnRefreshData" onclick="muatDataNegaraDanHarga()" style="cursor: pointer; color: var(--accent-cyan); font-weight: bold;">🔄 Refresh Harga</span>
-        </div>
+        <!-- 1. Layanan (Shopee & WhatsApp) -->
         <div class="service-tabs">
             <button id="tabShopee" class="btn-srv-tab aktif" onclick="pilihLayananCepat('shopee')">🛒 Shopee</button>
             <button id="tabWhatsapp" class="btn-srv-tab" onclick="pilihLayananCepat('whatsapp')">💬 WhatsApp</button>
         </div>
 
-        <!-- 2. Pilih Negara (Asia - Default Indonesia) -->
+        <!-- 2. Negara (Asia) + Tombol Refresh -->
         <div class="label-sec">
             <span>Negara (Asia)</span>
             <span id="txtInfoNegaraCount" style="color: var(--accent-cyan); font-size: 10px;">Memuat...</span>
         </div>
-        <select id="selectNegaraAsia" class="select-negara" onchange="onNegaraBerubah()">
-            <option value="">Memuat daftar negara Asia...</option>
-        </select>
-
-        <!-- 3. Pilih Harga / Tier (Server 1..5+) -->
-        <div class="label-sec">
-            <span>Pilih Harga (default termurah)</span>
-            <span id="txtJumlahTier" style="font-size: 10px; color: var(--text-sub);">-</span>
-        </div>
-        <div id="containerTierHarga" class="tier-list">
-            <div style="text-align: center; padding: 14px; color: #6272a4; font-size: 11px;">Memuat tingkatan harga...</div>
+        <div class="row-flex">
+            <select id="selectNegaraAsia" class="select-compact" onchange="onNegaraBerubah()">
+                <option value="">Memuat daftar negara Asia...</option>
+            </select>
+            <button class="btn-icon-refresh" onclick="muatDataNegaraDanHarga()" title="Refresh Harga & Stok">🔄</button>
         </div>
 
-        <div id="barInfoHarga" class="info-harga-bar">
-            <span>🔥 Harga: Rp 0</span>
-            <span>Stok: 0 pcs</span>
+        <!-- 3. Harga (Tier) & Operator sejajar 2 kolom (Dropdown Compact) -->
+        <div class="grid-2-col">
+            <div>
+                <div class="label-sec">
+                    <span>Pilih Harga</span>
+                    <span id="txtJumlahTier" style="font-size: 10px; color: var(--accent-orange);">-</span>
+                </div>
+                <select id="selectTierHarga" class="select-compact" onchange="onTierBerubah()">
+                    <option value="">Memuat harga...</option>
+                </select>
+            </div>
+            <div>
+                <div class="label-sec">
+                    <span>Operator</span>
+                </div>
+                <select id="selectOperator" class="select-compact" onchange="onOperatorBerubah()">
+                    <option value="any">✅ Otomatis</option>
+                </select>
+            </div>
         </div>
-
-        <!-- 4. Operator Dinamis Sesuai Negara -->
-        <div class="label-sec">
-            <span>Operator (opsional)</span>
-            <span id="txtOpTerpilih" style="color: var(--accent-green); font-size: 10px;">Otomatis</span>
-        </div>
-        <button id="btnOpAuto" class="op-auto-btn terpilih" onclick="pilihOperator('any', 'Otomatis (semua operator)')">
-            ✅ Otomatis (semua operator)
-        </button>
-        <div id="containerOperator" class="op-grid"></div>
 
         <!-- Tombol Pesan -->
         <button onclick="prosesPesanSekarang()" class="btn-pesan-premium" id="btnPesanUtama">
@@ -392,23 +327,23 @@
         </button>
 
         <!-- Nomor & OTP Aktif -->
-        <div style="margin-top: 18px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+        <div style="margin-top: 15px; border-top: 2px dashed var(--border-color); padding-top: 10px;">
             <div style="font-size: 13px; font-weight: bold; color: var(--accent-green); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Nomor & OTP Aktif:</span>
                 <span onclick="hapusRiwayatSelesai()" style="cursor: pointer; font-size: 10px; color: var(--accent-red); background: var(--bg-item); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-color);">🧹 Bersihkan</span>
             </div>
             <div id="containerListOrder">
-                <div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
+                <div style="text-align: center; padding: 16px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>
             </div>
         </div>
 
         <!-- Riwayat Lengkap -->
-        <div style="margin-top: 16px; border-top: 2px dashed var(--border-color); padding-top: 12px;">
+        <div style="margin-top: 14px; border-top: 2px dashed var(--border-color); padding-top: 10px;">
             <div class="pemicu-dropdown" onclick="toggleRiwayatDropdown()">
                 <span>📜 Riwayat Orderan Server 4</span>
                 <span style="font-size: 10px;">▼</span>
             </div>
-            <div id="wadahRiwayatDropdown" class="wrapper-layanan" style="display: none; padding: 10px; max-height: 250px; overflow-y: auto; background: var(--bg-card);">
+            <div id="wadahRiwayatDropdown" class="wrapper-layanan" style="display: none; padding: 10px; max-height: 240px; overflow-y: auto; background: var(--bg-card);">
                 <div id="containerRiwayatLengkap">
                     <div style="text-align: center; color: #6272a4; font-size: 11px; font-style: italic;">Belum ada riwayat.</div>
                 </div>
@@ -416,7 +351,7 @@
         </div>
 
         <!-- Console Log -->
-        <div id="miniConsoleLog" style="margin-top: 12px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 60px; overflow-y: auto;">
+        <div id="miniConsoleLog" style="margin-top: 10px; padding: 6px; background: var(--bg-main); border-radius: 6px; font-family: monospace; font-size: 10px; color: var(--accent-green); border: 1px solid var(--border-color); word-break: break-all; max-height: 55px; overflow-y: auto;">
             └> Server 4 (Murah) Ready.
         </div>
     </div>
@@ -446,6 +381,7 @@
         let namaLayananAktif = "Shopee";
 
         let negaraTerpilih = null;
+        let listTierSaatIni = [];
         let tierTerpilih = null;
         let operatorTerpilih = "any";
         let isCheckingSms = false;
@@ -570,9 +506,10 @@
 
         async function muatDataNegaraDanHarga() {
             if (!idLayananAktif) return;
-            const sel = document.getElementById("selectNegaraAsia");
-            sel.innerHTML = `<option value="">Memuat negara Asia...</option>`;
-            document.getElementById("containerTierHarga").innerHTML = `<div style="text-align:center; padding:14px; color:#6272a4; font-size:11px;">Memuat harga...</div>`;
+            const selNegara = document.getElementById("selectNegaraAsia");
+            const selTier = document.getElementById("selectTierHarga");
+            selNegara.innerHTML = `<option value="">Memuat negara Asia...</option>`;
+            selTier.innerHTML = `<option value="">Memuat harga...</option>`;
 
             try {
                 const res = await hitApiS4(`/s9/countries.php?service=${idLayananAktif}`);
@@ -590,22 +527,22 @@
                     return String(a.name).localeCompare(String(b.name));
                 });
 
-                document.getElementById("txtInfoNegaraCount").innerText = `${listNegaraAsia.length} negara tersedia`;
+                document.getElementById("txtInfoNegaraCount").innerText = `${listNegaraAsia.length} negara`;
 
                 if (listNegaraAsia.length === 0) {
-                    sel.innerHTML = `<option value="">Stok Asia kosong</option>`;
-                    document.getElementById("containerTierHarga").innerHTML = `<div style="text-align:center; padding:14px; color:#ff5555; font-size:11px;">Stok layanan ini sedang kosong di Asia.</div>`;
+                    selNegara.innerHTML = `<option value="">Stok Asia kosong</option>`;
+                    selTier.innerHTML = `<option value="">Stok kosong</option>`;
                     return;
                 }
 
                 const prevId = negaraTerpilih ? negaraTerpilih.id : null;
                 let selectedId = listNegaraAsia.some(c => c.id === prevId) ? prevId : listNegaraAsia[0].id;
 
-                sel.innerHTML = listNegaraAsia.map(c => {
+                selNegara.innerHTML = listNegaraAsia.map(c => {
                     const stok = parseInt(c.count || 0).toLocaleString("id-ID");
                     const harga = parseInt(c.price || 0).toLocaleString("id-ID");
                     const flag = (c.id === 7 || String(c.name).toLowerCase().includes("indonesia")) ? "🇮🇩 " : "🌏 ";
-                    return `<option value="${c.id}" ${c.id === selectedId ? "selected" : ""}>${flag}${c.name} (${stok} pcs) — mulai Rp ${harga}</option>`;
+                    return `<option value="${c.id}" ${c.id === selectedId ? "selected" : ""}>${flag}${c.name} (${stok}) — Rp ${harga}</option>`;
                 }).join("");
 
                 onNegaraBerubah();
@@ -619,81 +556,49 @@
             negaraTerpilih = listNegaraAsia.find(c => c.id === idDipilih) || null;
             if (!negaraTerpilih) return;
 
-            renderTierHarga();
-            renderOperatorNegara();
+            renderTierHargaDropdown();
+            renderOperatorDropdown();
         }
 
-        function renderTierHarga() {
-            const box = document.getElementById("containerTierHarga");
-            let prices = Array.isArray(negaraTerpilih.prices) && negaraTerpilih.prices.length > 0
+        function renderTierHargaDropdown() {
+            const selTier = document.getElementById("selectTierHarga");
+            listTierSaatIni = Array.isArray(negaraTerpilih.prices) && negaraTerpilih.prices.length > 0
                 ? negaraTerpilih.prices
                 : [{ price: negaraTerpilih.price, price_usd: negaraTerpilih.price_usd, count: negaraTerpilih.count }];
 
-            document.getElementById("txtJumlahTier").innerText = `${prices.length} tingkatan`;
+            document.getElementById("txtJumlahTier").innerText = `${listTierSaatIni.length} opsi`;
 
-            tierTerpilih = prices[0];
-            updateBarHarga();
-
-            box.innerHTML = prices.map((t, idx) => {
+            selTier.innerHTML = listTierSaatIni.map((t, idx) => {
                 const hrg = parseInt(t.price || 0).toLocaleString("id-ID");
                 const stk = parseInt(t.count || 0).toLocaleString("id-ID");
-                return `<div class="tier-item ${idx === 0 ? "terpilih" : ""}" id="tier_${idx}" onclick="pilihTierHarga(${idx})">
-                    <span style="font-weight:600; color:#fff;">Server ${idx + 1}</span>
-                    <span>
-                        <strong style="color:#b4b7ff;">Rp ${hrg}</strong>
-                        <small style="color:#8b8da9; margin-left:4px;">${stk} pcs</small>
-                    </span>
-                </div>`;
+                return `<option value="${idx}">S${idx + 1} • Rp ${hrg} (${stk})</option>`;
             }).join("");
+
+            tierTerpilih = listTierSaatIni[0];
         }
 
-        function pilihTierHarga(idx) {
-            let prices = Array.isArray(negaraTerpilih.prices) && negaraTerpilih.prices.length > 0
-                ? negaraTerpilih.prices
-                : [{ price: negaraTerpilih.price, price_usd: negaraTerpilih.price_usd, count: negaraTerpilih.count }];
-
-            tierTerpilih = prices[idx];
-            document.querySelectorAll(".tier-item").forEach((el, i) => {
-                el.classList.toggle("terpilih", i === idx);
-            });
-            updateBarHarga();
+        function onTierBerubah() {
+            const idx = parseInt(document.getElementById("selectTierHarga").value);
+            tierTerpilih = listTierSaatIni[idx] || listTierSaatIni[0];
         }
 
-        function updateBarHarga() {
-            if (!tierTerpilih) return;
-            const hrg = parseInt(tierTerpilih.price || 0).toLocaleString("id-ID");
-            const stk = parseInt(tierTerpilih.count || 0).toLocaleString("id-ID");
-            document.getElementById("barInfoHarga").innerHTML = `<span>🔥 Harga: Rp ${hrg}</span><span>Stok: ${stk} pcs</span>`;
-        }
-
-        function renderOperatorNegara() {
-            const grid = document.getElementById("containerOperator");
+        function renderOperatorDropdown() {
+            const selOp = document.getElementById("selectOperator");
             const ops = Array.isArray(negaraTerpilih.operators) ? negaraTerpilih.operators : [];
 
-            pilihOperator("any", "Otomatis (semua operator)");
+            let html = `<option value="any">✅ Otomatis</option>`;
+            ops.forEach(op => {
+                const code = String(op.code || op).replace(/"/g, "");
+                const name = String(op.name || op);
+                html += `<option value="${code}">${name}</option>`;
+            });
 
-            if (ops.length === 0) {
-                grid.innerHTML = `<div style="grid-column: span 2; text-align:center; font-size:10px; color:#6272a4; padding:4px;">Hanya tersedia mode Otomatis untuk negara ini.</div>`;
-                return;
-            }
-
-            grid.innerHTML = ops.map(op => {
-                const code = String(op.code || op).replace(/'/g, "");
-                const name = String(op.name || op).replace(/'/g, "");
-                return `<button class="op-btn" data-code="${code}" onclick="pilihOperator('${code}', '${name}')">
-                    <strong>${name}</strong>
-                    <small>${code}</small>
-                </button>`;
-            }).join("");
+            selOp.innerHTML = html;
+            operatorTerpilih = "any";
         }
 
-        function pilihOperator(code, label) {
-            operatorTerpilih = code;
-            document.getElementById("txtOpTerpilih").innerText = label;
-            document.getElementById("btnOpAuto").classList.toggle("terpilih", code === "any");
-            document.querySelectorAll(".op-btn").forEach(btn => {
-                btn.classList.toggle("terpilih", btn.getAttribute("data-code") === code);
-            });
+        function onOperatorBerubah() {
+            operatorTerpilih = document.getElementById("selectOperator").value || "any";
         }
 
         async function prosesPesanSekarang() {
@@ -834,7 +739,7 @@
         function renderUILayout() {
             const container = document.getElementById("containerListOrder");
             if (daftarOrderan.length === 0) {
-                container.innerHTML = `<div style="text-align: center; padding: 20px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>`;
+                container.innerHTML = `<div style="text-align: center; padding: 16px 10px; color: #6272a4; font-style: italic; font-size: 12px;">Belum ada pesanan aktif.</div>`;
                 return;
             }
             let html = "";
